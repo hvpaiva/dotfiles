@@ -59,15 +59,15 @@ alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 
 # GO
-export GOPATH='/Users/omerxx/go'
+export GOPATH='/Users/hpaiva/go'
 
 # VIM
-alias v="/Users/omerxx/.nix-profile/bin/nvim"
+alias v="/Users/hpaiva/.nix-profile/bin/nvim"
 
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:/Users/omerxx/.cargo/bin
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/hpaiva/.vimpkg/bin:${GOPATH}/bin:/Users/hpaiva/.cargo/bin
 
 alias cl='clear'
 
@@ -136,6 +136,29 @@ function ranger {
 	command rm -f -- "$tempfile" 2>/dev/null
 }
 alias rr='ranger'
+
+# Meli Configs
+export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*                                                                                                                                                    │
+export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*                                                                                                                                                    │
+export GOPROXY=https://go.artifacts.furycloud.io/                                                                                                                                                                     │
+export GONOPROXY=https://go.artifacts.furycloud.io/                                                                                                                                                                   │
+export PATH=$PATH:/usr/local/go/bin
+export PATH="$HOME/.pyenv/bin:$PATH"
+
+## Fury CLI
+export PYENV_ROOT="$HOME/.pyenv"                                                                                                                                                                                      │/Users/hpaiva
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"                                                                                                                                                    │
+eval "$(pyenv init -)"
+
+export PATH="/Users/hpaiva/Library/Python/3.9/bin:$PATH"
+
+## Services CLI                                                                                                                                                                                                        │
+export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin                                                                                                                                                                    ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+eval "$(_SRVC2_COMPLETE=zsh_source srvc2)"
+
+#SDKMAN
+export SDKMAN_DIR="$HOME/.sdkman"                                                                                                                                                                                     │
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # navigation
 cx() { cd "$@" && l; }

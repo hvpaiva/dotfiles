@@ -14,7 +14,7 @@ format =  '[$symbol$branch(:$remote_branch)]($style)'
 
 [aws]
 format = '[$symbol(profile: "$profile" )(\(region: $region\) )]($style)'
-disabled = false
+disabled = true
 style = 'bold blue'
 symbol = " "
 

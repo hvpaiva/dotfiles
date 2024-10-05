@@ -58,7 +58,7 @@
     };
   in
   {
-    darwinConfigurations."Hvpaiva-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+    darwinConfigurations."BR0C02HD0980" = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";
       modules = [ 
 	configuration
@@ -71,6 +71,6 @@
     };
 
     # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations."Hvpaiva-MacBook-Pro".pkgs;
+    darwinPackages = self.darwinConfigurations."BR0C02HD0980".pkgs;
   };
 }

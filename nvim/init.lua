@@ -1,19 +1,37 @@
-require('keymaps')
-require('plugins.lazy')
-require('plugins.misc')
-require('plugins.lualine')
-require('options')
-require('misc')
-require('plugins.dap')
-require('plugins.gitsigns')
-require('plugins.tele')
-require('plugins.treesitter')
-require('plugins.lsp')
-require('plugins.trouble')
-require('plugins.obsidian')
-require('plugins.zenmode')
-require('plugins.neogit')
-require('plugins.codesnap')
-require('plugins.harpoon')
+vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"
+vim.g.mapleader = " "
 
--- vim: ts=8 sts=2 sw=2 et
+-- bootstrap lazy and all plugins
+local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+
+if not vim.uv.fs_stat(lazypath) then
+  local repo = "https://github.com/folke/lazy.nvim.git"
+  vim.fn.system { "git", "clone", "--filter=blob:none", repo, "--branch=stable", lazypath }
+end
+
+vim.opt.rtp:prepend(lazypath)
+
+local lazy_config = require "configs.lazy"
+
+-- load plugins
+require("lazy").setup({
+  {
+    "NvChad/NvChad",
+    lazy = false,
+    branch = "v2.5",
+    import = "nvchad.plugins",
+  },
+
+  { import = "plugins" },
+}, lazy_config)
+
+-- load theme
+dofile(vim.g.base46_cache .. "defaults")
+dofile(vim.g.base46_cache .. "statusline")
+
+require "options"
+require "nvchad.autocmds"
+
+vim.schedule(function()
+  require "mappings"
+end)

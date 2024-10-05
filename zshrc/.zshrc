@@ -62,7 +62,7 @@ alias ......="cd ../../../../.."
 export GOPATH='/Users/hpaiva/go'
 
 # VIM
-alias v="/Users/hpaiva/.nix-profile/bin/nvim"
+alias v="/opt/homebrew/bin/nvim"
 
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
@@ -119,6 +119,7 @@ alias mat='osascript -e "tell application \"System Events\" to key code 126 usin
 # Nix!
 export NIX_CONF_DIR=$HOME/.config/nix
 export PATH=/run/current-system/sw/bin:$PATH
+export PATH=/nix/var/nix/profiles/default/bin:$PATH
 
 function ranger {
 	local IFS=$'\t\n'
@@ -138,26 +139,26 @@ function ranger {
 alias rr='ranger'
 
 # Meli Configs
-export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*                                                                                                                                                    │
-export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*                                                                                                                                                    │
-export GOPROXY=https://go.artifacts.furycloud.io/                                                                                                                                                                     │
-export GONOPROXY=https://go.artifacts.furycloud.io/                                                                                                                                                                   │
+export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*
+export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*
+export GOPROXY=https://go.artifacts.furycloud.io/
+export GONOPROXY=https://go.artifacts.furycloud.io/
 export PATH=$PATH:/usr/local/go/bin
 export PATH="$HOME/.pyenv/bin:$PATH"
 
 ## Fury CLI
-export PYENV_ROOT="$HOME/.pyenv"                                                                                                                                                                                      │/Users/hpaiva
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"                                                                                                                                                    │
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 export PATH="/Users/hpaiva/Library/Python/3.9/bin:$PATH"
 
-## Services CLI                                                                                                                                                                                                        │
-export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin                                                                                                                                                                    ├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## Services CLI
+export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin
 eval "$(_SRVC2_COMPLETE=zsh_source srvc2)"
 
 #SDKMAN
-export SDKMAN_DIR="$HOME/.sdkman"                                                                                                                                                                                     │
+export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # navigation
@@ -166,11 +167,11 @@ fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
 f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
 fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
 
- # Nix
- if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+# Nix
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
 	 . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
- fi
- # End Nix
+fi
+# End Nix
 
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh)"

@@ -14,7 +14,6 @@ colima
 docker
 docker-compose
 docker-credential-helper
-dog
 duf
 dust
 eksctl

@@ -31,7 +31,7 @@
       nixpkgs.hostPlatform = "aarch64-darwin";
       security.pam.enableSudoTouchIdAuth = true;
 
-      users.users.omerxx.home = "/Users/omerxx";
+      users.users.hpaiva.home = "/Users/hpaiva";
       home-manager.backupFileExtension = "backup";
       nix.configureBuildUsers = true;
       nix.useDaemon = true;
@@ -58,7 +58,7 @@
     };
   in
   {
-    darwinConfigurations."Omers-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+    darwinConfigurations."Hvpaiva-MacBook-Pro" = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";
       modules = [ 
 	configuration
@@ -71,6 +71,6 @@
     };
 
     # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations."Omers-MacBook-Pro".pkgs;
+    darwinPackages = self.darwinConfigurations."Hvpaiva-MacBook-Pro".pkgs;
   };
 }

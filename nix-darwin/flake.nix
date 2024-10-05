@@ -22,6 +22,7 @@
           pkgs.direnv
           pkgs.sshs
           pkgs.glow
+          pkgs.eza
         ];
       services.nix-daemon.enable = true;
       nix.settings.experimental-features = "nix-command flakes";
@@ -50,7 +51,7 @@
       homebrew.enable = true;
       homebrew.casks = [
 	      "wireshark"
-              "google-chrome"
+#          "google-chrome"
       ];
       homebrew.brews = [
 	      "imagemagick"
@@ -58,19 +59,19 @@
     };
   in
   {
-    darwinConfigurations."BR0C02HD0980" = nix-darwin.lib.darwinSystem {
+    darwinConfigurations."BR0C02HD0980KPF" = nix-darwin.lib.darwinSystem {
       system = "aarch64-darwin";
       modules = [ 
 	configuration
         home-manager.darwinModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.omerxx = import ./home.nix;
+          home-manager.users.hpaiva = import ./home.nix;
         }
       ];
     };
 
     # Expose the package set, including overlays, for convenience.
-    darwinPackages = self.darwinConfigurations."BR0C02HD0980".pkgs;
+    darwinPackages = self.darwinConfigurations."BR0C02HD0980KPF".pkgs;
   };
 }

@@ -63,6 +63,7 @@ export GOPATH='/Users/hpaiva/go'
 
 # VIM
 alias v="/opt/homebrew/bin/nvim"
+alias vim="/opt/homebrew/bin/nvim"
 
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
@@ -118,7 +119,7 @@ alias mat='osascript -e "tell application \"System Events\" to key code 126 usin
 
 # Nix!
 export NIX_CONF_DIR=$HOME/.config/nix
-export PATH=/run/current-system/sw/bin:$PATH
+export PATH=/run/current-system/sw/bin:$HOME/.nix-profile/bin:$PATH
 export PATH=/nix/var/nix/profiles/default/bin:$PATH
 export PATH=$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH
 

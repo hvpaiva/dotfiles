@@ -41,8 +41,6 @@ colorMoved = default
 rebase = true
 [push]
 default = upstream
-[github]
-user = hpaiva 
 [init]
 defaultBranch = main
 [commit]
@@ -50,5 +48,5 @@ gpgsign = false
 [credential]
 helper = cache
 [rebase]
-	autoStash = true
+autoStash = true
 

@@ -11,6 +11,7 @@ caffix/amass/amass
 cmake
 cmatrix
 colima
+darwin-rebuild
 docker
 docker-compose
 docker-credential-helper
@@ -18,6 +19,7 @@ duf
 dust
 eksctl
 exa
+fish
 fd
 flyctl
 fzf
@@ -33,6 +35,7 @@ helix
 hey
 htop
 ical-buddy
+jessedufield/lazygit/lazygit
 jq
 k6
 k9s
@@ -68,6 +71,7 @@ starship
 stern
 stow
 stripe/stripe-cli/stripe
+tar
 tailwarden/komiser/komiser
 telnet
 terraform
@@ -80,6 +84,7 @@ tree
 watch
 wget
 xh
+yazi
 yarn
 yq
 zellij

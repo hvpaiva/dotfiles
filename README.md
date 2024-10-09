@@ -1,19 +1,13 @@
-# Dotfiles symlinked on my machine
+# Dotfiles 
 
-### Install with stow:
 ```bash
-stow --target .
+# Installing Darwin Nix 
+brew install darwin-nix
 ```
 
-### Homebrew installation:
 ```bash
-# Leaving a machine
-brew leaves > leaves.txt
-
 # Fresh installation
-xargs brew install < leaves.txt
+darwin-rebuild switch --impure --flake ~/dotfiles/nix-darwin && sudo chmod 777 /Users/hpaiva/.config/nvim/lazy-lock.json
 ```
 
-```bash
-nix run --extra-experimental-features 'nix-command flakes' nix-darwin -- switch --impure --flake ~/dotfiles/nix-darwin
-```
+

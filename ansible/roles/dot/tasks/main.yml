@@ -68,8 +68,3 @@
     path: "{{ lookup('env', 'HOME') }}/.ssh/control"
     state: directory
     mode: u=rwx,g=,o=
-
-- name: Copy gpg-agent.conf
-  copy:
-    dest: "{{ lookup('env', 'HOME') }}/.gnupg/gpg-agent.conf"
-    content: "pinentry-program /usr/local/bin/pinentry"

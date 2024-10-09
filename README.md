@@ -2,7 +2,7 @@
 
 ```bash
 # Installing Darwin Nix 
-brew install darwin-nix
+brew install darwin-rebuild
 ```
 
 ```bash

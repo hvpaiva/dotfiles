@@ -59,6 +59,9 @@ alias ....="cd ../../.."
 alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 
+# Darwin
+alias reload-dotfiles='darwin-rebuild switch --impure --flake ~/dotfiles/nix-darwin && sudo chmod 777 /Users/hpaiva/.config/nvim/lazy-lock.json'
+
 # GO
 export GOPATH='/Users/hpaiva/go'
 
@@ -175,7 +178,12 @@ if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
 	 . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
 fi
 # End Nix
+ 
+# NVM 
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh)"
 eval "$(direnv hook zsh)"
+eval "$(tmux)"

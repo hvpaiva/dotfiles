@@ -158,6 +158,7 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 export PATH="/Users/hpaiva/Library/Python/3.9/bin:$PATH"
+export PATH="/Users/hpaiva/.local/bin:$PATH"
 
 ## Services CLI
 export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin
@@ -186,4 +187,9 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh)"
 eval "$(direnv hook zsh)"
-eval "$(tmux)"
+
+if command -v tmux &> /dev/null; then
+  if [[ -z "$TMUX" ]]; then
+    tmux attach-session -t default || tmux new-session -s default
+  fi
+fi

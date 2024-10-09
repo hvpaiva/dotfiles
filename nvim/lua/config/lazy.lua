@@ -17,36 +17,14 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
   spec = {
     -- add LazyVim and import its plugins
-    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-
-    -- Extra plugins imports
-    { import = "lazyvim.plugins.extras.editor.harpoon2" },
-    { import = "lazyvim.plugins.extras.editor.inc-rename" },
-    { import = "lazyvim.plugins.extras.editor.telescope" },
-    { import = "lazyvim.plugins.extras.editor.fzf" },
-    { import = "lazyvim.plugins.extras.editor.overseer" },
-    { import = "lazyvim.plugins.extras.editor.illuminate" },
-    { import = "lazyvim.plugins.extras.editor.mini-move" },
-    { import = "lazyvim.plugins.extras.editor.refactoring" },
-    { import = "lazyvim.plugins.extras.coding.neogen" },
-    { import = "lazyvim.plugins.extras.coding.luasnip" },
-    { import = "lazyvim.plugins.extras.coding.yanky" },
-    { import = "lazyvim.plugins.extras.lang.go" },
-    { import = "lazyvim.plugins.extras.lang.git" },
-    { import = "lazyvim.plugins.extras.lang.cmake" },
-    { import = "lazyvim.plugins.extras.lang.rust" },
-    { import = "lazyvim.plugins.extras.lang.yaml" },
-    { import = "lazyvim.plugins.extras.lang.sql" },
-    { import = "lazyvim.plugins.extras.lang.kotlin" },
-    { import = "lazyvim.plugins.extras.lang.json" },
-    { import = "lazyvim.plugins.extras.lang.java" },
-    { import = "lazyvim.plugins.extras.lsp.none-ls" },
-    { import = "lazyvim.plugins.extras.test.core" },
-    { import = "lazyvim.plugins.extras.ui.treesitter-context" },
-    { import = "lazyvim.plugins.extras.util.dot" },
-    -- { import = "lazyvim.plugins.extras.util.gitui" },
-
-    -- import/override with your plugins
+    {
+      "LazyVim/LazyVim",
+      import = "lazyvim.plugins",
+      opts = {
+        lazyvim = true,
+        neovim = true,
+      },
+    },
     { import = "plugins" },
   },
   defaults = {
@@ -64,6 +42,9 @@ require("lazy").setup({
     notify = false, -- notify on update
   }, -- automatically check for plugin updates
   performance = {
+    cache = {
+      enabled = true,
+    },
     rtp = {
       -- disable some rtp plugins
       disabled_plugins = {
@@ -77,4 +58,12 @@ require("lazy").setup({
       },
     },
   },
+  ui = {
+    custom_keys = {
+      ["<localleader>d"] = function(plugin)
+        dd(plugin)
+      end,
+    },
+  },
+  debug = false,
 })

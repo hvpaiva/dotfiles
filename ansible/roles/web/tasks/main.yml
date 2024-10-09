@@ -1,0 +1,43 @@
+- name: Create Brave Web Apps for macOS
+  template:
+    src: "~/dotfiles/ansible/roles/web/templates/app.j2"
+    dest: "~/Applications/brave-{{item.name | lower | regex_replace(' ', '-')}}.sh"
+  loop:
+    - { name: "Gmail", url: "https://mail.google.com/mail/u/0/#inbox" }
+    - { name: "Notion", url: "https://notion.so/" }
+    - {
+        name: "Google Keep",
+        url: "https://keep.google.com/u/0/",
+        icon: "notes",
+      }
+    - {
+        name: "Google Calendar",
+        url: "https://calendar.google.com/calendar/u/0/r",
+      }
+    - {
+        name: "YouTube Music",
+        url: "https://music.youtube.com",
+        icon: "youtube-music-desktop-app",
+      }
+
+- name: Make Brave Web App scripts executable
+  file:
+    path: "~/Applications/brave-{{item.name | lower | regex_replace(' ', '-')}}.sh"
+    mode: "0755"
+  loop:
+    - { name: "Gmail", url: "https://mail.google.com/mail/u/0/#inbox" }
+    - { name: "Notion", url: "https://notion.so/" }
+    - {
+        name: "Google Keep",
+        url: "https://keep.google.com/u/0/",
+        icon: "notes",
+      }
+    - {
+        name: "Google Calendar",
+        url: "https://calendar.google.com/calendar/u/0/r",
+      }
+    - {
+        name: "YouTube Music",
+        url: "https://music.youtube.com",
+        icon: "youtube-music-desktop-app",
+      }

@@ -1,0 +1,16 @@
+# APPS #
+#
+# Slack
+alt - s : open -a /Applications/Slack.app/Contents/MacOS/Slack
+
+# Show date
+alt - d : osascript ~/.config/skhd/applescripts/pop.scpt
+
+# Close notifications
+ralt - n : osascript ~/.config/skhd/applescripts/notifications.scpt
+
+# Notion
+lalt - n : open -a /Applications/Notion.app/Contents/MacOS/Notion
+
+# Motion
+ralt - m : open -a /Applications/Motion\ 2.app/Contents/MacOS/Motion

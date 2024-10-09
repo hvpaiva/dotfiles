@@ -1,0 +1,16 @@
+- name: Create {{item}} directory in macOS Fonts
+  file:
+    path: ~/Library/Fonts/{{item}}
+    state: directory
+
+- name: Download and Install {{item}} Nerd Font
+  ansible.builtin.unarchive:
+    src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/{{item}}.zip
+    dest: ~/Library/Fonts/{{item}}
+    creates: ~/Library/Fonts/{{item}}/done
+    remote_src: true
+
+- name: Mark {{item}} as installed
+  copy:
+    dest: ~/Library/Fonts/{{item}}/done
+    content: ""

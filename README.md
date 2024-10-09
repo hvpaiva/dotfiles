@@ -1,13 +1,5 @@
 # Dotfiles 
 
-```bash
-# Installing Darwin Nix 
-brew install darwin-rebuild
-```
-
-```bash
-# Fresh installation
-darwin-rebuild switch --impure --flake ~/dotfiles/nix-darwin && sudo chmod 777 /Users/hpaiva/.config/nvim/lazy-lock.json
-```
+To run the dotfiles, go to ansible folder and read the [README.md](/ansible/README.md)
 
 

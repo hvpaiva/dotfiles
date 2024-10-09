@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+function have {
+	command -v "$1" &>/dev/null
+}
+
+# Verificar se Homebrew está instalado
+if ! have brew; then
+	echo "Homebrew não está instalado. Instalando Homebrew..."
+	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# Verificar se pipx está instalado
+if ! have pipx; then
+	echo "pipx não está instalado. Instalando pipx via Homebrew..."
+	brew install pipx
+	pipx ensurepath
+fi
+
+# Verificar se Ansible está instalado (preferência para Homebrew)
+if ! have ansible; then
+	echo "Ansible não está instalado. Instalando Ansible via Homebrew..."
+	if have brew; then
+		brew install ansible
+	else
+		echo "Homebrew não encontrado. Instalando Ansible via pipx..."
+		pipx install --include-deps ansible
+	fi
+fi
+
+# Run Ansible playbook
+ansible-playbook -i ./hosts ./mac.yml

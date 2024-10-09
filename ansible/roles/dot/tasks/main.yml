@@ -1,0 +1,75 @@
+- name: Ensure .config directory exists
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.config"
+    state: directory
+
+- name: Find .config files
+  find:
+    paths: "{{ lookup('env', 'HOME') }}/dotfiles/config/"
+    recurse: no
+    file_type: any
+    hidden: yes
+  register: dot_config
+
+- name: Create symlinks for .config files
+  file:
+    src: "{{item.path}}"
+    dest: "{{ lookup('env', 'HOME') }}/.config/{{item.path | basename}}"
+    state: link
+  loop: "{{ dot_config.files }}"
+  loop_control:
+    label: "{{ lookup('env', 'HOME') }}/.config/{{item.path | basename}}"
+
+- name: Create .bashrc
+  copy:
+    dest: "{{ lookup('env', 'HOME') }}/.bashrc"
+    content: "source <(starship init bash --print-full-init)"
+
+- name: Replace .zshrc with custom version
+  copy:
+    src: "{{ lookup('env', 'HOME') }}/dotfiles/zshrc/.zshrc"
+    dest: "{{ lookup('env', 'HOME') }}/.zshrc"
+    owner: "{{ lookup('env', 'USER') }}"
+    mode: "0644"
+    backup: yes
+
+- name: Create .hushlogin
+  copy:
+    dest: "{{ lookup('env', 'HOME') }}/.hushlogin"
+    content: ""
+
+- name: Link .gitconfig
+  file:
+    src: "{{ lookup('env', 'HOME') }}/.config/.gitconfig"
+    dest: "{{ lookup('env', 'HOME') }}/.gitconfig"
+    state: link
+    force: true
+
+- name: Link nvim config
+  file:
+    src: "{{ lookup('env', 'HOME') }}/dotfiles/nvim"
+    dest: "{{ lookup('env', 'HOME') }}/.config/nvim"
+    state: link
+
+- name: Ensure .ssh directory exists
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh"
+    state: directory
+    mode: u=rwx,g=,o=
+
+- name: Copy .ssh/config
+  copy:
+    src: "{{ lookup('env', 'HOME') }}/.config/.ssh.config"
+    dest: "{{ lookup('env', 'HOME') }}/.ssh/config"
+    mode: u=rw,g=,o=
+
+- name: Ensure .ssh/control directory exists
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/control"
+    state: directory
+    mode: u=rwx,g=,o=
+
+- name: Copy gpg-agent.conf
+  copy:
+    dest: "{{ lookup('env', 'HOME') }}/.gnupg/gpg-agent.conf"
+    content: "pinentry-program /usr/local/bin/pinentry"

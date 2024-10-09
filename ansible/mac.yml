@@ -1,0 +1,8 @@
+- name: Setup Mac Workstation
+  hosts: local
+  roles:
+    # - packages
+    # - fonts
+    - dot
+    - node
+    - web

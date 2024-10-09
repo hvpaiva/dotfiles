@@ -86,6 +86,7 @@ wget
 xh
 yazi
 yarn
+ydiff
 yq
 zellij
 zoxide

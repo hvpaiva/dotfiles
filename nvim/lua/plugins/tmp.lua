@@ -3,7 +3,6 @@ vim.env.FZF_DEFAULT_OPTS = ""
 vim.schedule(function() end)
 
 return {
-  { "echasnovski/mini.test" },
   {
     "folke/which-key.nvim",
     enabled = true,
@@ -60,22 +59,13 @@ return {
       enabled = false,
     },
   },
-  { "folke/github" },
-  {
-    "ibhagwan/fzf-lua",
-    dev = false,
-  },
   { "justinsgithub/wezterm-types", lazy = true },
-  { "LuaCATS/luassert", name = "luassert-types", lazy = true },
-  { "LuaCATS/busted", name = "busted-types", lazy = true },
   {
     "folke/lazydev.nvim",
     opts = function(_, opts)
       opts.debug = true
       vim.list_extend(opts.library, {
         { path = "wezterm-types", mods = { "wezterm" } },
-        { path = "luassert-types/library", words = { "assert" } },
-        { path = "busted-types/library", words = { "describe" } },
       })
     end,
   },
@@ -84,21 +74,7 @@ return {
     opts = { show_help = false },
   },
   { "fei6409/log-highlight.nvim", event = "BufRead *.log", opts = {} },
-  {
-    "t-troebst/perfanno.nvim",
-    opts = function()
-      local util = require("perfanno.util")
-      local hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-      local bg = string.format("#%06x", hl.bg)
-      local fg = "#dc2626"
-      return {
-        line_highlights = util.make_bg_highlights(bg, fg, 10),
-        vt_highlight = util.make_fg_highlight(fg),
-      }
-    end,
-    cmd = "PerfLuaProfileStart",
-  },
-  { "akinsho/bufferline.nvim", opts = { options = { separator_style = "slope" } } },
+  { "akinsho/bufferline.nvim", opts = { options = { separator_style = "slanted" } } },
   {
     "echasnovski/mini.align",
     opts = {},
@@ -106,5 +82,18 @@ return {
       { "ga", mode = { "n", "v" } },
       { "gA", mode = { "n", "v" } },
     },
+  },
+  {
+    "m4xshen/hardtime.nvim",
+    dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
+    opts = {
+      disable_mouse = false,
+    },
+  },
+  {
+    "Dronakurl/usage-tracker.nvim",
+    config = function()
+      require("usage-tracker").setup({})
+    end,
   },
 }

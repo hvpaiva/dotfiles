@@ -174,6 +174,7 @@ return {
       -- })
     end,
   },
+  -- { "folke/which-key.nvim", enabled = true, config = function() end },
   { "folke/noice.nvim", enabled = true },
 
   "folke/twilight.nvim",
@@ -189,5 +190,11 @@ return {
       },
     },
     keys = { { "<leader>z", "<cmd>ZenMode<cr>", desc = "Zen Mode" } },
+  },
+  {
+    "folke/drop.nvim",
+    opts = {
+      -- ...
+    },
   },
 }

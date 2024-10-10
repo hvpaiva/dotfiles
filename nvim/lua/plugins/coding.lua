@@ -1,22 +1,12 @@
 return {
   {
     "folke/ts-comments.nvim",
-    opts = {
-      langs = {
-        dts = "// %s",
-      },
-    },
   },
   {
     "zbirenbaum/copilot.lua",
     opts = {
       filetypes = { ["*"] = true },
     },
-  },
-  {
-    "smjonas/inc-rename.nvim",
-    cmd = "IncRename",
-    config = true,
   },
   {
     "Wansmer/treesj",
@@ -29,6 +19,19 @@ return {
     "nvim-neotest/neotest",
     opts = {
       adapters = {},
+    },
+  },
+  {
+    "okuuva/auto-save.nvim",
+    opts = {
+      -- your config goes here
+      -- or just leave it empty :)
+    },
+  },
+  {
+    "numToStr/Comment.nvim",
+    opts = {
+      -- add any options here
     },
   },
 }

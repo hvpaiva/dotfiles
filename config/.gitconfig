@@ -7,7 +7,7 @@ required = true
 [user]
 name = hvpaiva
 email = highlander.paiva@mercadolivre.com
-	signingkey = E9CD91D911EF64DE
+signingkey = E9CD91D911EF64DE
 
 [color]
 ui = true
@@ -52,4 +52,4 @@ helper = cache
 autoStash = true
 
 [gpg]
-	program = /opt/homebrew/bin/gpg
+program = /opt/homebrew/bin/gpg

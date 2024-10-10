@@ -24,6 +24,7 @@ export STARSHIP_CONFIG=~/.config/starship/starship.toml
 export LANG=en_US.UTF-8
 
 export EDITOR=/opt/homebrew/bin/nvim
+export XDG_CONFIG_HOME="$HOME/.config"
 
 alias la=tree
 alias cat=bat

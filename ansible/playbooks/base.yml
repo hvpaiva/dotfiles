@@ -1,0 +1,188 @@
+---
+- name: Configure base
+  hosts: localhost
+
+  tasks:
+    - name: Ensure base directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      loop:
+        - "{{ ansible_env.HOME }}/.config"
+
+    - name: Set locale to en_US.UTF-8
+      when: ansible_distribution == 'Ubuntu'
+      ansible.builtin.shell: |
+        if ! grep "LC_ALL=en_US.UTF-8" '/etc/environment'>/dev/null; then
+          echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+        fi
+        if ! grep "en_US.UTF-8 UTF-8" '/etc/locale.gen'>/dev/null; then
+          echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+        fi
+        echo "LANG=en_US.UTF-8" > /etc/locale.conf
+        locale-gen en_US.UTF-8
+      become: true
+
+    ###########################
+    # coreutils
+    # A package of GNU software containing implementations for many
+    # of the basic tools, such as cat, ls, and rm, which are used on
+    # Unix-like operating systems
+    ###########################
+    - name: MacOS => install coreutils
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: coreutils
+
+    - name: Ubuntu => install coreutils
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: coreutils
+        state: latest
+      become: true
+
+    ###########################
+    # inetutils
+    # GNU network utilities (e.g. ftp, telnet, etc.)
+    ###########################
+    - name: MacOS => install inetutils
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: inetutils
+
+    - name: Ubuntu => install inetutils
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: inetutils-tools
+        state: latest
+      become: true
+
+    ###########################
+    # gnu-tar
+    #
+    # The Linux 'tar' stands for tape archive, which is used to create Archive
+    # and extract the Archive files.
+    #
+    # Notes:
+    # - Linux/OSX tar has compatibility issue, tarballs created on OS X give
+    #   errors when untarred in Linux.
+    # - Mac OS X 10.6 uses a BSD tar by default but also ships with a gnutar
+    #   at `/usr/bin/gnutar`, it's not shipped anymore with Mac OS X (at least
+    #   as of Mavericks).
+    #
+    ###########################
+    - name: MacOS => install curl
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: gnu-tar
+
+    ###########################
+    # snap
+    # The app store for Linux
+    ###########################
+    - name: Ubuntu => install snap
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: snapd
+        state: latest
+      become: true
+
+    ###########################
+    # curl
+    # A computer software project providing a library and command-line
+    # tool for transferring data using various network protocols
+    ###########################
+    - name: MacOS => install curl
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: curl
+
+    - name: Ubuntu => install curl
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: curl
+        state: latest
+      become: true
+
+    ###########################
+    # wget
+    # A GNU computer program that retrieves content from web servers
+    ###########################
+    - name: MacOS => install wget
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: wget
+
+    - name: Ubuntu => install wget
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: wget
+        state: latest
+      become: true
+
+    ###########################
+    # htop
+    # An interactive system-monitor process-viewer and process-manager
+    ###########################
+    - name: MacOS => install htop
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: htop
+
+    - name: Ubuntu => install htop
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: htop
+        state: latest
+      become: true
+
+    ###########################
+    # zoxide
+    # A smarter cd command. Supports all major shells.
+    ###########################
+    - name: Install zoxide
+      community.general.homebrew:
+        name: zoxide
+
+    ###########################
+    # ripgrep
+    # A battle-tested alternative for grep
+    ###########################
+    - name: MacOS => install ripgrep
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: ripgrep
+
+    - name: Ubuntu => install ripgrep
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: ripgrep
+        state: latest
+      become: true
+
+    ###########################
+    # xclip
+    # Command line interface to the X11 clipboard
+    ###########################
+    - name: MacOS => install xclip
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: xclip
+
+    - name: Ubuntu => install xclip
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: xclip
+        state: latest
+      become: true
+
+    ###########################
+    # xquartz
+    # An open-source effort to develop a version of the X.Org X Window
+    # System that runs on macOS (support xclip on MacOS)
+    ###########################
+    - name: MacOS => install xquartz
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: xquartz

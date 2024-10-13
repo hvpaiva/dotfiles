@@ -1,0 +1,17 @@
+---
+- name: Configure nvim
+  hosts: localhost
+
+  tasks:
+    - name: MacOS => install neovim
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: neovim
+
+
+    - name: Link nvim config
+      file:
+        src: "{{ ansible_env.PWD }}/../../nvim"
+        dest: "{{ ansible_env.HOME }}/.config/nvim"
+        state: link
+        force: true

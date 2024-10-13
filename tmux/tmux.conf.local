@@ -1,0 +1,141 @@
+# source default local configuration
+# source -q "$HOME/.tmux/.tmux.conf.local"
+
+set -g status-position top
+
+# start with mouse mode enabled
+set -g mouse on
+
+# force Vi mode
+# really you should export VISUAL or EDITOR environment variable, see manual
+set -g status-keys vi
+set -g mode-keys vi
+
+# -- theming -------------------------------------------------------------------
+
+# default theme
+tmux_conf_theme_colour_1="#303030"
+tmux_conf_theme_colour_2="#303030"
+tmux_conf_theme_colour_3="#7f849c"
+tmux_conf_theme_colour_4="#89b4fa"
+tmux_conf_theme_colour_5="#f2cdcd"
+tmux_conf_theme_colour_6="#313244"
+tmux_conf_theme_colour_7="#cdd6f4"
+tmux_conf_theme_colour_8="#313244"
+tmux_conf_theme_colour_9="#cba6f7"
+tmux_conf_theme_colour_10="#f9e2af"
+tmux_conf_theme_colour_11="#a6e3a1"
+tmux_conf_theme_colour_12="#8a8a8a"
+tmux_conf_theme_colour_13="#cdd6f4"
+tmux_conf_theme_colour_14="#1e1e2e"
+tmux_conf_theme_colour_15="#eba0ac"
+tmux_conf_theme_colour_16="#74c7ec"
+tmux_conf_theme_colour_17="#b4befe"
+
+# terminal title
+tmux_conf_theme_terminal_title="❐ #S ● #I #W"
+
+# window status style
+tmux_conf_theme_window_status_format="#I #W #{?#{||:#{window_bell_flag},#{window_zoomed_flag}}, ,}#{?window_bell_flag,,}#{?window_zoomed_flag,,}"
+
+# window current status style
+tmux_conf_theme_window_status_current_fg="$tmux_conf_theme_colour_1"
+tmux_conf_theme_window_status_current_bg="$tmux_conf_theme_colour_4"
+tmux_conf_theme_window_status_current_attr="bold"
+tmux_conf_theme_window_status_current_format="#I #W #{?#{||:#{window_bell_flag},#{window_zoomed_flag}}, ,}#{?window_bell_flag,,}#{?window_zoomed_flag,,}"
+
+# status left/right content:
+tmux_conf_theme_status_left="  #S "
+tmux_conf_theme_status_right=" #{prefix}#{mouse}#{pairing}#{synchronized}#{?battery_status,#{battery_status},}#{?battery_bar,,}#{?battery_percentage, #{battery_percentage},} ,  %R , 󰃭 %d %b | #{username}#{root} "
+
+# status left style
+tmux_conf_theme_status_left_fg="$tmux_conf_theme_colour_6,$tmux_conf_theme_colour_7,$tmux_conf_theme_colour_8"
+tmux_conf_theme_status_left_bg="$tmux_conf_theme_colour_9,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
+tmux_conf_theme_status_left_attr="bold,none,none"
+
+# status right style
+tmux_conf_theme_status_right_fg="$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_6"
+tmux_conf_theme_status_right_bg="$tmux_conf_theme_colour_17,$tmux_conf_theme_colour_15,$tmux_conf_theme_colour_17"
+tmux_conf_theme_status_right_attr="none,bold,bold"
+
+# pane indicator colours (when you hit <prefix> + q)
+tmux_conf_theme_pane_indicator="$tmux_conf_theme_colour_16"
+tmux_conf_theme_pane_active_indicator="$tmux_conf_theme_colour_16"
+
+# pane borders colours:
+tmux_conf_theme_pane_border="$tmux_conf_theme_colour_2"
+tmux_conf_theme_pane_active_border="$tmux_conf_theme_colour_16"
+%if #{>=:#{version},3.2}
+tmux_conf_theme_pane_active_border="#{?pane_in_mode,$tmux_conf_theme_colour_9,#{?synchronize-panes,$tmux_conf_theme_colour_16,$tmux_conf_theme_colour_4}}"
+%endif
+
+# symbols used to indicate whether battery is charging or discharging
+tmux_conf_battery_status_charging="󱎗"
+tmux_conf_battery_status_discharging="󱟟"
+
+# pairing indicator
+tmux_conf_theme_pairing="⚇"
+
+# prefix indicator
+tmux_conf_theme_prefix="⌨"
+
+# mouse indicator
+tmux_conf_theme_mouse=""
+
+# root indicator
+tmux_conf_theme_root=""
+
+# synchronized indicator
+tmux_conf_theme_synchronized="󱑠"
+
+# status left/right sections separators
+tmux_conf_theme_left_separator_main=""
+tmux_conf_theme_left_separator_sub="|"
+tmux_conf_theme_right_separator_main=""
+tmux_conf_theme_right_separator_sub="|"
+
+# -- user plugins -------------------------------------------------------
+
+# Fix uninstalling plugins issue caused by tmux configuration. Instead, using
+# r (Reload config) or S-u (Update plugins) to update plugins.
+bind I run-shell "echo 'Please use prefix-r (Reload config) or prefix-U (Update plugins) to install plugins!'"
+
+# List of plugins
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-yank'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'fcsonline/tmux-thumbs'
+set -g @plugin 'jabirali/tmux-tilish'
+set -g @plugin 'omerxx/tmux-sessionx'
+set -g @plugin 'omerxx/tmux-floax'
+set -g @plugin 'aserowy/tmux.nvim'
+
+# tmux-floax configs
+set -g @floax-width '80%'
+set -g @floax-height '80%'
+set -g @floax-border-color 'magenta'
+set -g @floax-text-color 'blue'
+set -g @floax-bind 'p'
+set -g @floax-change-path 'true'
+
+# tmux-sessionx configs
+set -g @sessionx-bind 'o'
+set -g @sessionx-auto-accept 'off'
+set -g @sessionx-custom-paths '/Users/hpaiva/dev/meli,/Users/hpaiva/dev/self'
+set -g @sessionx-custom-paths-subdirectories 'true'
+set -g @sessionx-window-height '85%'
+set -g @sessionx-window-width '75%'
+set -g @sessionx-zoxide-mode 'on'
+set -g @sessionx-filter-current 'false'
+
+# tmux-resurrect
+bind C-s run-shell -b "$HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+bind C-r run-shell -b "$HOME/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
+
+# switch to last session
+bind S switch-client -l
+
+# switch to last window
+bind W last-window
+

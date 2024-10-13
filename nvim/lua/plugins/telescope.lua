@@ -1,10 +1,5 @@
 return {
   {
-    "ibhagwan/fzf-lua",
-    optional = true,
-    keys = {},
-  },
-  {
     "echasnovski/mini.surround",
     optional = true,
     opts = {

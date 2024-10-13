@@ -12,6 +12,9 @@ return {
       win = {},
       spec = {},
     },
+    -- triggers_blacklist = {
+    --   n = { "d", "y" },
+    -- },
   },
   {
     "OXY2DEV/markview.nvim",
@@ -74,15 +77,6 @@ return {
     opts = { show_help = false },
   },
   { "fei6409/log-highlight.nvim", event = "BufRead *.log", opts = {} },
-  { "akinsho/bufferline.nvim", opts = { options = { separator_style = "slanted" } } },
-  {
-    "echasnovski/mini.align",
-    opts = {},
-    keys = {
-      { "ga", mode = { "n", "v" } },
-      { "gA", mode = { "n", "v" } },
-    },
-  },
   {
     "m4xshen/hardtime.nvim",
     dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },

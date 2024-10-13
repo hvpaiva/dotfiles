@@ -1,0 +1,348 @@
+---
+- name: Configure dev
+  hosts: localhost
+
+  tasks:
+    ###########################
+    # atuin
+    # magical shell history
+    ###########################
+    - name: install atuin
+      community.general.homebrew:
+        name: atuin
+
+    - name: Link atuin
+      file:
+        src: "{{ ansible_env.PWD }}/../../atuin"
+        dest: "{{ ansible_env.HOME }}/.config/atuin"
+        state: link
+        force: true
+
+    ###########################
+    # lazygit
+    # A simple terminal UI for git commands
+    ###########################
+    - name: install lazygit
+      community.general.homebrew:
+        name: lazygit
+
+    - name: Link lazygit
+      file:
+        src: "{{ ansible_env.PWD }}/../../lazygit"
+        dest: "{{ ansible_env.HOME }}/.config/lazygit"
+        state: link
+        force: true
+
+    ###########################
+    # kitty
+    # The fast, feature-rich, GPU based terminal emulator
+    ###########################
+    - name: Install kitty
+      community.general.homebrew:
+        name: kitty
+
+    - name: Link kitty
+      file:
+        src: "{{ ansible_env.PWD }}/../../kitty"
+        dest: "{{ ansible_env.HOME }}/.config/kitty"
+        state: link
+        force: true
+
+    ###########################
+    # nginx
+    # Advanced Load Balancer, Web Server, & Reverse Proxy
+    ###########################
+    - name: MacOS => install nginx
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: nginx
+
+    - name: Ubuntu => install nginx
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: nginx
+        state: latest
+      become: true
+
+    ###########################
+    # tig
+    # Text-mode interface for git
+    ###########################
+    - name: MacOS => install tig
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: tig
+
+    - name: Ubuntu => install tig
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: tig
+        state: latest
+      become: true
+
+    ###########################
+    # gitui
+    # Blazing 💥 fast terminal-ui for git written in rust 🦀
+    ###########################
+    - name: Install gitui
+      community.general.cargo:
+        name: gitui
+        locked: true
+        version: 0.26.3
+
+    - name: Create gitui config directory
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/gitui"
+        state: directory
+        mode: 0755
+
+    # The soft link support bringing up in a fixed version v0.24.2
+    #
+    # Refs:
+    # - https://github.com/extrawurst/gitui/issues/1751
+    # - https://github.com/extrawurst/gitui/releases/tag/v0.24.2
+    #
+    - name: Link key_bindings.ron for vim-like bindings
+      ansible.builtin.file:
+        src: "{{ ansible_env.PWD }}/../../gitui/key_bindings.ron"
+        dest: "{{ ansible_env.HOME }}/.config/gitui/key_bindings.ron"
+        state: link
+        force: true
+
+    ###########################
+    # diff-so-fancy
+    # Good-lookin' diffs. Actually… nah… The best-lookin' diffs. 🎉
+    ###########################
+    - name: Install diff-so-fancy
+      community.general.npm:
+        name: diff-so-fancy
+        global: true
+
+    ###########################
+    # git-delta
+    # A syntax-highlighting pager for git, diff and grep output
+    ###########################
+    - name: MacOS => install delta
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: git-delta
+
+    - name: Ubuntu => install delta
+      when: ansible_distribution == 'Ubuntu'
+      ansible.builtin.apt:
+        deb: https://github.com/dandavison/delta/releases/download/0.17.0/git-delta-musl_0.17.0_amd64.deb
+      become: true
+
+    ###########################
+    # jq
+    # A lightweight and flexible command-line JSON processor
+    ###########################
+    - name: MacOS => install jq
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: jq
+
+    - name: Ubuntu => install jq
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: jq
+        state: latest
+      become: true
+
+    ###########################
+    # yq
+    # A portable command-line YAML, JSON, XML, CSV, TOML and properties processor
+    ###########################
+    - name: All => install yq
+      ansible.builtin.shell: go install github.com/mikefarah/yq/v4@latest
+
+    ###########################
+    # sd
+    # Intuitive find & replace CLI (sed alternative)
+    ###########################
+    - name: All => Install sd
+      community.general.cargo:
+        name: sd
+        locked: true
+
+    ###########################
+    # fd
+    # A simple, fast and user-friendly alternative to 'find'
+    ###########################
+    - name: All => Install fd
+      community.general.cargo:
+        name: fd-find
+        locked: true
+
+    ###########################
+    # bat
+    # A cat(1) clone with wings
+    ###########################
+    - name: All => Install bat
+      community.general.cargo:
+        name: bat
+        locked: true
+
+    - name: Link bat
+      file:
+        src: "{{ ansible_env.PWD }}/../../bat"
+        dest: "{{ ansible_env.HOME }}/.config/bat"
+        state: link
+        force: true
+
+    - name: Build bat cache
+      ansible.builtin.command: bat cache --build
+
+    ###########################
+    # tokei
+    # Count your code, quickly
+    ###########################
+    - name: All => Install tokei
+      community.general.cargo:
+        name: tokei
+        locked: true
+
+    ###########################
+    # navi
+    # An interactive cheatsheet tool for the command-line
+    ###########################
+    - name: All => Install navi
+      community.general.cargo:
+        name: navi
+        locked: true
+
+    ###########################
+    # tldr
+    # 📚 Collaborative cheatsheets for console commands
+    ###########################
+    - name: All => Install tldr
+      community.general.npm:
+        name: tldr
+        global: true
+
+    ###########################
+    # nnn
+    # n³ The unorthodox terminal file manager
+    ###########################
+    - name: MacOS => install nnn
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: nnn
+
+    - name: Ubuntu => install nnn
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: nnn
+        state: latest
+      become: true
+
+    ###########################
+    # entr
+    # Run arbitrary commands when files change
+    # https://github.com/eradman/entr
+    ###########################
+    - name: MacOS => install entr
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: entr
+
+    - name: Ubuntu => install entr
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: entr
+        state: latest
+      become: true
+
+    ###########################
+    # usql
+    # Universal command-line interface for SQL databases Topics
+    ###########################
+    - name: Install usql
+      ansible.builtin.command: go install github.com/xo/usql@latest
+
+    ###########################
+    # dbeaver
+    # Free Universal Database Tool
+    ###########################
+    - name: MacOS => install dbeaver
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: dbeaver-community
+
+    - name: Ubuntu => install dbeaver
+      when: ansible_distribution == 'Ubuntu'
+      community.general.snap:
+        name: dbeaver-ce
+        channel: latest/edge
+
+    ###########################
+    # postman
+    # Free Universal Database Tool
+    ###########################
+    - name: MacOS => install postman
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: postman
+
+    - name: Ubuntu => install postman
+      when: ansible_distribution == 'Ubuntu'
+      community.general.snap:
+        name: postman
+        channel: latest/edge
+
+    ###########################
+    # gh
+    # GitHub’s official command line tool
+    ###########################
+    - name: MacOS => install gh
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: gh
+
+    ###########################
+    # zerotier
+    # Securely connect any device, anywhere
+    ###########################
+    - name: MacOS => install zerotier
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: zerotier-one
+
+    - name: Ubuntu => install zerotier
+      when: ansible_distribution == 'Ubuntu'
+      community.general.snap:
+        name: zerotier
+
+    ###########################
+    # sourcetree
+    # Securely connect any device, anywhere
+    ###########################
+    - name: MacOS => install sourcetree
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: sourcetree
+
+    ###########################
+    # diagrams
+    # 🎨 Diagram as Code for prototyping cloud system architectures
+    # https://github.com/mingrammer/diagrams
+    ###########################
+    - name: All => install diagrams
+      ansible.builtin.command: pip install diagrams
+
+    ###########################
+    # tree
+    # A recursive directory listing command or program that produces a
+    # depth-indented listing of files.
+    ###########################
+    - name: MacOS => install tree
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: tree
+
+    - name: Ubuntu => install tree
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: tree
+        state: latest
+      become: true

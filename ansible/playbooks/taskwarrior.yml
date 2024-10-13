@@ -1,0 +1,28 @@
+- name: Configure taskwarrior
+  hosts: localhost
+
+  tasks:
+    - name: MacOS => install taskwarrior
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: task
+
+    - name: Ubuntu => install taskwarrior
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: taskwarrior
+        state: latest
+      become: true
+
+    - name: Create task config directory
+      ansible.builtin.file:
+        path: '{{ ansible_env.HOME }}/.config/task'
+        state: directory
+        mode: 0755
+
+    - name: Link taskrc
+      ansible.builtin.file:
+        src: '{{ ansible_env.PWD }}/../../task/taskrc'
+        dest: '{{ ansible_env.HOME }}/.config/task/taskrc'
+        state: link
+        force: true

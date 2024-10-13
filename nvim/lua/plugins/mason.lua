@@ -7,7 +7,6 @@ return {
         "shellcheck",
         "shfmt",
         "flake8",
-        "omnisharp",
         "checkstyle",
         "cmakelang",
         "cmakelint",

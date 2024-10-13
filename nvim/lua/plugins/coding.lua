@@ -1,6 +1,7 @@
 return {
   {
     "folke/ts-comments.nvim",
+    opts = {},
   },
   {
     "zbirenbaum/copilot.lua",
@@ -23,15 +24,19 @@ return {
   },
   {
     "okuuva/auto-save.nvim",
-    opts = {
-      -- your config goes here
-      -- or just leave it empty :)
-    },
+    opts = {},
   },
   {
     "numToStr/Comment.nvim",
-    opts = {
-      -- add any options here
-    },
+    opts = {},
+  },
+  {
+    "mg979/vim-visual-multi",
+    branch = "master",
+    init = function()
+      vim.g.VM_maps = {
+        ["Find Under"] = "<C-d>",
+      }
+    end,
   },
 }

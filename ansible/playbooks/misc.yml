@@ -1,0 +1,305 @@
+- name: Install miscellaneous softwares
+  hosts: localhost
+
+  tasks:
+    ###########################
+    # ffmpeg
+    # A free tool for manipulating media files
+    ###########################
+    - name: MacOS => install ffmpeg
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: ffmpeg
+
+    - name: Ubuntu => install ffmpeg
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: ffmpeg
+        state: latest
+      become: true
+
+    ###########################
+    # pandoc
+    # a universal document converter
+    ###########################
+    - name: MacOS => install pandoc
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: pandoc
+      # Ignore Cask homebrew/cask/pandoc was renamed to homebrew/core/pandoc
+      ignore_errors: yes
+
+    - name: Ubuntu => install pandoc
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: pandoc
+        state: latest
+      become: true
+
+    - name: MacOS => install basictex as pandoc PDF convertor
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: basictex
+
+    ###########################
+    # calibre (ebook-convert)
+    # the calibre ebook manager
+    ###########################
+    - name: MacOS => install calibre
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: calibre
+
+    ###########################
+    # thefuck
+    # Magnificent app which corrects your previous console command.
+    ###########################
+    - name: Install thefuck
+      community.general.homebrew:
+        name: thefuck
+
+    ###########################
+    # gcalcli
+    # Google Calendar Command Line Interface
+    ###########################
+    - name: Install gcalcli
+      ansible.builtin.command: pipx install gcalcli
+
+    ###########################
+    # neofetch
+    # 🖼️A command-line system information tool written in bash 3.2+
+    ###########################
+    - name: MacOS => install neofetch
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name:
+          - neofetch
+
+    - name: Ubuntu => install neofetch
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: neofetch
+        state: latest
+      become: true
+
+    ###########################
+    # figlet
+    # A program for making large letters out of ordinary text
+    #  _ _ _          _   _     _
+    # | (_) | _____  | |_| |__ (_)___
+    # | | | |/ / _ \ | __| '_ \| / __|
+    # | | |   <  __/ | |_| | | | \__ \
+    # |_|_|_|\_\___|  \__|_| |_|_|___/
+    #
+    # http://www.figlet.org/
+    ###########################
+    - name: Install figlet-cli
+      community.general.npm:
+        name: figlet-cli
+        global: true
+
+    ###########################
+    # glow
+    # Render markdown on the CLI, with pizzazz! 💅
+    ###########################
+    - name: Install glow
+      ansible.builtin.command: go install github.com/charmbracelet/glow@latest
+
+    ###########################
+    # markserv
+    # 🏁 serve markdown as html (GitHub style), index directories,
+    # live-reload as you edit
+    ###########################
+    - name: Install markserv
+      community.general.npm:
+        name: markserv
+        global: true
+
+    ###########################
+    # serve
+    # Static file serving and directory listing
+    ###########################
+    - name: Install serve
+      community.general.npm:
+        name: serve
+        global: true
+
+    ###########################
+    # vhs
+    # Your CLI home video recorder 📼
+    ###########################
+    - name: Install vhs
+      ansible.builtin.command: go install github.com/charmbracelet/vhs@latest
+
+    ###########################
+    # cmatrix
+    # Terminal based "The Matrix" like implementation
+    ###########################
+    - name: MacOS => install cmatrix
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: cmatrix
+
+    - name: Ubuntu => install cmatrix
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: cmatrix
+        state: latest
+      become: true
+
+    ###########################
+    # privoxy
+    # A free non-caching web proxy
+    ###########################
+    - name: MacOS => install privoxy
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: privoxy
+
+    - name: Ubuntu => install privoxy
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: privoxy
+        state: latest
+      become: true
+
+    ###########################
+    # ngrok
+    # Reverse proxy, secure introspectable tunnels to localhost
+    ###########################
+    - name: MacOS => install ngrok
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: ngrok
+
+    - name: Ubuntu => install ngrok
+      when: ansible_distribution == 'Ubuntu'
+      community.general.snap:
+        name: ngrok
+        channel: latest/edge
+
+    ###########################
+    # sshuttle
+    # Transparent proxy server that works as a poor man's VPN. Forwards
+    # over ssh. Doesn't require admin. Works with Linux and MacOS.
+    # Supports DNS tunneling.
+    ###########################
+    - name: Install sshuttle
+      ansible.builtin.command: pipx install shuttle
+
+    ###########################
+    # translate-shell
+    # 💬 Command-line translator using Google Translate, Bing Translator,
+    # Yandex.Translate, etc.
+    #
+    # https://github.com/soimort/translate-shell
+    ###########################
+    - name: MacOS => install translate-shell
+      ansible.builtin.homebrew:
+        name: translate-shell
+
+    - name: Ubuntu => install translate-shell
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: translate-shell
+        state: latest
+      become: true
+
+    ###########################
+    # asciinema
+    # Terminal session recorder 📹
+    ###########################
+    - name: Install asciinema
+      ansible.builtin.command: pipx install asciinema
+
+    ###########################
+    # openconnect
+    # Multi-protocol VPN client, for Cisco AnyConnect VPNs and others.
+    ###########################
+    - name: MacOS => install openconnect
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: openconnect
+
+    ###########################
+    # vpn-slice
+    # vpnc-script replacement for easy and secure split-tunnel VPN setup
+    # Example:
+    #   vpn-slice 10.0.0.0/8
+    ###########################
+    - name: Install vpn-slice
+      ansible.builtin.command: pipx install "vpn-slice[dnspython,setproctitle]"
+
+    ###########################
+    # proxychains
+    # A tool that forces any TCP connection made by any given application to
+    # follow through proxy like TOR or any other SOCKS4, SOCKS5 or HTTP(S)
+    # proxy. Supported auth-types: "user/pass" for SOCKS4/5, "basic" for HTTP.
+    #
+    # https://github.com/haad/proxychains
+    #
+    # For macOS: SIP should be disabled via `csrutil disable`
+    ###########################
+    - name: MacOS => install proxychains
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: proxychains-ng
+
+    ###########################
+    # autossh
+    # Automatically restart SSH sessions and tunnels.
+    #
+    # https://github.com/Autossh/autossh
+    #
+    # e.g. autossh -M 20000 -L 5000:localhost:5000 -C -N -T user@example.com
+    ###########################
+    - name: MacOS => install autossh
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: autossh
+
+    - name: Ubuntu => install autossh
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: autossh
+        state: latest
+      become: true
+
+    # ttyper
+    # Terminal-based typing test
+    #
+    # https://github.com/bloznelis/typioca
+    ###########################
+    - name: Install ttyper
+      community.general.cargo:
+        name: ttyper
+        locked: true
+
+    ###########################
+    # typioca
+    # Cozy typing speed tester in terminal
+    #
+    # https://github.com/bloznelis/typioca
+    ###########################
+    - name: Install typioca
+      ansible.builtin.command: go install github.com/bloznelis/typioca@latest
+
+    ###########################
+    # graphviz
+    # It's an open source graph visualization software.
+    ###########################
+    - name: MacOS => install graphviz
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: graphviz
+
+    ###########################
+    # httrack
+    # HTTrack Website Copier, copy websites to your computer
+    #
+    # https://github.com/xroche/httrack
+    ###########################
+    - name: MacOS => install httrack
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: httrack

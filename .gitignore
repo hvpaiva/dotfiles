@@ -1,3 +1,4 @@
+become_password.yml
 Spoons
 .DS_Store
 org-roam.db
@@ -5,13 +6,9 @@ secrets.fish
 config/nvim/sessions
 foo.*
 result
-packer_compiled.vim
-packer_compiled.lua
 *.session
-state.yml
-config/lazygit/*/*.patch
 *.log
 tt.*
-nvim/lua/config/env.lua
-config/environment.d/secrets.conf
-config/github-copilot/apps.json
+/nvim/lua/config/env.lua
+/nvim/usage_data.json
+nvim/usage_data.json

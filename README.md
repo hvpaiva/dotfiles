@@ -1,6 +1,6 @@
 # Dotfiles
 
-```
+```sh
 ██████╗  ██████╗ ████████╗███████╗██╗██╗     ███████╗███████╗
 ██╔══██╗██╔═══██╗╚══██╔══╝██╔════╝██║██║     ██╔════╝██╔════╝
 ██║  ██║██║   ██║   ██║   █████╗  ██║██║     █████╗  ███████╗
@@ -18,6 +18,7 @@
     alt="License: MIT" />
 </a>
 
+![dotfiles](dotfiles.png)
 
 All the configuration and scripts needed by myself, proper dotfiles are the
 very heart of an efficient working environment, no more, no less.
@@ -45,10 +46,9 @@ Navigate to the project directory and run the `setup.sh` playbook.
 cd dotfiles && ./setup.sh
 ```
 
-Alias included in zshrc to reload dotfiles:
-```sh
-rdot
-```
+> [!NOTE]
+> To run the configuration, the sudo password is required. This will only be requested the first time, after which it will be securely stored on your machine.
+> Make sure to remove it if the machine is not a secure environment.
 
 ## Manifest
 
@@ -62,25 +62,23 @@ rdot
 - Editor:
   - [neovim](https://github.com/neovim/neovim)
 - Theme:
-  - Catppuccin
+  - [Catppuccin](https://catppuccin.com/)
 - Font:
   - Fira Code from Nerd Fonts
 - Browser:
   - [nnn](https://github.com/jarun/nnn)
 - Version Manager:
   - [asdf](https://github.com/asdf-vm/asdf)
-  - [sdkman]()
 - Others:
   - cmatrix
 - ...
 
-
 ## Contributing
 
-Issues and Pull Requests are greatly appreciated. If you've never contributed to an open source project before I'm more than happy to walk you through how to create a pull request.
+Issues and Pull Requests are greatly appreciated. If you've never contributed to an open source project before
+I'm more than happy to walk you through how to create a pull request.
 
-You can start by [opening an issue](https://github.com/jeffreytse/dotfiles/issues/new) describing the problem that you're looking to resolve and we'll go from there.
-
+You can start by [opening an issue](https://github.com/hvpaiva/dotfiles/issues/new) describing the problem that you're looking to resolve and we'll go from there.
 
 ## License
 
@@ -88,4 +86,4 @@ This project is licensed under the [MIT license](https://opensource.org/licenses
 
 ## Acknowledge
 
-This repo is hardly inspired in [jeffreytse](https://github.com/jeffreytse/dotfiles) dotfiles.
+This repo is inspired in [jeffreytse](https://github.com/jeffreytse/dotfiles) dotfiles.

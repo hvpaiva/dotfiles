@@ -48,32 +48,10 @@ return {
       return opts
     end,
   },
-
-  -- auto-resize windows
-  -- {
-  --   "anuvyklack/windows.nvim",
-  --   enabled = false,
-  --   event = "WinNew",
-  --   dependencies = {
-  --     { "anuvyklack/middleclass" },
-  --     { "anuvyklack/animation.nvim", enabled = false },
-  --   },
-  --   keys = { { "<leader>m", "<cmd>WindowsMaximize<cr>", desc = "Zoom" } },
-  --   config = function()
-  --     vim.o.winwidth = 5
-  --     vim.o.equalalways = false
-  --     require("windows").setup({
-  --       animation = { enable = false, duration = 150 },
-  --     })
-  --   end,
-  -- },
-
   { "folke/noice.nvim", enabled = true },
   {
     "folke/drop.nvim",
-    opts = {
-      -- ...
-    },
+    opts = {},
   },
   {
     "akinsho/bufferline.nvim",

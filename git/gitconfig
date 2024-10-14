@@ -1,7 +1,7 @@
 [user]
 	name = hvpaiva
-    email = highlander.paiva@mercadolivre.com
-    signingkey = E9CD91D911EF64DE
+  email = highlander.paiva@mercadolivre.com
+  signingkey = E9CD91D911EF64DE
 [credential]
 	helper = store
 [core]

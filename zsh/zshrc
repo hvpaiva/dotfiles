@@ -377,4 +377,7 @@ if command -v tmux &> /dev/null; then
   fi
 fi
 
+# Added by furycli:
+export PATH="$HOME/.fury/fury_venv/bin:$PATH" # Added by furycli
+
 # Everything else will be loaded by zshenv (autoload) as this file is loaded in a non-interactive session

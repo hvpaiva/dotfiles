@@ -36,7 +36,7 @@
   tags: [nerd-fonts]
 
 - import_playbook: playbooks/noto-cjk-fonts.yml
-  tags: [ noto-cjk-fonts ]
+  tags: [noto-cjk-fonts]
 
 - import_playbook: playbooks/mycli.yml
   tags: [mycli]
@@ -49,6 +49,10 @@
 
 - import_playbook: playbooks/dev.yml
   tags: [dev]
+
+- import_playbook: playbooks/fury.yml
+  tags: [fury]
+  when: meli | bool
 
 - import_playbook: playbooks/misc.yml
   tags: [misc]

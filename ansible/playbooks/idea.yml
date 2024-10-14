@@ -10,7 +10,7 @@
 
     - name: Link .ideavimrc
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../idea/ideavimrc'
-        dest: '{{ ansible_env.HOME }}/.ideavimrc'
+        src: "{{ ansible_env.PWD }}/../../idea/ideavimrc"
+        dest: "{{ ansible_env.HOME }}/.ideavimrc"
         state: link
         force: true

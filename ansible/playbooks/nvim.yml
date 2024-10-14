@@ -8,7 +8,6 @@
       community.general.homebrew:
         name: neovim
 
-
     - name: Link nvim config
       file:
         src: "{{ ansible_env.PWD }}/../../nvim"

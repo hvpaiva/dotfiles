@@ -40,7 +40,7 @@
 
     - name: Link .gitconfig
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../git/gitconfig'
-        dest: '{{ ansible_env.HOME }}/.gitconfig'
+        src: "{{ ansible_env.PWD }}/../../git/gitconfig"
+        dest: "{{ ansible_env.HOME }}/.gitconfig"
         state: link
         force: true

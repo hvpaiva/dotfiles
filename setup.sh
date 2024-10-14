@@ -21,6 +21,7 @@ function usage() {
 	echo ""
 	echo "--help   Show this message and exit"
 	echo "--check  Run the playbook in check mode (default: false)"
+	echo "--meli   Run specific playbooks for Meli environment (default: false)"
 	exit 0
 }
 
@@ -28,6 +29,7 @@ function usage() {
 while test $# -gt 0; do
 	case "$1" in
 	--check) ANSIBLE_PLAYBOOK_ARGS+=("--check") ;;
+	--meli) MELI_FLAG=true ;;
 	--help) usage ;;
 	--*) echo "bad option $1" ;;
 	*) usage ;;
@@ -56,4 +58,4 @@ fi
 
 cd ./ansible
 ansible-galaxy collection install -r requirements.yml --upgrade
-ansible-playbook setup.yml --extra-vars "ansible_become_password=${BECOME_PASS}" ${ANSIBLE_PLAYBOOK_ARGS[@]}
+ansible-playbook setup.yml --extra-vars "ansible_become_password=${BECOME_PASS} meli=${MELI_FLAG}" ${ANSIBLE_PLAYBOOK_ARGS[@]}

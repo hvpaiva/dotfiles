@@ -5,5 +5,4 @@
   tasks:
     - name: Reshim all packages installed by asdf version manager
       ansible.builtin.command:
-        cmd: 'asdf reshim'
-
+        cmd: "asdf reshim"

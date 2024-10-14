@@ -12,27 +12,27 @@
 
     - name: Create k9s config directory
       ansible.builtin.file:
-        path: '{{ ansible_env.HOME }}/.config/k9s'
+        path: "{{ ansible_env.HOME }}/.config/k9s"
         state: directory
         mode: 0755
 
     - name: Link config.yaml
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../k9s/config.yaml'
-        dest: '{{ ansible_env.HOME }}/.config/k9s/config.yaml'
+        src: "{{ ansible_env.PWD }}/../../k9s/config.yaml"
+        dest: "{{ ansible_env.HOME }}/.config/k9s/config.yaml"
         state: link
         force: true
 
     - name: Link hotkeys.yaml
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../k9s/hotkeys.yaml'
-        dest: '{{ ansible_env.HOME }}/.config/k9s/hotkeys.yaml'
+        src: "{{ ansible_env.PWD }}/../../k9s/hotkeys.yaml"
+        dest: "{{ ansible_env.HOME }}/.config/k9s/hotkeys.yaml"
         state: link
         force: true
 
     - name: Link plugins.yaml
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../k9s/plugins.yaml'
-        dest: '{{ ansible_env.HOME }}/.config/k9s/plugins.yaml'
+        src: "{{ ansible_env.PWD }}/../../k9s/plugins.yaml"
+        dest: "{{ ansible_env.HOME }}/.config/k9s/plugins.yaml"
         state: link
         force: true

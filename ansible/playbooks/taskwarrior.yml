@@ -16,13 +16,13 @@
 
     - name: Create task config directory
       ansible.builtin.file:
-        path: '{{ ansible_env.HOME }}/.config/task'
+        path: "{{ ansible_env.HOME }}/.config/task"
         state: directory
         mode: 0755
 
     - name: Link taskrc
       ansible.builtin.file:
-        src: '{{ ansible_env.PWD }}/../../task/taskrc'
-        dest: '{{ ansible_env.HOME }}/.config/task/taskrc'
+        src: "{{ ansible_env.PWD }}/../../task/taskrc"
+        dest: "{{ ansible_env.HOME }}/.config/task/taskrc"
         state: link
         force: true

@@ -1,6 +1,7 @@
 ---
 - name: Configure Noto CJK fonts
   hosts: localhost
+
   tasks:
     ###########################
     # Noto CJK Fonts

@@ -24,12 +24,16 @@ return {
   },
   {
     "okuuva/auto-save.nvim",
+    keys = {
+      { "<leader>n", ":ASToggle<CR>", desc = "Toggle auto-save" },
+    },
+
     opts = {},
   },
-  -- {
-  --   "numToStr/Comment.nvim",
-  --   opts = {},
-  -- },
+  {
+    "numToStr/Comment.nvim",
+    opts = {},
+  },
   {
     "mg979/vim-visual-multi",
     branch = "master",

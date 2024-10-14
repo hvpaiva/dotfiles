@@ -30,8 +30,8 @@
         force: true
 
     - name: Install asdf
-      ansible.builtin.shell:
-        cmd: '. "{{ asdf_home }}/asdf.sh"'
+      ansible.builtin.shell: |
+        source "{{ asdf_home }}/asdf.sh"
 
     - name: Install plugins according to .tool-version
       ansible.builtin.shell: |

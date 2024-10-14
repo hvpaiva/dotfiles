@@ -42,6 +42,13 @@
       community.general.homebrew:
         name: kitty
 
+    - name: Ubuntu => install kitty
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: kitty
+        state: latest
+      become: true
+
     - name: Link kitty
       file:
         src: "{{ ansible_env.PWD }}/../../kitty"

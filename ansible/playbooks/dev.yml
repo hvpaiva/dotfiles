@@ -37,7 +37,8 @@
     # kitty
     # The fast, feature-rich, GPU based terminal emulator
     ###########################
-    - name: Install kitty
+    - name: MacOS => Install kitty
+      when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
         name: kitty
 

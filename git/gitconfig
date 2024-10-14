@@ -9,8 +9,9 @@
 	excludesfile = ~/.gitignore
 	ignorecase = false
 	pager = delta
+	hooksPath = /Users/hpaiva/.config/git/hooks/
 [github]
-	user = jeffreytse.mail@gmail.com
+	user = contact@hvpaiva.dev
 [push]
 	default = current
 	autoSetupRemote = true
@@ -34,12 +35,12 @@
     minus-non-emph-style          = syntax "#3a273a"
     minus-emph-style              = syntax "#6b2e43"
     minus-empty-line-marker-style = syntax "#3a273a"
-    line-numbers-minus-style      = "#e26a75"
+    line-numbers-minus-style      = "#f38ba8"
     plus-style                    = syntax "#273849"
     plus-non-emph-style           = syntax "#273849"
     plus-emph-style               = syntax "#305f6f"
     plus-empty-line-marker-style  = syntax "#273849"
-    line-numbers-plus-style       = "#b8db87"
+    line-numbers-plus-style       = "#a6e3a1"
     line-numbers-zero-style       = "#3b4261"
 [alias]
     st = status -sb

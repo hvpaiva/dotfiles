@@ -57,27 +57,26 @@ return {
     },
   },
 
-  -- modicator (auto color line number based on vim mode)
-  -- {
-  --   "mawkler/modicator.nvim",
-  --   dependencies = "catppuccin/nvim",
-  --   init = function()
-  --     -- These are required for Modicator to work
-  --     vim.o.cursorline = true
-  --     vim.o.number = true
-  --     vim.o.termguicolors = true
-  --   end,
-  --   opts = {
-  --     show_warnings = true,
-  --     highlights = {
-  --       -- Default options for bold/italic
-  --       defaults = {
-  --         bold = true,
-  --         italic = false,
-  --       },
-  --     },
-  --   },
-  -- },
+  {
+    "mawkler/modicator.nvim",
+    dependencies = "catppuccin/nvim",
+    init = function()
+      -- These are required for Modicator to work
+      vim.o.cursorline = true
+      vim.o.number = true
+      vim.o.termguicolors = true
+    end,
+    opts = {
+      show_warnings = true,
+      highlights = {
+        -- Default options for bold/italic
+        defaults = {
+          bold = true,
+          italic = false,
+        },
+      },
+    },
+  },
 
   {
     "nvim-lualine/lualine.nvim",

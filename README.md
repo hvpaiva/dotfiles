@@ -18,7 +18,8 @@
     alt="License: MIT" />
 </a>
 
-![dotfiles](dotfiles.png)
+![dotfiles](imgs/dotfiles.png)
+![dashboard](imgs/nvim-dash.png)
 
 All the configuration and scripts needed by myself, proper dotfiles are the
 very heart of an efficient working environment, no more, no less.

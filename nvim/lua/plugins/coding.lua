@@ -26,10 +26,10 @@ return {
     "okuuva/auto-save.nvim",
     opts = {},
   },
-  {
-    "numToStr/Comment.nvim",
-    opts = {},
-  },
+  -- {
+  --   "numToStr/Comment.nvim",
+  --   opts = {},
+  -- },
   {
     "mg979/vim-visual-multi",
     branch = "master",

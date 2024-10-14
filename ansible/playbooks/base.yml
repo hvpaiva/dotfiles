@@ -178,6 +178,15 @@
       become: true
 
     ###########################
+    # op
+    # Command line interface to the 1Password
+    ###########################
+    - name: MacOS => install op
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: op
+
+    ###########################
     # xquartz
     # An open-source effort to develop a version of the X.Org X Window
     # System that runs on macOS (support xclip on MacOS)

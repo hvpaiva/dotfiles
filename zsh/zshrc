@@ -191,6 +191,7 @@ autoload -U compinit compdef && compinit
 # export GOPATH='/Users/hpaiva/go'
 # export PATH=/opt/homebrew/bin:$PATH
 # # export MANPATH="/usr/local/man:$MANPATH"
+export OP_BIOMETRIC_UNLOCK_ENABLED=true
 
 # History
 export HISTFILE=$HOME/.zsh_history
@@ -295,9 +296,6 @@ alias ....="cd ../../.."
 alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 
-# Update Dotfiles
-alias rdot='pushd ~/dotfiles/ansible > /dev/null && ./setup.sh && popd > /dev/null'
-
 # VIM
 alias v="/opt/homebrew/bin/nvim"
 alias vim="/opt/homebrew/bin/nvim"
@@ -334,6 +332,27 @@ alias ltree="eza --tree --level=2  --icons --git"
 # Others
 #############################
 
+# Functions
+fgt() {
+  export TIGER_TOKEN="Bearer $(fury get-token | grep 'Bearer' | awk '{print $2}')"
+  
+  echo $TIGER_TOKEN | pbcopy
+  
+  echo "TIGER_TOKEN set and copied to clipboard."
+}
+
+copyfile() {
+  # Check if the file exists
+  if [[ -f "$1" ]]; then
+    # Copy the file content to the clipboard (using pbcopy on Mac, xclip or xsel on Linux)
+    cat "$1" | pbcopy
+
+    echo "Content of $1 copied to the clipboard."
+  else
+    echo "File $1 not found."
+  fi
+}
+
 # Meli Configs
 export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*
 export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*
@@ -352,6 +371,7 @@ eval "$(atuin init zsh)"
 eval "$(starship init zsh)"
 eval "$(direnv hook zsh)"
 eval "$(z init zsh)"
+eval "$(op completion zsh)"; compdef _op op
 
 # kubectl auto completion
 if command -v kubectl &>/dev/null; then

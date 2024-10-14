@@ -54,6 +54,7 @@ cd dotfiles && ./setup.sh
 ## Manifest
 
 - Terminals:
+  - [kitty](https://sw.kovidgoyal.net/kitty/)
   - [wezterm](https://github.com/wez/wezterm)
   - [tmux](https://github.com/tmux/tmux)
 - Shell:
@@ -65,12 +66,16 @@ cd dotfiles && ./setup.sh
 - Theme:
   - [Catppuccin](https://catppuccin.com/)
 - Font:
-  - Fira Code from Nerd Fonts
+  - Fira Code _from Nerd Fonts_
 - Browser:
   - [nnn](https://github.com/jarun/nnn)
 - Version Manager:
   - [asdf](https://github.com/asdf-vm/asdf)
 - Others:
+  - lazygit
+  - gitui
+  - bat
+  - ideavim
   - cmatrix
 - ...
 

@@ -178,13 +178,13 @@
       become: true
 
     ###########################
-    # op
+    # 1password-cli (op)
     # Command line interface to the 1Password
     ###########################
-    - name: MacOS => install op
+    - name: MacOS => install 1password-cli
       when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
-        name: op
+        name: 1password-cli
 
     ###########################
     # xquartz

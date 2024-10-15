@@ -265,6 +265,7 @@
         state: latest
       become: true
 
+    ###########################
     # ttyper
     # Terminal-based typing test
     #
@@ -273,7 +274,16 @@
     - name: Install ttyper
       community.general.cargo:
         name: ttyper
-        locked: true
+        locked: truee
+
+    ###########################
+    # translate-cli
+    # 🌍 A simple CLI application for translations using OpenAI API
+    #
+    # https://github.com/hvpaiva/translate-cli
+    ###########################
+    - name: Install translate-cli
+      ansible.builtin.command: go install github.com/hvpaiva/translate-cli@latest
 
     ###########################
     # typioca
@@ -294,6 +304,13 @@
         name: graphviz
 
     ###########################
+    # cowsay
+    # cowsay is a configurable talking cow
+    ###########################
+    - name: install cowsay
+      ansible.builtin.command: npm install -g cowsay
+
+    ###########################
     # httrack
     # HTTrack Website Copier, copy websites to your computer
     #
@@ -303,3 +320,34 @@
       when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
         name: httrack
+
+    ###########################
+    # fortune
+    # Infamous electronic fortune-cookie generator
+    ###########################
+    - name: MacOS => install fortune
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: fortune
+
+    - name: Ubuntu => install fortune
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: fortune-mod
+        state: latest
+      become: true
+
+    ###########################
+    # lolcat
+    # Rainbows and unicorns!
+    ###########################
+    - name: MacOS => install lolcat
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: lolcat
+
+    - name: Ubuntu => install lolcat
+      when: ansible_distribution == 'Ubuntu'
+      community.general.snap:
+        name: lolcat
+        channel: latest/edge

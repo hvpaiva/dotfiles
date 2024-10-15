@@ -11,6 +11,9 @@
 - import_playbook: playbooks/zsh.yml
   tags: [zsh]
 
+- import_playbook: playbooks/scripts.yml
+  tags: [scripts]
+
 - import_playbook: playbooks/asdf.yml
   tags: [asdf]
 

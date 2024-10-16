@@ -55,7 +55,6 @@ cd dotfiles && ./setup.sh
 
 - Terminals:
   - [kitty](https://sw.kovidgoyal.net/kitty/)
-  - [wezterm](https://github.com/wez/wezterm)
   - [tmux](https://github.com/tmux/tmux)
 - Shell:
   - [zsh](https://www.zsh.org/)
@@ -64,7 +63,7 @@ cd dotfiles && ./setup.sh
 - Editor:
   - [neovim](https://github.com/neovim/neovim)
 - Theme:
-  - [Catppuccin](https://catppuccin.com/)
+  - [TokyoNight](https://github.com/folke/tokyonight.nvim)
 - Font:
   - Fira Code _from Nerd Fonts_
 - Browser:
@@ -76,7 +75,6 @@ cd dotfiles && ./setup.sh
   - gitui
   - bat
   - ideavim
-  - cmatrix
 - ...
 
 ## Contributing
@@ -90,6 +88,6 @@ You can start by [opening an issue](https://github.com/hvpaiva/dotfiles/issues/n
 
 This project is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php) © Highlander Paiva.
 
-## Acknowledge
+## Acknowledgement
 
-This repo is inspired in [jeffreytse](https://github.com/jeffreytse/dotfiles) dotfiles.
+This repository is inspired by the [dotfiles](https://github.com/jeffreytse/dotfiles) created by [jeffreytse](https://github.com/jeffreytse).

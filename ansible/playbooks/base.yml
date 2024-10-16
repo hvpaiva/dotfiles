@@ -72,7 +72,7 @@
     #   as of Mavericks).
     #
     ###########################
-    - name: MacOS => install curl
+    - name: MacOS => install gnu-tar
       when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
         name: gnu-tar
@@ -185,6 +185,48 @@
       when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
         name: 1password-cli
+
+    ###########################
+    # luarocks
+    # LuaRocks is the package manager for the Lua programming language.
+    ###########################
+    - name: MacOS => install luarocks
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: luarocks
+
+    - name: Ubuntu => install luarocks
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: luarocks
+        state: latest
+      become: true
+
+    ###########################
+    # lua
+    # Lua programming language.
+    ###########################
+    - name: MacOS => install lua@latest
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: lua
+
+    - name: Ubuntu => install lua@latest
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: lua
+        state: latest
+      become: true
+
+
+    ###########################
+    # jsregexp
+    # JavaScript regular expressions for Lua
+    ###########################
+    - name: MacOS => install jsregexp
+      when: ansible_distribution == 'MacOSX'
+      command: luarocks install jsregexp
+      become: yes
 
     ###########################
     # xquartz

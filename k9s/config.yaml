@@ -1,3 +1,20 @@
+foreground: &foreground "#c0caf5"
+background: &background "#24283b"
+current_line: &current_line "#8c6c3e"
+selection: &selection "#364a82"
+comment: &comment "#565f89"
+cyan: &cyan "#7dcfff"
+green: &green "#9ece6a"
+yellow: &yellow "#e0af68"
+orange: &orange "#ff9e64"
+magenta: &magenta "#bb9af7"
+blue: &blue "#7aa2f7"
+red: &red "#f7768e"
+purple: &purple "#9d7cd8"
+pink: &pink "#bb9af7"
+white: &white "#a9b1d6"
+black: &black "#1d202f"
+
 # $XDG_CONFIG_HOME/k9s/config.yaml
 k9s:
   # Enable periodic refresh of resource browser windows. Default false
@@ -59,102 +76,105 @@ k9s:
       memory: 100Mi
     # Enable TTY
     tty: true
+  # General K9s styles
   body:
-    fgColor: '#cdd6f4'
-    bgColor: '#1e1e2e'
-    logoColor: '#cba6f7'
+    fgColor: *foreground
+    bgColor: default
+    logoColor: *blue
+  # Command prompt styles
   prompt:
-    fgColor: '#cdd6f4'
-    bgColor: '#181825'
-    suggestColor: '#89b4fa'
-  help:
-    fgColor: '#cdd6f4'
-    bgColor: '#1e1e2e'
-    sectionColor: '#a6e3a1'
-    keyColor: '#89b4fa'
-    numKeyColor: '#eba0ac'
-  frame:
-    title:
-      fgColor: '#94e2d5'
-      bgColor: '#1e1e2e'
-      highlightColor: '#f5c2e7'
-      counterColor: '#f9e2af'
-      filterColor: '#a6e3a1'
-    border:
-      fgColor: '#cba6f7'
-      focusColor: '#b4befe'
-    menu:
-      fgColor: '#cdd6f4'
-      keyColor: '#89b4fa'
-      numKeyColor: '#eba0ac'
-    crumbs:
-      fgColor: '#1e1e2e'
-      bgColor: '#eba0ac'
-      activeColor: '#f2cdcd'
-    status:
-      newColor: '#89b4fa'
-      modifyColor: '#b4befe'
-      addColor: '#a6e3a1'
-      pendingColor: '#fab387'
-      errorColor: '#f38ba8'
-      highlightColor: '#89dceb'
-      killColor: '#cba6f7'
-      completedColor: '#6c7086'
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *orange
+  # ClusterInfoView styles.
   info:
-    fgColor: '#fab387'
-    sectionColor: '#cdd6f4'
-  views:
-    table:
-      fgColor: '#cdd6f4'
-      bgColor: '#1e1e2e'
-      cursorFgColor: '#313244'
-      cursorBgColor: '#45475a'
-      markColor: '#f5e0dc'
-      header:
-        fgColor: '#f9e2af'
-        bgColor: '#1e1e2e'
-        sorterColor: '#89dceb'
-    xray:
-      fgColor: '#cdd6f4'
-      bgColor: '#1e1e2e'
-      cursorColor: '#45475a'
-      cursorTextColor: '#1e1e2e'
-      graphicColor: '#f5c2e7'
-    charts:
-      bgColor: '#1e1e2e'
-      chartBgColor: '#1e1e2e'
-      dialBgColor: '#1e1e2e'
-      defaultDialColors:
-        - '#a6e3a1'
-        - '#f38ba8'
-      defaultChartColors:
-        - '#a6e3a1'
-        - '#f38ba8'
-      resourceColors:
-        cpu:
-          - '#cba6f7'
-          - '#89b4fa'
-        mem:
-          - '#f9e2af'
-          - '#fab387'
-    yaml:
-      keyColor: '#89b4fa'
-      valueColor: '#cdd6f4'
-      colonColor: '#a6adc8'
-    logs:
-      fgColor: '#cdd6f4'
-      bgColor: '#1e1e2e'
-      indicator:
-        fgColor: '#b4befe'
-        bgColor: '#1e1e2e'
-        toggleOnColor: '#a6e3a1'
-        toggleOffColor: '#a6adc8'
+    fgColor: *magenta
+    sectionColor: *foreground
+  # Dialog styles.
   dialog:
-    fgColor: '#f9e2af'
-    bgColor: '#9399b2'
-    buttonFgColor: '#1e1e2e'
-    buttonBgColor: '#7f849c'
-    buttonFocusFgColor: '#1e1e2e'
-    buttonFocusBgColor: '#f5c2e7'
-    labelFgColor: '#f5e0dc'
-    fieldFgColor: '#cdd6f4'
+    fgColor: *foreground
+    bgColor: default
+    buttonFgColor: *foreground
+    buttonBgColor: *magenta
+    buttonFocusFgColor: *background
+    buttonFocusBgColor: *foreground
+    labelFgColor: *comment
+    fieldFgColor: *foreground
+  frame:
+    # Borders styles.
+    border:
+      fgColor: *selection
+      focusColor: *foreground
+    menu:
+      fgColor: *foreground
+      keyColor: *magenta
+      # Used for favorite namespaces
+      numKeyColor: *magenta
+    # CrumbView attributes for history navigation.
+    crumbs:
+      fgColor: *white
+      bgColor: *cyan
+      activeColor: *yellow
+    # Resource status and update styles
+    status:
+      newColor: *magenta
+      modifyColor: *blue
+      addColor: *green
+      errorColor: *red
+      highlightcolor: *orange
+      killColor: *comment
+      completedColor: *comment
+    # Border title styles.
+    title:
+      fgColor: *foreground
+      bgColor: default
+      highlightColor: *blue
+      counterColor: *magenta
+      filterColor: *magenta
+  views:
+    # Charts skins...
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *blue
+        - *red
+      defaultChartColors:
+        - *blue
+        - *red
+    # TableView attributes.
+    table:
+      fgColor: *foreground
+      bgColor: default
+      cursorFgColor: *white
+      cursorBgColor: *background
+      markColor: darkgoldenrod
+      # Header row styles.
+      header:
+        fgColor: *foreground
+        bgColor: default
+        sorterColor: *cyan
+    # Xray view attributes.
+    xray:
+      fgColor: *foreground
+      bgColor: default
+      cursorColor: *current_line
+      graphicColor: *blue
+      showIcons: false
+    # YAML info styles.
+    yaml:
+      keyColor: *magenta
+      colonColor: *blue
+      valueColor: *foreground
+    # Logs styles.
+    logs:
+      fgColor: *foreground
+      bgColor: default
+      indicator:
+        fgColor: *foreground
+        bgColor: *selection
+    help:
+      fgColor: *foreground
+      bgColor: default
+      indicator:
+        fgColor: *red
+        bgColor: *selection

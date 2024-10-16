@@ -205,7 +205,7 @@
     # tokei
     # Count your code, quickly
     ###########################
-    - name: All => Install tokei
+    - name: Install tokei
       community.general.cargo:
         name: tokei
         locked: true
@@ -214,7 +214,7 @@
     # navi
     # An interactive cheatsheet tool for the command-line
     ###########################
-    - name: All => Install navi
+    - name: Install navi
       community.general.cargo:
         name: navi
         locked: true
@@ -226,6 +226,15 @@
     - name: All => Install tldr
       community.general.npm:
         name: tldr
+        global: true
+
+    ###########################
+    # markdown-toc
+    # API and CLI for generating a markdown TOC
+    ###########################
+    - name: Install tldr
+      community.general.npm:
+        name: markdown-toc
         global: true
 
     ###########################
@@ -260,6 +269,20 @@
         name: entr
         state: latest
       become: true
+
+    ###########################
+    # gotestsum
+    # 'go test' runner with output optimized for humans
+    ###########################
+    - name: Install gotestsum
+      ansible.builtin.command: go install gotest.tools/gotestsum@latest
+
+    ###########################
+    # delve
+    # Delve is a debugger for the Go programming language.
+    ###########################
+    - name: Install delve
+      ansible.builtin.command: go install github.com/go-delve/delve/cmd/dlv@latest
 
     ###########################
     # usql
@@ -335,7 +358,7 @@
     # 🎨 Diagram as Code for prototyping cloud system architectures
     # https://github.com/mingrammer/diagrams
     ###########################
-    - name: All => install diagrams
+    - name: install diagrams
       ansible.builtin.command: pip install diagrams
 
     ###########################

@@ -1,6 +1,3 @@
-# source default local configuration
-# source -q "$HOME/.tmux/.tmux.conf.local"
-
 set -g status-position top
 
 # start with mouse mode enabled
@@ -14,64 +11,106 @@ set -g mode-keys vi
 # -- theming -------------------------------------------------------------------
 
 # default theme
-tmux_conf_theme_colour_1="#303030"
-tmux_conf_theme_colour_2="#303030"
-tmux_conf_theme_colour_3="#7f849c"
-tmux_conf_theme_colour_4="#89b4fa"
-tmux_conf_theme_colour_5="#f2cdcd"
-tmux_conf_theme_colour_6="#313244"
-tmux_conf_theme_colour_7="#cdd6f4"
-tmux_conf_theme_colour_8="#313244"
-tmux_conf_theme_colour_9="#cba6f7"
-tmux_conf_theme_colour_10="#f9e2af"
-tmux_conf_theme_colour_11="#a6e3a1"
+tmux_conf_theme_colour_1="#1e2030"
+tmux_conf_theme_colour_2="#2f334d"
+tmux_conf_theme_colour_3="#737aa2"
+tmux_conf_theme_colour_4="#82aaff"
+tmux_conf_theme_colour_5="#ff966c"
+tmux_conf_theme_colour_6="#1e2030"
+tmux_conf_theme_colour_7="#c8d3f5"
+tmux_conf_theme_colour_8="#394b70"
+tmux_conf_theme_colour_9="#c099ff"
+tmux_conf_theme_colour_10="#ffc777"
+tmux_conf_theme_colour_11="#c3e88d"
 tmux_conf_theme_colour_12="#8a8a8a"
 tmux_conf_theme_colour_13="#cdd6f4"
-tmux_conf_theme_colour_14="#1e1e2e"
-tmux_conf_theme_colour_15="#eba0ac"
-tmux_conf_theme_colour_16="#74c7ec"
-tmux_conf_theme_colour_17="#b4befe"
+tmux_conf_theme_colour_14="#41a6b5"
+tmux_conf_theme_colour_15="#ff757f"
+tmux_conf_theme_colour_16="#65bcff"
+tmux_conf_theme_colour_17="#b4f9f8"
+
+# pane borders colours:
+tmux_conf_theme_pane_border_style=thin
+tmux_conf_theme_pane_border="$tmux_conf_theme_colour_8"
+tmux_conf_theme_pane_active_border="$tmux_conf_theme_colour_10"
+%if #{>=:#{version},3.2}
+tmux_conf_theme_pane_active_border="#{?pane_in_mode,$tmux_conf_theme_colour_9,#{?synchronize-panes,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_5}}"
+%endif
+
+# pane indicator colours (when you hit <prefix> + q)
+tmux_conf_theme_pane_indicator="$tmux_conf_theme_colour_12"
+tmux_conf_theme_pane_active_indicator="$tmux_conf_theme_colour_10"
 
 # terminal title
 tmux_conf_theme_terminal_title="❐ #S ● #I #W"
 
+# message line style
+tmux_conf_theme_message_fg="$tmux_conf_theme_colour_6"
+tmux_conf_theme_message_bg="$tmux_conf_theme_colour_5"
+tmux_conf_theme_message_attr="bold"
+
+# message line command style (<prefix> : Escape)
+tmux_conf_theme_message_command_fg="$tmux_conf_theme_colour_5"
+tmux_conf_theme_message_command_bg="$tmux_conf_theme_colour_6"
+tmux_conf_theme_message_command_attr="bold"
+
+# window modes style
+tmux_conf_theme_mode_fg="$tmux_conf_theme_colour_1"
+tmux_conf_theme_mode_bg="$tmux_conf_theme_colour_10"
+tmux_conf_theme_mode_attr="bold"
+
+# status line style
+tmux_conf_theme_status_fg="$tmux_conf_theme_colour_10"
+tmux_conf_theme_status_bg="$tmux_conf_theme_colour_6"
+tmux_conf_theme_status_attr="none"
+
 # window status style
+tmux_conf_theme_window_status_fg="$tmux_conf_theme_colour_3"
+tmux_conf_theme_window_status_bg="$tmux_conf_theme_colour_6"
+tmux_conf_theme_window_status_attr="none"
 tmux_conf_theme_window_status_format="#I #W #{?#{||:#{window_bell_flag},#{window_zoomed_flag}}, ,}#{?window_bell_flag,,}#{?window_zoomed_flag,,}"
 
 # window current status style
-tmux_conf_theme_window_status_current_fg="$tmux_conf_theme_colour_1"
-tmux_conf_theme_window_status_current_bg="$tmux_conf_theme_colour_4"
+tmux_conf_theme_window_status_current_fg="$tmux_conf_theme_colour_8"
+tmux_conf_theme_window_status_current_bg="$tmux_conf_theme_colour_11"
 tmux_conf_theme_window_status_current_attr="bold"
 tmux_conf_theme_window_status_current_format="#I #W #{?#{||:#{window_bell_flag},#{window_zoomed_flag}}, ,}#{?window_bell_flag,,}#{?window_zoomed_flag,,}"
 
+# window bell status style
+tmux_conf_theme_window_status_bell_fg="$tmux_conf_theme_colour_5"
+tmux_conf_theme_window_status_bell_bg="default"
+tmux_conf_theme_window_status_bell_attr="blink,bold"
+
+# window last status style
+tmux_conf_theme_window_status_last_fg="$tmux_conf_theme_colour_11"
+tmux_conf_theme_window_status_last_bg="$tmux_conf_theme_colour_2"
+tmux_conf_theme_window_status_last_attr="none"
+
 # status left/right content:
-tmux_conf_theme_status_left="  #S "
-tmux_conf_theme_status_right=" #{prefix}#{mouse}#{pairing}#{synchronized}#{?battery_status,#{battery_status},}#{?battery_bar,,}#{?battery_percentage, #{battery_percentage},} ,  %R , 󰃭 %d %b | #{username}#{root} "
+tmux_conf_theme_status_left="  #S || ↑#{?uptime_y, #{uptime_y}y,}#{?uptime_d, #{uptime_d}d,}#{?uptime_h, #{uptime_h}h,}#{?uptime_m, #{uptime_m}m,} "
+tmux_conf_theme_status_right="| #{prefix}#{mouse}#{pairing}#{synchronized}#{?battery_status,#{battery_status},}#{?battery_bar, #{battery_bar},}#{?battery_percentage, #{battery_percentage},} ||  %R , 󰃭 %d %b "
 
 # status left style
-tmux_conf_theme_status_left_fg="$tmux_conf_theme_colour_6,$tmux_conf_theme_colour_7,$tmux_conf_theme_colour_8"
-tmux_conf_theme_status_left_bg="$tmux_conf_theme_colour_9,$tmux_conf_theme_colour_10,$tmux_conf_theme_colour_11"
+tmux_conf_theme_status_left_fg="$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2"
+tmux_conf_theme_status_left_bg="$tmux_conf_theme_colour_9,$tmux_conf_theme_colour_8,$tmux_conf_theme_colour_4"
 tmux_conf_theme_status_left_attr="bold,none,none"
 
 # status right style
-tmux_conf_theme_status_right_fg="$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_6"
-tmux_conf_theme_status_right_bg="$tmux_conf_theme_colour_17,$tmux_conf_theme_colour_15,$tmux_conf_theme_colour_17"
-tmux_conf_theme_status_right_attr="none,bold,bold"
+tmux_conf_theme_status_right_fg="$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2"
+tmux_conf_theme_status_right_bg="$tmux_conf_theme_colour_8,$tmux_conf_theme_colour_4,$tmux_conf_theme_colour_8,$tmux_conf_theme_colour_9"
+tmux_conf_theme_status_right_attr="none,none,none,bold"
 
-# pane indicator colours (when you hit <prefix> + q)
-tmux_conf_theme_pane_indicator="$tmux_conf_theme_colour_16"
-tmux_conf_theme_pane_active_indicator="$tmux_conf_theme_colour_16"
-
-# pane borders colours:
-tmux_conf_theme_pane_border="$tmux_conf_theme_colour_2"
-tmux_conf_theme_pane_active_border="$tmux_conf_theme_colour_16"
-%if #{>=:#{version},3.2}
-tmux_conf_theme_pane_active_border="#{?pane_in_mode,$tmux_conf_theme_colour_9,#{?synchronize-panes,$tmux_conf_theme_colour_16,$tmux_conf_theme_colour_4}}"
-%endif
 
 # symbols used to indicate whether battery is charging or discharging
-tmux_conf_battery_status_charging="󱎗"
-tmux_conf_battery_status_discharging="󱟟"
+tmux_conf_battery_status_charging="󰂄"
+tmux_conf_battery_status_discharging="󰂃"
+
+# battery bar palette, possible values are:
+#   - gradient (default)
+#   - heat
+#   - "colour_full_fg,colour_empty_fg,colour_bg"
+# tmux_conf_battery_bar_palette="gradient"
+tmux_conf_battery_bar_palette="$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_2,$tmux_conf_theme_colour_4"
 
 # pairing indicator
 tmux_conf_theme_pairing="⚇"
@@ -89,10 +128,13 @@ tmux_conf_theme_root=""
 tmux_conf_theme_synchronized="󱑠"
 
 # status left/right sections separators
-tmux_conf_theme_left_separator_main=""
-tmux_conf_theme_left_separator_sub="|"
-tmux_conf_theme_right_separator_main=""
-tmux_conf_theme_right_separator_sub="|"
+tmux_conf_theme_left_separator_main='\uE0B0'
+tmux_conf_theme_left_separator_sub='\uE0B1'
+tmux_conf_theme_right_separator_main='\uE0B2'
+tmux_conf_theme_right_separator_sub='\uE0B3'
+
+tmux_conf_theme_clock_colour="$tmux_conf_theme_colour_10"
+tmux_conf_theme_clock_style="24"
 
 # -- user plugins -------------------------------------------------------
 
@@ -101,33 +143,9 @@ tmux_conf_theme_right_separator_sub="|"
 bind I run-shell "echo 'Please use prefix-r (Reload config) or prefix-U (Update plugins) to install plugins!'"
 
 # List of plugins
-set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-yank'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
-set -g @plugin 'fcsonline/tmux-thumbs'
-set -g @plugin 'jabirali/tmux-tilish'
-set -g @plugin 'omerxx/tmux-sessionx'
-set -g @plugin 'omerxx/tmux-floax'
-set -g @plugin 'aserowy/tmux.nvim'
-
-# tmux-floax configs
-set -g @floax-width '80%'
-set -g @floax-height '80%'
-set -g @floax-border-color 'magenta'
-set -g @floax-text-color 'blue'
-set -g @floax-bind 'p'
-set -g @floax-change-path 'true'
-
-# tmux-sessionx configs
-set -g @sessionx-bind 'o'
-set -g @sessionx-auto-accept 'off'
-set -g @sessionx-custom-paths '/Users/hpaiva/dev/meli,/Users/hpaiva/dev/self'
-set -g @sessionx-custom-paths-subdirectories 'true'
-set -g @sessionx-window-height '85%'
-set -g @sessionx-window-width '75%'
-set -g @sessionx-zoxide-mode 'on'
-set -g @sessionx-filter-current 'false'
 
 # tmux-resurrect
 bind C-s run-shell -b "$HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"

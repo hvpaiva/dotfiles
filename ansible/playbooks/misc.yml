@@ -274,7 +274,7 @@
     - name: Install ttyper
       community.general.cargo:
         name: ttyper
-        locked: truee
+        locked: true
 
     ###########################
     # translate-cli

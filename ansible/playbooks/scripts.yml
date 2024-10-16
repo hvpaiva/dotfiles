@@ -17,3 +17,4 @@
         dest: "{{ ansible_env.HOME }}/.scripts"
         state: link
         force: true
+

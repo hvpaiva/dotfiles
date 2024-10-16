@@ -1,114 +1,144 @@
-command_timeout = 6000
+format = """
+[█](#c099ff)\
+$os\
+$username\
+[](bg:#394b70 fg:#c099ff)\
+[](bg:#82aaff fg:#394b70)\
+$directory\
+[](fg:#82aaff bg:#394b70)\
+[](fg:#394b70 bg:#c3e88d)\
+$git_branch\
+$git_status\
+[](fg:#c3e88d bg:#394b70)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$nodejs\
+$nim\
+$rust\
+$scala\
+$docker_context\
+[ ](fg:#394b70)\
+\n$character"""
 
-palette = "catppuccin_mocha"
+# Disable the blank line at the start of the prompt
+# add_newline = false
 
-[aws]
-disabled = true
-
-
-[palettes.catppuccin_mocha]
-rosewater = "#f5e0dc"
-flamingo = "#f2cdcd"
-pink = "#f5c2e7"
-mauve = "#cba6f7"
-red = "#f38ba8"
-maroon = "#eba0ac"
-peach = "#fab387"
-yellow = "#f9e2af"
-green = "#a6e3a1"
-teal = "#94e2d5"
-sky = "#89dceb"
-sapphire = "#74c7ec"
-blue = "#89b4fa"
-lavender = "#b4befe"
-text = "#cdd6f4"
-subtext1 = "#bac2de"
-subtext0 = "#a6adc8"
-overlay2 = "#9399b2"
-overlay1 = "#7f849c"
-overlay0 = "#6c7086"
-surface2 = "#585b70"
-surface1 = "#45475a"
-surface0 = "#313244"
-base = "#1e1e2e"
-mantle = "#181825"
-crust = "#11111b"
-
-[lua]
-detect_folders = []
-symbol = " "
-
-[git_metrics]
+# You can also replace your username with a neat symbol like   or disable this
+# and use the os module below
+[username]
+show_always = true
+style_user = "bg:#c099ff fg:#2f334d"
+style_root = "bg:#c099ff fg:#2f334d"
+format = '[$user ]($style)'
 disabled = false
 
-[buf]
-symbol = " "
+# An alternative to the username module which displays a symbol that
+# represents the current operating system
+[os]
+style = "bg:#c099ff fg:#2f334d"
+disabled = false                # Disabled by default
+
+[directory]
+style = "bg:#82aaff fg:#2f334d"
+format = "[ $path ]($style)"
+truncation_length = 3
+
+# Here is how you can shorten some long paths by text replacement
+# similar to mapped_locations in Oh My Posh:
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+# Keep in mind that the order matters. For example:
+# "Important Documents" = " 󰈙 "
+# will not be replaced, because "Documents" was already substituted before.
+# So either put "Important Documents" before "Documents" or use the substituted version:
+# "Important 󰈙 " = " 󰈙 "
 
 [c]
 symbol = " "
-
-[conda]
-symbol = " "
-
-[dart]
-symbol = " "
-
-[directory]
-read_only = " 󰌾"
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
 symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol $context ]($style)'
 
 [elixir]
 symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [elm]
 symbol = " "
-
-[fossil_branch]
-symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [git_branch]
-symbol = " "
+symbol = ""
+style = "bg:#c3e88d fg:#2f334d"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#c3e88d fg:#2f334d"
+format = '[$all_status$ahead_behind ]($style)'
 
 [golang]
 symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
-[guix_shell]
-symbol = " "
+[gradle]
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [haskell]
 symbol = " "
-
-[haxe]
-symbol = "⌘ "
-
-[hg_branch]
-symbol = " "
-
-[hostname]
-ssh_symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [java]
 symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [julia]
 symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
-[memory_usage]
-symbol = "󰍛 "
+[kotlin]
+symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
-[meson]
-symbol = "󰔷 "
+[nodejs]
+symbol = ""
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [nim]
 symbol = "󰆥 "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
-[nix_shell]
-symbol = " "
+[rust]
+symbol = ""
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
-[nodejs]
-symbol = " "
+[scala]
+symbol = " "
+style = "bg:#394b70"
+format = '[ $symbol ($version) ]($style)'
 
 [os.symbols]
 Alpaquita = " "
@@ -150,27 +180,3 @@ SUSE = " "
 Ubuntu = " "
 Unknown = " "
 Windows = "󰍲 "
-
-[package]
-symbol = "󰏗 "
-
-[pijul_channel]
-symbol = "🪺 "
-
-[python]
-symbol = " "
-
-[rlang]
-symbol = "󰟔 "
-
-[ruby]
-symbol = " "
-
-[rust]
-symbol = " "
-
-[scala]
-symbol = " "
-
-[spack]
-symbol = "🅢 "

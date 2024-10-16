@@ -29,9 +29,6 @@
 - import_playbook: playbooks/nvim.yml
   tags: [nvim]
 
-- import_playbook: playbooks/wezterm.yml
-  tags: [wezterm]
-
 - import_playbook: playbooks/font-fira-code.yml
   tags: [fira-code]
 

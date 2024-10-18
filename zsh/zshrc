@@ -381,7 +381,7 @@ copyfile() {
 # Meli Configs
 export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*
 export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*
-export GOPROXY=https://proxy.golang.org,https://go.artifacts.furycloud.io,direct
+export GOPROXY=https://proxy.golang.org,direct,https://go.artifacts.furycloud.io
 export GONOPROXY=github.com/mercadolibre/*,github.com/melisource/*
  
 # Services CLI

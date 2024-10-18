@@ -20,7 +20,7 @@ return {
       },
     },
   },
-  { "nvim-neotest/neotest-plenary" },
+  { "nvim-neotest/neotest-plenary" }, -- TODO: Check if this import is necessary
   {
     "nvim-neotest/neotest",
     opts = { adapters = { "neotest-plenary" } },

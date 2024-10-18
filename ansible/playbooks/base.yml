@@ -206,15 +206,15 @@
     # lua
     # Lua programming language.
     ###########################
-    - name: MacOS => install lua@latest
+    - name: MacOS => install lua
       when: ansible_distribution == 'MacOSX'
       community.general.homebrew:
         name: lua
 
-    - name: Ubuntu => install lua@latest
+    - name: Ubuntu => install lua
       when: ansible_distribution == 'Ubuntu'
       apt:
-        name: lua
+        name: lua5.4
         state: latest
       become: true
 

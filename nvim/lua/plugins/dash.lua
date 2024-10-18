@@ -1,7 +1,7 @@
 return {
   {
     "nvimdev/dashboard-nvim",
-    lazy = false, -- As https://github.com/nvimdev/dashboard-nvim/pull/450, dashboard-nvim shouldn't be lazy-loaded to properly handle stdin.
+    lazy = false,
     opts = function()
       local logo = [[
             ██╗  ██╗██╗   ██╗██████╗  █████╗ ██╗██╗   ██╗ █████╗           Z
@@ -17,8 +17,6 @@ return {
       local opts = {
         theme = "doom",
         hide = {
-          -- this is taken care of by lualine
-          -- enabling this messes up the actual laststatus setting after loading a file
           statusline = false,
         },
         config = {
@@ -49,7 +47,6 @@ return {
         button.key_format = "  %s"
       end
 
-      -- open dashboard after closing lazy
       if vim.o.filetype == "lazy" then
         vim.api.nvim_create_autocmd("WinClosed", {
           pattern = tostring(vim.api.nvim_get_current_win()),

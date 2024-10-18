@@ -207,10 +207,10 @@ autoload -U compinit compdef && compinit
 #############################
 
 # # User configuration
-# export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/hpaiva/.vimpkg/bin:${GOPATH}/bin:/Users/hpaiva/.cargo/bin
-# export GOPATH='/Users/hpaiva/go'
-# export PATH=/opt/homebrew/bin:$PATH
-# # export MANPATH="/usr/local/man:$MANPATH"
+export PATH=/opt/homebrew/bin:$PATH
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+export PATH="$PATH:$GOBIN"
 export OP_BIOMETRIC_UNLOCK_ENABLED=true
 
 # History
@@ -280,6 +280,8 @@ export EDITOR="$VISUAL"
 alias la=tree
 alias cat=bat
 alias cl='clear'
+alias asdfshell="asdf shell $1 && asdf reshim"
+alias usego="asdf shell golang $1 && asdf reshim"
 
 # Tmux commands
 alias tmux-restore='tmux attach || { (while ! tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; do sleep 0.2; done)& tmux ; }'

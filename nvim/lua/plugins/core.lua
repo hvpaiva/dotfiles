@@ -2,7 +2,7 @@ return {
   -- 🧶 Automatically save your changes in NeoVim
   {
     "okuuva/auto-save.nvim",
-    enabled = false,
+    enabled = false, --  TODO: I'm experiencing some performance issues.
     keys = {
       { "<leader>n", ":ASToggle<CR>", desc = "Toggle auto-save" },
     },
@@ -69,6 +69,8 @@ return {
     opts = {},
   },
 
+  -- TODO: Validate conflicts with other tools.
+  --
   -- Multiple cursors plugin for vim/neovim
   --  {
   --    "mg979/vim-visual-multi",

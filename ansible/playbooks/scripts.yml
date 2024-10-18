@@ -7,14 +7,13 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
-        mode: 0755
+        mode: "0755"
       loop:
         - "{{ ansible_env.HOME }}/.scripts"
 
     - name: Link bin scripts
-      file:
+      ansible.builtin.file:
         src: "{{ ansible_env.PWD }}/../../scripts"
         dest: "{{ ansible_env.HOME }}/.scripts"
         state: link
         force: true
-

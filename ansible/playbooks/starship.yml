@@ -8,13 +8,15 @@
       ansible.builtin.file:
         path: "/usr/local/bin"
         state: directory
-        mode: 0777
+        mode: "0755"
         recurse: true
       become: true
 
     - name: Install starship
       ansible.builtin.shell:
-        cmd: "curl -sS https://starship.rs/install.sh | sh -s -- -f"
+        cmd: |
+          set -o pipefail
+          curl -sS https://starship.rs/install.sh | sh -s -- -f
       become: true
 
     - name: Link starship.toml

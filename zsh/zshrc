@@ -385,8 +385,8 @@ export GOPROXY=https://proxy.golang.org,direct,https://go.artifacts.furycloud.io
 export GONOPROXY=github.com/mercadolibre/*,github.com/melisource/*
  
 # Services CLI
-# export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin
-# eval "$(_SRVC2_COMPLETE=zsh_source srvc2)"
+export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin
+eval "$(_SRVC2_COMPLETE=zsh_source srvc2)"
 
 test -e "${HOME}/.iterm3_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 

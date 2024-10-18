@@ -35,6 +35,7 @@
 
     - name: Install plugins according to .tool-version
       ansible.builtin.shell: |
+        set -o pipefail
         for plugin in $(cat $HOME/.tool-versions | sed s/' .*$'//); do
           asdf plugin-list | grep $plugin > /dev/null 2>&1
           if [ $? -ne 0 ]; then

@@ -7,6 +7,7 @@ set -g mouse on
 # really you should export VISUAL or EDITOR environment variable, see manual
 set -g status-keys vi
 set -g mode-keys vi
+set -g history-limit 5000
 
 # -- theming -------------------------------------------------------------------
 

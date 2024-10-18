@@ -10,11 +10,17 @@ return {
   },
 
   -- Generic log syntax highlighting and filetype management for Neovim
-  { "fei6409/log-highlight.nvim", event = "BufRead *.log", opts = {} },
+  {
+    "fei6409/log-highlight.nvim",
+    lazy = true,
+    event = "BufRead *.log",
+    opts = {},
+  },
 
   -- Establish good command workflow and quit bad habit
   {
     "m4xshen/hardtime.nvim",
+    lazy = true,
     dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
     opts = {
       disable_mouse = false,
@@ -66,6 +72,7 @@ return {
   -- 🍁 Fun little plugin that can be used as a screensaver and on your dashboard
   {
     "folke/drop.nvim",
+    lazy = true,
     opts = {},
   },
 

@@ -161,14 +161,14 @@
     # yq
     # A portable command-line YAML, JSON, XML, CSV, TOML and properties processor
     ###########################
-    - name: All => install yq
+    - name: Install yq
       ansible.builtin.shell: go install github.com/mikefarah/yq/v4@latest
 
     ###########################
     # sd
     # Intuitive find & replace CLI (sed alternative)
     ###########################
-    - name: All => Install sd
+    - name: Install sd
       community.general.cargo:
         name: sd
         locked: true
@@ -177,7 +177,7 @@
     # fd
     # A simple, fast and user-friendly alternative to 'find'
     ###########################
-    - name: All => Install fd
+    - name: Install fd
       community.general.cargo:
         name: fd-find
         locked: true
@@ -186,7 +186,7 @@
     # bat
     # A cat(1) clone with wings
     ###########################
-    - name: All => Install bat
+    - name: Install bat
       community.general.cargo:
         name: bat
         locked: true
@@ -223,7 +223,7 @@
     # tldr
     # 📚 Collaborative cheatsheets for console commands
     ###########################
-    - name: All => Install tldr
+    - name: Install tldr
       community.general.npm:
         name: tldr
         global: true

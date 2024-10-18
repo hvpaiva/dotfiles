@@ -3,7 +3,7 @@
     "lazyvim.plugins.extras.coding.copilot",
     "lazyvim.plugins.extras.coding.copilot-chat",
     "lazyvim.plugins.extras.coding.mini-comment",
-    "lazyvim.plugins.extra.coding.mini-surround",
+    "lazyvim.plugins.extras.coding.mini-surround",
     "lazyvim.plugins.extras.coding.neogen",
     "lazyvim.plugins.extras.coding.yanky",
     "lazyvim.plugins.extras.dap.core",

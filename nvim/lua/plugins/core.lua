@@ -68,21 +68,4 @@ return {
       })
     end,
   },
-
-  -- 🍁 Fun little plugin that can be used as a screensaver and on your dashboard
-  {
-    "folke/drop.nvim",
-    lazy = true,
-    opts = {},
-  },
-
-  -- TODO: Validate conflicts with other tools.
-  --
-  -- Multiple cursors plugin for vim/neovim
-  --  {
-  --    "mg979/vim-visual-multi",
-  --    branch = "master",
-  --    lazy = false,
-  --    config = function() end,
-  --  },
 }

@@ -1,14 +1,4 @@
 return {
-  -- 🧶 Automatically save your changes in NeoVim
-  {
-    "okuuva/auto-save.nvim",
-    enabled = false, --  TODO: I'm experiencing some performance issues.
-    keys = {
-      { "<leader>n", ":ASToggle<CR>", desc = "Toggle auto-save" },
-    },
-    opts = {},
-  },
-
   -- Generic log syntax highlighting and filetype management for Neovim
   {
     "fei6409/log-highlight.nvim",

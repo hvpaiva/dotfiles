@@ -13,6 +13,7 @@
         declare -a fonts=(
           font-fira-code-nerd-font
           font-hack-nerd-font
+          font-cascadia-mono
         )
 
         for font in "${fonts[@]}"; do

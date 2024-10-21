@@ -9,68 +9,61 @@
 ╚═════╝  ╚═════╝    ╚═╝   ╚═╝     ╚═╝╚══════╝╚══════╝╚══════╝
 ```
 
-<a href="https://github.com/hvpaiva/dotfiles/actions/workflows/tests.yml">
-  <img src="https://github.com/hvpaiva/dotfiles/actions/workflows/tests.yml/badge.svg"
-    alt="build" />
-</a>
-<a href="https://opensource.org/licenses/MIT">
-  <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg"
-    alt="License: MIT" />
-</a>
+[![test](https://github.com/hvpaiva/dotfiles/actions/workflows/tests.yml/badge.svg)](https://github.com/hvpaiva/dotfiles/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![dotfiles](imgs/dotfiles.png)
 ![dashboard](imgs/nvim-dash.png)
 
-All the configuration and scripts needed by myself, proper dotfiles are the
-very heart of an efficient working environment, no more, no less.
+All the configuration and scripts needed for my working environment. Proper dotfiles are at the core of an efficient setup—no more, no less.
 
-All configurations are managed by [Ansible](https://github.com/ansible/ansible),
-it's a little more complex than [GNU Stow](https://www.gnu.org/software/stow/),
-[dotbot](https://github.com/anishathalye/dotbot), but much features rich to
-bootstrap my environment.
+All configurations are managed using [Ansible](https://github.com/ansible/ansible). While it’s a bit more complex than tools like [GNU Stow](https://www.gnu.org/software/stow/) or [dotbot](https://github.com/anishathalye/dotbot), Ansible provides much richer features to bootstrap my environment.
 
-Please NOTE that this project isn't a distro, it's intended for my personal
-usage, and perhaps some inspiration, _not complete duplication_. If you see
-something weird or wrong please raise an issue instead.
+> **Important:**  
+> This project is not intended to be a fully-fledged Linux distribution or for direct duplication. It is highly personalized for my own use and may only serve as inspiration for others. If you find anything odd or incorrect, feel free to open an issue.
+
+## Note
+
+Even though the configuration is set up to work on Linux, I have never actually used it in practice. The setup was created but hasn't been tested or deployed in a real-world working environment yet.
 
 ## Setup
 
-Cloning Dotfiles
+Cloning Dotfiles:
 
 ```sh
 git clone git@github.com:hvpaiva/dotfiles.git
 ```
 
-Navigate to the project directory and run the `setup.sh` playbook.
+Navigate to the project directory and run the `setup.sh` playbook:
 
 ```sh
 cd dotfiles && ./setup.sh
 ```
 
-> [!NOTE]
-> To run the configuration, the sudo password is required. This will only be requested the first time, after which it will be securely stored on your machine.
-> Make sure to remove it if the machine is not a secure environment.
+> **Note:**  
+> You will be prompted for your `sudo` password the first time you run the configuration. After this, it will be securely stored.  
+> If you're using a shared or unsecured machine, make sure to remove sensitive information.
 
 ## Manifest
 
-- Terminals:
+- **Terminals**:
   - [kitty](https://sw.kovidgoyal.net/kitty/)
   - [tmux](https://github.com/tmux/tmux)
-- Shell:
+- **Shell**:
   - [zsh](https://www.zsh.org/)
   - [zinit](https://github.com/zdharma-continuum/zinit)
   - [starship](https://github.com/starship/starship)
-- Editor:
+- **Editor**:
   - [neovim](https://github.com/neovim/neovim)
-- Theme:
+- **Theme**:
   - [TokyoNight](https://github.com/folke/tokyonight.nvim)
-- Font:
-  - Fira Code _from Nerd Fonts_
-- Browser:
+- **Font**:
+  - Fira Code (Nerd Fonts version)
+- **Browser**:
   - [nnn](https://github.com/jarun/nnn)
-- Version Manager:
+- **Version Manager**:
   - [asdf](https://github.com/asdf-vm/asdf)
-- Others:
+- **Others**:
   - lazygit
   - gitui
   - bat
@@ -79,14 +72,13 @@ cd dotfiles && ./setup.sh
 
 ## Contributing
 
-Issues and Pull Requests are greatly appreciated. If you've never contributed to an open source project before
-I'm more than happy to walk you through how to create a pull request.
+Issues and Pull Requests are greatly appreciated. If you’re new to contributing to open-source projects, I’d be happy to help you get started.
 
-You can start by [opening an issue](https://github.com/hvpaiva/dotfiles/issues/new) describing the problem that you're looking to resolve and we'll go from there.
+You can begin by [opening an issue](https://github.com/hvpaiva/dotfiles/issues/new) describing the problem you're trying to solve, and we'll take it from there.
 
 ## License
 
-This project is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php) © Highlander Paiva.
+This project is licensed under the [MIT License](https://opensource.org/licenses/mit-license.php) © Highlander Paiva.
 
 ## Acknowledgement
 

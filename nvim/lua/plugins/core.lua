@@ -33,7 +33,11 @@ return {
   {
     "Dronakurl/usage-tracker.nvim",
     config = function()
-      require("usage-tracker").setup({})
+      require("usage-tracker").setup({
+        json_file = vim.fn.stdpath("data") .. "/usage-tracker.json",
+        keep_eventlog_days = 365,
+        cleanup_freq_days = 356,
+      })
     end,
   },
 
@@ -57,5 +61,12 @@ return {
         ignore_filetypes = { "NvimTree", "TelescopePrompt" },
       })
     end,
+  },
+  -- Neorg is a note-taking plugin for Neovim
+  {
+    "nvim-neorg/neorg",
+    lazy = false,
+    version = "*",
+    config = true,
   },
 }

@@ -38,5 +38,7 @@ hooks.location=~/.config/task/hooks
 #include solarized-dark-256.theme
 #include solarized-light-256.theme
 #include no-color.theme
+#include bubblegum-256.theme
 
 news.version=3.1.0
+_forcecolor=on

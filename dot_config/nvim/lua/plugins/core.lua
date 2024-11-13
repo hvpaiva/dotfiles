@@ -9,12 +9,17 @@ return {
   -- Establish good command workflow and quit bad habit
   {
     "m4xshen/hardtime.nvim",
+    dependencies = { "MunifTanjim/nui.nvim", "nvim-lua/plenary.nvim" },
     opts = {
       disable_mouse = false,
     },
+    command = "Hardtime",
+    event = "BufEnter",
     keys = {
-      { "j", 'v:count || mode(1)[0:1] == "no" ? "j" : "gj"' },
-      { "k", 'v:count || mode(1)[0:1] == "no" ? "k" : "gk"' },
+      { "n", "j", "<cmd>Hardtime<CR>", desc = "Hardtime" },
+      { "n", "k", "<cmd>Hardtime<CR>", desc = "Hardtime" },
+      { "n", "gj", "<cmd>Hardtime<CR>", desc = "Hardtime" },
+      { "n", "gk", "<cmd>Hardtime<CR>", desc = "Hardtime" },
     },
   },
   -- NeoVim plugin with which you can track the time you spent on files, projects, repos, filetypes

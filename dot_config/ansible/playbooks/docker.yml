@@ -1,0 +1,28 @@
+---
+- name: Configure docker
+  hosts: localhost
+
+  tasks:
+    ###########################
+    # colima
+    ###########################
+    - name: MacOS => install colima
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: colima
+
+    ###########################
+    # docker server
+    ###########################
+    - name: MacOS => install docker server
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew_cask:
+        name: docker
+
+    ###########################
+    # docker compose
+    ###########################
+    - name: MacOS => install docker compose
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: docker-compose

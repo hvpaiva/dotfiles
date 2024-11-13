@@ -1,0 +1,38 @@
+---
+- name: Configure Fury
+  hosts: localhost
+
+  # FuryCLI is designed to run only on macOS, as this is the environment I work in.
+  # Additionally, it requires a connection to the Meli VPN to function properly.
+  # If you're not connected to the Meli VPN, this script will not work.
+  # However, you can safely ignore this requirement by simply not using the --meli flag.
+
+  vars:
+    fury_home: "{{ ansible_env.HOME }}/.fury"
+
+  tasks:
+    - name: Ensure base directories
+      when: ansible_distribution == 'MacOSX'
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ ansible_env.HOME }}/.fury"
+        - "{{ ansible_env.HOME }}/.fury/fury_venv"
+
+    - name: Create a virtual env to isolate fury configs
+      when: ansible_distribution == 'MacOSX'
+      ansible.builtin.command: python -m venv {{ fury_home }}/fury_venv
+
+    - name: Load installed venv
+      when: ansible_distribution == 'MacOSX'
+      ansible.builtin.shell: |
+        source {{ fury_home }}/fury_venv/bin/activate
+
+    - name: Install Furycli
+      when: ansible_distribution == 'MacOSX'
+      ansible.builtin.shell: |
+          furycli_version=$(curl https://web.furycloud.io/api/proxy/furycli_metrics/furycli/stable)
+          python -m pip install -i https://pypi.artifacts.furycloud.io/ \
+            "furycli==${furycli_version}" --no-warn-script-location --no-cache-dir

@@ -1,0 +1,43 @@
+---
+- name: Configure tmux
+  hosts: localhost
+
+  vars:
+    tmux_home: "{{ ansible_env.HOME }}/.config/tmux"
+
+  tasks:
+    - name: MacOS => install tmux
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: tmux
+
+    - name: Ubuntu => install tmux
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: tmux
+        state: latest
+      become: true
+
+    - name: Link tmux
+      file:
+        src: "{{ ansible_env.PWD }}/../../tmux"
+        dest: "{{ tmux_home }}"
+        state: link
+        force: true
+
+    - name: Clone tmux-plugins/tpm
+      ansible.builtin.git:
+        repo: https://github.com/tmux-plugins/tpm.git
+        dest: "{{ tmux_home }}/plugins/tpm"
+        clone: true
+        update: true
+        force: true
+        depth: 1
+
+    - name: Link color mode
+      file:
+        src: "{{ ansible_env.PWD }}/../../.color_mode"
+        dest: "{{ ansible_env.HOME }}/.config/.color_mode"
+        state: link
+        force: true
+

@@ -1,0 +1,5 @@
+[[database]]
+Name = 'Control Plane :: Local'
+Provider = 'mysql'
+DBName = 'test'
+URL = 'mysql://root:1234@localhost:3307/test'

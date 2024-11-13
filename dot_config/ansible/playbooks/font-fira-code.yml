@@ -1,0 +1,16 @@
+---
+- name: Configure font fira code
+  hosts: localhost
+
+  tasks:
+    - name: MacOS => install font fira code
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: font-fira-code
+
+    - name: Ubuntu => install font fira code
+      when: ansible_distribution == 'Ubuntu'
+      apt:
+        name: fonts-firacode
+        state: latest
+      become: true

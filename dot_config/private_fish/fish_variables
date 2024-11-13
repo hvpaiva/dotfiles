@@ -1,0 +1,41 @@
+# This file contains fish universal variable definitions.
+# VERSION: 3.0
+SETUVAR TO_DIR:/Users/hpaiva/\x2etofish
+SETUVAR __fish_initialized:3400
+SETUVAR _fisher_joehillen_2F_ev_2D_fish_files:\x7e/\x2econfig/fish/functions/ev\x2efish\x1e\x7e/\x2econfig/fish/completions/ev\x2efish
+SETUVAR _fisher_joehillen_2F_to_2D_fish_files:\x7e/\x2econfig/fish/functions/to\x2efish\x1e\x7e/\x2econfig/fish/conf\x2ed/to\x2efish\x1e\x7e/\x2econfig/fish/completions/to\x2efish
+SETUVAR _fisher_jorgebucaran_2F_fisher_files:\x7e/\x2econfig/fish/functions/fisher\x2efish\x1e\x7e/\x2econfig/fish/completions/fisher\x2efish
+SETUVAR _fisher_jorgebucaran_2F_replay_2E_fish_files:\x7e/\x2econfig/fish/functions/replay\x2efish\x1e\x7e/\x2econfig/fish/completions/replay\x2efish
+SETUVAR _fisher_laughedelic_2F_fish__logo_files:\x7e/\x2econfig/fish/functions/fish_logo\x2efish\x1e\x7e/\x2econfig/fish/completions/fish_logo\x2efish
+SETUVAR _fisher_patrickf1_2F_fzf_2E_fish_files:\x7e/\x2econfig/fish/functions/_fzf_configure_bindings_help\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_extract_var_info\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_preview_changed_file\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_preview_file\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_report_diff_type\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_report_file_type\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_directory\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_git_log\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_git_status\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_history\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_processes\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_search_variables\x2efish\x1e\x7e/\x2econfig/fish/functions/_fzf_wrapper\x2efish\x1e\x7e/\x2econfig/fish/functions/fzf_configure_bindings\x2efish\x1e\x7e/\x2econfig/fish/conf\x2ed/fzf\x2efish\x1e\x7e/\x2econfig/fish/completions/fzf_configure_bindings\x2efish
+SETUVAR _fisher_plugins:jorgebucaran/fisher\x1elaughedelic/fish_logo\x1ejoehillen/to\x2dfish\x1epatrickf1/fzf\x2efish\x1ejorgebucaran/replay\x2efish\x1ejoehillen/ev\x2dfish
+SETUVAR _fisher_upgraded_to_4_4:\x1d
+SETUVAR fish_color_autosuggestion:gray
+SETUVAR fish_color_cancel:\x2dr
+SETUVAR fish_color_command:blue
+SETUVAR fish_color_comment:gray
+SETUVAR fish_color_cwd:green
+SETUVAR fish_color_cwd_root:red
+SETUVAR fish_color_end:green
+SETUVAR fish_color_error:red
+SETUVAR fish_color_escape:brcyan
+SETUVAR fish_color_history_current:\x2d\x2dbold
+SETUVAR fish_color_host:normal
+SETUVAR fish_color_host_remote:yellow
+SETUVAR fish_color_normal:black
+SETUVAR fish_color_operator:brcyan
+SETUVAR fish_color_param:cyan
+SETUVAR fish_color_quote:yellow
+SETUVAR fish_color_redirection:cyan\x1e\x2d\x2dbold
+SETUVAR fish_color_search_match:bryellow\x1e\x2d\x2dbackground\x3dbrblack
+SETUVAR fish_color_selection:white\x1e\x2d\x2dbold\x1e\x2d\x2dbackground\x3dbrblack
+SETUVAR fish_color_status:red
+SETUVAR fish_color_user:brgreen
+SETUVAR fish_color_valid_path:\x2d\x2dunderline
+SETUVAR fish_key_bindings:fish_default_key_bindings
+SETUVAR fish_pager_color_completion:blue\x1e\x2d\x2dbold
+SETUVAR fish_pager_color_description:yellow\x1e\x2di
+SETUVAR fish_pager_color_prefix:normal\x1e\x2d\x2dbold\x1e\x2d\x2dunderline
+SETUVAR fish_pager_color_progress:brwhite\x1e\x2d\x2dbackground\x3dcyan
+SETUVAR fish_pager_color_selected_background:\x2dr
+SETUVAR --export fish_user_paths:/usr/bin\x1e/Users/hpaiva/\x2easdf/installs/gradle/8\x2e10\x2e2/bin\x1e/Users/hpaiva/\x2easdf/installs/gradle/8\x2e10\x2e2\x1e/Users/hpaiva/\x2easdf/installs/golang/1\x2e23\x2e2/packages/bin\x1e/Users/hpaiva/\x2easdf/installs/perl/5\x2e40\x2e0/bin\x1e/Users/hpaiva/\x2easdf/installs/rust/1\x2e81\x2e0/bin\x1e/Users/hpaiva/\x2easdf/installs/python/3\x2e11\x2e5/bin\x1e/Users/hpaiva/\x2escripts/bin\x1e/Users/hpaiva/\x2elocal/bin\x1e/Users/hpaiva/\x2efury/fury_venv/bin\x1e/Users/hpaiva/\x2esrvc_cli/venv/bin\x1e/Users/hpaiva/\x2elocal/share/nvim/mason/bin\x1e/Users/hpaiva/\x2ecargo/bin\x1e/opt/homebrew/sbin

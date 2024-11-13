@@ -1,0 +1,53 @@
+---
+- name: Configure nvim
+  hosts: localhost
+
+  tasks:
+    - name: MacOS => install neovim
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: neovim
+
+    - name: Link nvim config
+      file:
+        src: "{{ ansible_env.PWD }}/../../nvim"
+        dest: "{{ ansible_env.HOME }}/.config/nvim"
+        state: link
+        force: true
+
+
+    ## The config bellow is to allow kotlin development with detekt plugin
+
+    - name: Fetch Maven metadata to get the latest version
+      uri:
+        url: "https://repo1.maven.org/maven2/io/gitlab/arturbosch/detekt/detekt-formatting/maven-metadata.xml"
+        return_content: yes
+      register: metadata
+    
+    - name: Parse latest version from Maven metadata
+      community.general.xml:
+        xmlstring: "{{ metadata.content }}"
+        xpath: "/metadata/versioning/latest"
+      register: parsed_version
+
+    - name: Set the latest version
+      set_fact:
+        latest_version: "{{ parsed_version.xmlstring | regex_search('(?<=<latest>)(.*?)(?=</latest>)') }}"
+    
+    - name: Ensure the plugin directory exists
+      file:
+        path: "{{ ansible_env.HOME }}/.config/plugins/java"
+        state: directory
+        mode: '0755'
+
+    - name: Download the Detekt formatting plugin
+      get_url:
+        url: "https://repo1.maven.org/maven2/io/gitlab/arturbosch/detekt/detekt-formatting/{{ latest_version }}/detekt-formatting-{{ latest_version }}.jar"
+        dest: "{{ ansible_env.HOME }}/.config/plugins/java/detekt-formatting.jar"
+        mode: '0644'
+          
+    - name: MacOS => install detekt
+      when: ansible_distribution == 'MacOSX'
+      community.general.homebrew:
+        name: detekt
+

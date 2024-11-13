@@ -1,0 +1,14 @@
+ruby 3.3.4
+python 3.11.5
+nodejs 22.9.0 18.12.1
+perl 5.40.0
+maven 3.9.9
+golang 1.23.2 1.21.5 1.22.8
+gradle 8.10.2
+groovy 4.0.23
+java openjdk-17.0.2 openjdk-21.0.2 openjdk-23
+kotlin 1.8.22 2.0.21
+tomcat 10.1.31
+pipx 1.7.1
+pnpm 9.12.2
+fzf 0.55.0

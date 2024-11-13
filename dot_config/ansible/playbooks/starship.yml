@@ -1,0 +1,27 @@
+---
+- name: Configure starship
+  hosts: localhost
+
+  tasks:
+    - name: Create a directory `/usr/local/bin`
+      when: not ansible_check_mode
+      ansible.builtin.file:
+        path: "/usr/local/bin"
+        state: directory
+        mode: "0755"
+        recurse: true
+      become: true
+
+    - name: Install starship
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          curl -sS https://starship.rs/install.sh | sh -s -- -f
+      become: true
+
+    - name: Link starship.toml
+      ansible.builtin.file:
+        src: "{{ ansible_env.PWD }}/../../starship/starship.toml"
+        dest: "{{ ansible_env.HOME }}/.config/starship.toml"
+        state: link
+        force: true

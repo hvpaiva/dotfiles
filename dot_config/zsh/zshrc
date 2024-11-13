@@ -1,0 +1,431 @@
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+#############################
+# Shell Options
+#############################
+
+#== History ==
+#
+# Append history to the history file (no overwriting)
+setopt appendhistory
+# Share history across terminals
+setopt sharehistory
+# Immediately append to the history file, not just when a term is killed
+setopt incappendhistory
+# Remove superfluous blanks from each command line being added to the history
+# list
+setopt histreduceblanks
+# Remove command lines from the history list when the first character on the
+# line is a space, or when one of the expanded aliases contains a leading space
+setopt histignorespace
+# Do not enter command lines into the history list if they are duplicates of the
+# previous event.
+setopt histignorealldups
+# Add a bit more data (timestamp in unix epoch time and elapsed time of the command)
+# setopt extended_history
+
+#== Directory ==
+#
+# Switching directories for lazy people
+setopt autocd
+# See: http://zsh.sourceforge.net/Intro/intro_6.html
+setopt autopushd pushdminus pushdsilent pushdtohome pushdignoredups
+# Don't kill background jobs when I logout
+# setopt nohup
+# See: http://zsh.sourceforge.net/Intro/intro_2.html
+setopt extendedglob
+# Do not require a leading '.' in a filename to be matched explicitly
+# setopt globdots
+
+#== Input/Output ==
+#
+# Automatically use menu completion after the second consecutive request for
+# completion
+setopt automenu
+# If the argument to a cd command (or an implied cd with the AUTO_CD option set)
+# is not a directory, and does not begin with a slash, try to expand the
+# expression as if it were preceded by a '~'
+setopt cdablevars
+# Try to make the completion list smaller (occupying less lines) by printing
+# the matches in columns with different widths
+setopt listpacked
+# Don't show types in completion lists
+setopt nolisttypes
+# If a completion is performed with the cursor within a word, and a full
+# completion is inserted, the cursor is moved to the end of the word
+setopt alwaystoend
+# Not correct the spelling of commands
+setopt nocorrect nocorrectall
+# Disable beep
+setopt nobeep
+# Get rid of "No match found" when running commands
+# https://github.com/robbyrussell/oh-my-zsh/issues/449
+setopt no_nomatch
+# Don't ask for confirmation on rm *
+setopt rmstarsilent
+# Allow comments inside commands
+# setopt interactivecomments
+# Report the status of background jobs immediately, rather than waiting until
+# just before printing a prompt.
+setopt notify
+# Display PID when using jobs
+setopt longlistjobs
+# Perform implicit tees or cats when multiple redirections are attempted
+setopt multios
+# Use vi key bindings in ZSH
+# setopt vi
+
+#############################
+# Zinit Plugin Manager
+#############################
+
+## Added by Zinit's installer
+if [[ ! -f $HOME/.zinit/zinit.zsh ]]; then
+    print -P "%F{33}▓▒░ %F{220}Installing %F{33}DHARMA%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
+    command mkdir -p "$HOME/.zinit" && command chmod g-rwX "$HOME/.zinit"
+    command git clone https://github.com/zdharma-continuum/zinit "$HOME/.zinit" && \
+        print -P "%F{33}▓▒░ %F{34}Installation successful.%f%b" || \
+        print -P "%F{160}▓▒░ The clone has failed.%f%b"
+fi
+
+source "$HOME/.zinit/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+zinit light-mode for \
+    zdharma-continuum/zinit-annex-as-monitor \
+    zdharma-continuum/zinit-annex-bin-gem-node \
+    zdharma-continuum/zinit-annex-patch-dl \
+    zdharma-continuum/zinit-annex-rust
+
+### End of Zinit's installer chunk
+
+# git
+zinit snippet OMZP::git
+zinit snippet OMZP::git-extras
+zinit light k4rthik/git-cal
+
+# nodejs
+zinit snippet OMZP::node
+zinit snippet OMZP::npm
+
+# ruby
+zinit snippet OMZP::ruby
+zinit snippet OMZP::rails
+zinit snippet OMZP::bundler
+zinit snippet OMZP::rake
+zinit snippet OMZP::gem
+
+# docker
+zinit snippet OMZP::docker-compose
+
+# kubernetes
+zinit snippet OMZP::kubectl
+
+# others
+zinit snippet OMZP::history
+zinit snippet OMZP::textmate
+zinit snippet OMZP::lighthouse
+zinit snippet OMZP::fancy-ctrl-z
+zinit snippet OMZP::common-aliases
+
+# zinit ice lucid wait
+# zinit snippet OMZP::sudo
+
+zinit ice lucid wait
+zinit snippet OMZP::fzf
+
+zinit light agkozak/zsh-z
+
+zinit light zsh-users/zsh-history-substring-search
+zinit light zsh-users/zsh-autosuggestions
+zinit light zdharma-continuum/fast-syntax-highlighting
+
+zinit light b4b4r07/zplug-doctor
+zinit light b4b4r07/zplug-cd
+zinit light b4b4r07/zplug-rm
+
+zvm_config() {
+   ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
+
+   # Retrieve default cursor styles
+   local ncur=$(zvm_cursor_style $ZVM_NORMAL_MODE_CURSOR)
+   local icur=$(zvm_cursor_style $ZVM_INSERT_MODE_CURSOR)
+
+   # Append your custom color for your cursor
+   ZVM_INSERT_MODE_CURSOR=$icur'\e\e]12;#c3e88d\a'
+   ZVM_NORMAL_MODE_CURSOR=$ncur'\e\e]12;#82aaff\a'
+   ZVM_VISUAL_MODE_CURSOR=$ncur'\e\e]12;#c099ff\a'
+   ZVM_VISUAL_LINE_MODE_CURSOR=$ncur'\e\e]12;#c099ff\\a'
+   ZVM_OPPEND_MODE_CURSOR=$ncur'\e\e]12;#82aaff\a'
+}
+
+zinit light jeffreytse/zsh-vi-mode
+
+### End of Zinit's installer chunk
+
+# FZF Theme - Tokyonight
+export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS \
+  --color=bg+:#283457 \
+  --color=bg:#16161e \
+  --color=border:#27a1b9 \
+  --color=fg:#c0caf5 \
+  --color=gutter:#16161e \
+  --color=header:#ff9e64 \
+  --color=hl+:#2ac3de \
+  --color=hl:#2ac3de \
+  --color=info:#545c7e \
+  --color=marker:#ff007c \
+  --color=pointer:#ff007c \
+  --color=prompt:#2ac3de \
+  --color=query:#c0caf5:regular \
+  --color=scrollbar:#27a1b9 \
+  --color=separator:#ff9e64 \
+  --color=spinner:#ff007c \
+"
+
+#############################
+# Common Functions
+#############################
+
+# Functions Autoloading
+
+# Homebrew functionalities like auto-completion
+if type brew &>/dev/null; then
+  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+fi
+
+# Completion
+autoload -U promptinit && promptinit
+autoload -U compinit compdef && compinit
+
+#############################
+# Common Environment Vars
+#############################
+
+# # User configuration
+export PATH=/opt/homebrew/bin:$PATH
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+export PATH="$PATH:$GOBIN"
+export OP_BIOMETRIC_UNLOCK_ENABLED=true
+
+# History
+export HISTFILE=$HOME/.zsh_history
+export HISTSIZE=100000
+export SAVEHIST=100000
+#export WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
+
+# You may need to manually set your language environment
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+
+# ssh
+# export SSH_KEY_PATH="~/.ssh/rsa_id"
+
+# unified XDG_DATA_HOME and XDG_CONFIG_HOME
+export XDG_DATA_HOME=${XDG_DATA_HOME:="$HOME/.local/share"}
+export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
+
+# asdf-vm
+source $HOME/.asdf/asdf.sh
+fpath=(${ASDF_DIR}/completions $fpath)
+
+# snap bin for ubuntu
+if [ -d "/snap/bin" ]; then
+  export PATH="$PATH:/snap/bin"
+fi
+
+# fzf bin
+export FZF_BASE="$(asdf where fzf)"
+
+# python bin
+export PATH="$PATH:$(asdf where python)/bin"
+
+# golang bin
+export PATH="$PATH:$(asdf where golang)/packages/bin"
+export PATH=$PATH:/usr/local/go/bin
+
+# rust bin
+export PATH="$PATH:$(asdf where rust)/bin"
+
+# perl bin
+export PATH="$PATH:$(asdf where perl)/bin"
+
+# Others
+export PATH="$PATH:$HOME/.local/bin"
+
+# java home
+export JAVA_HOME="$(asdf where java)"
+
+# pnpm
+export PNPM_HOME="$XDG_DATA_HOME/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Set default editor
+export VISUAL="$(command -v nvim)"
+export EDITOR="$VISUAL"
+
+#############################
+# Personal Alias
+#############################
+
+# Set personal aliases
+alias la=tree
+alias cat=bat
+alias cl='clear'
+alias asdfshell="asdf shell $1 && asdf reshim"
+alias usego="asdf shell golang $1 && asdf reshim"
+
+# Tmux commands
+alias tmux-restore='tmux attach || { (while ! tmux run-shell ~/.tmux/plugins/tmux-resurrect/scripts/restore.sh; do sleep 0.2; done)& tmux ; }'
+alias mux=tmuxinator
+
+# Git
+alias gc="git commit -m"
+alias gca="git commit -a -m"
+alias gp="git push origin HEAD"
+alias gpu="git pull origin"
+alias gst="git status"
+alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
+alias gdiff="git diff"
+alias gco="git checkout"
+alias gb='git branch'
+alias gba='git branch -a'
+alias gadd='git add'
+alias ga='git add -p'
+alias gcoall='git checkout -- .'
+alias gr='git remote'
+alias gre='git reset'
+
+# Docker
+alias dco="docker compose"
+alias dps="docker ps"
+alias dpa="docker ps -a"
+alias dl="docker ps -l -q"
+alias dx="docker exec -it"
+
+# Dirs
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias ......="cd ../../../../.."
+
+# VIM
+alias v="/opt/homebrew/bin/nvim"
+alias vim="/opt/homebrew/bin/nvim"
+
+# Nmap
+alias nm="nmap -sC -sV -oN nmap"
+
+# K8S
+export KUBECONFIG=~/.kube/config
+alias k="kubectl"
+alias ka="kubectl apply -f"
+alias kg="kubectl get"
+alias kd="kubectl describe"
+alias kdel="kubectl delete"
+alias kl="kubectl logs"
+alias kgpo="kubectl get pod"
+alias kgd="kubectl get deployments"
+alias kc="kubectx"
+alias kns="kubens"
+alias kl="kubectl logs -f"
+alias ke="kubectl exec -it"
+alias kcns='kubectl config set-context --current --namespace'
+alias podname=''
+
+# HTTP requests with xh!
+alias http="xh"
+
+# Eza
+export EZA_CONFIG_DIR="$HOME/.config/eza"
+alias l="eza -l --icons --git -a"
+alias lt="eza --tree --level=2 --long --icons --git"
+alias ltree="eza --tree --level=2  --icons --git"
+
+#############################
+# Others
+#############################
+
+# Personal Scripts
+export PATH="$HOME/.scripts/bin:$PATH"
+
+# Functions
+fgt() {
+  export TIGER_TOKEN="Bearer $(fury get-token | grep 'Bearer' | awk '{print $2}')"
+  
+  echo $TIGER_TOKEN | pbcopy
+  
+  echo "TIGER_TOKEN set and copied to clipboard."
+}
+
+copyfile() {
+  # Check if the file exists
+  if [[ -f "$1" ]]; then
+    # Copy the file content to the clipboard (using pbcopy on Mac, xclip or xsel on Linux)
+    cat "$1" | pbcopy
+
+    echo "Content of $1 copied to the clipboard."
+  else
+    echo "File $1 not found."
+  fi
+}
+
+# Meli Configs
+export GOPRIVATE=github.com/mercadolibre/*,github.com/melisource/*
+export GONOSUMDB=github.com/mercadolibre/*,github.com/melisource/*
+export GOPROXY=https://proxy.golang.org,direct,https://go.artifacts.furycloud.io
+export GONOPROXY=github.com/mercadolibre/*,github.com/melisource/*
+ 
+# Services CLI
+export PATH=$PATH:/Users/hpaiva/.srvc_cli/venv/bin
+eval "$(_SRVC2_COMPLETE=zsh_source srvc2)"
+
+test -e "${HOME}/.iterm3_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+eval $(thefuck --alias)
+eval "$(zoxide init zsh)"
+eval "$(atuin init zsh)"
+eval "$(starship init zsh)"
+eval "$(direnv hook zsh)"
+eval "$(z init zsh)"
+eval "$(op completion zsh)"; compdef _op op
+
+# kubectl auto completion
+if command -v kubectl &>/dev/null; then
+  source <(kubectl completion zsh)
+fi
+
+# Clean filesystem user watches
+function fs-watcher-clean() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sudo sysctl -w kern.maxfiles=524288
+        sudo sysctl -w kern.maxfilesperproc=524288
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        sudo sysctl -n -w fs.inotify.max_queued_events=524288
+        sudo sysctl -n -w fs.inotify.max_user_instances=512
+        sudo sysctl -n -w fs.inotify.max_user_watches=524288
+    fi
+}
+
+# Tmux Start
+if command -v tmux &> /dev/null; then
+  if [[ -z "$TMUX" ]]; then
+    tmux attach-session -t default || tmux new-session -s default
+  fi
+fi
+
+# Added by furycli:
+export PATH="$HOME/.fury/fury_venv/bin:$PATH" # Added by furycli
+
+fortune | cowsay -r | lolcat --seed 0 --spread 1.0
+
+# Everything else will be loaded by zshenv (autoload) as this file is loaded in a non-interactive session

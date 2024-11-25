@@ -44,6 +44,7 @@ else if [ "$macOS_Theme" = dark ]
 end
 
 # Paths
+fish_add_path /opt/homebrew/bin
 fish_add_path /opt/homebrew/bin/brew
 fish_add_path /opt/homebrew/sbin
 fish_add_path "$HOME/.cargo/bin"

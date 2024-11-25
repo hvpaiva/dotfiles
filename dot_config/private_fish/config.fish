@@ -77,5 +77,6 @@ fish_add_path (asdf where python)/bin
 fish_add_path (asdf where perl)/bin
 fish_add_path (asdf where golang)/packages/bin
 
+eval "$(/opt/homebrew/bin/brew shellenv)"
 
 colorscript random

@@ -1,0 +1,44 @@
+theme = "tokyonight_storm"
+
+[editor]
+line-number = "relative"
+cursorline = true
+bufferline = "multiple"
+mouse = false
+color-modes = true
+end-of-line-diagnostics = "hint"
+popup-border = "all"
+
+[editor.cursor-shape]
+insert = "bar"
+
+[editor.indent-guides]
+render = true
+
+[editor.inline-diagnostics]
+cursor-line = "hint"
+
+[editor.lsp]
+display-inlay-hints = true
+
+[keys.normal]
+C-k = ["extend_to_line_bounds", "delete_selection", "move_line_up", "paste_before"]
+C-j = ["extend_to_line_bounds", "delete_selection", "paste_after"]
+C-y = [
+  ':sh rm -f /tmp/unique-file',
+  ':insert-output yazi %{buffer_name} --chooser-file=/tmp/unique-file',
+  ':insert-output echo "\x1b[?1049h\x1b[?2004h" > /dev/tty',
+  ':open %sh{cat /tmp/unique-file}',
+  ':redraw',
+]
+
+[keys.normal."backspace"]
+r = ":sh cargo run"
+t = ":sh cargo test"
+s = [":w", ":config-reload"]
+c = ":config-open"
+
+[keys.insert]
+"A-x" = "normal_mode"
+j = { k = "normal_mode" }
+

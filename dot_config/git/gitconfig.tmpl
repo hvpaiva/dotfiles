@@ -1,0 +1,87 @@
+[user]
+	name = hvpaiva
+  email = highlander.paiva@mercadolivre.com
+  signingkey = {{ onepasswordRead "op://Private/gitconfig-meli/signing-key" }}
+[credential]
+	helper = store
+[core]
+	quotepath = false
+	excludesfile = ~/.gitignore
+	ignorecase = false
+	pager = delta
+	hooksPath = {{ .chezmoi.homeDir }}/.config/git/hooks/
+[github]
+	user = contact@hvpaiva.dev
+[push]
+	default = current
+	autoSetupRemote = true
+[pull]
+	rebase = false
+	ff = yes
+[merge]
+	ff = no
+	conflictstyle = diff3
+[init]
+	defaultBranch = main
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	features = line-numbers decorations side-by-side
+	navigate = true    # use n and N to move between diff sections
+  light = false      # set to true if you're in a terminal w/ a light background color (e.g. the default macOS terminal)
+  side-by-side = true
+  line-numbers = true
+  syntax-theme = Enki-Tokyo-Night
+  minus-style                   = syntax "#37222c"
+  minus-non-emph-style          = syntax "#37222c"
+  minus-emph-style              = syntax "#713137"
+  minus-empty-line-marker-style = syntax "#37222c"
+  line-numbers-minus-style      = "#914c54"
+  plus-style                    = syntax "#20303b"
+  plus-non-emph-style           = syntax "#20303b"
+  plus-emph-style               = syntax "#2c5a66"
+  plus-empty-line-marker-style  = syntax "#20303b"
+  line-numbers-plus-style       = "#449dab"
+  line-numbers-zero-style       = "#3b4261"
+[alias]
+  st = status -sb
+  co = checkout
+  c = commit --short
+  ci = commit --short
+  p = push
+  l = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --decorate --date=short --color --decorate
+[color]
+  ui = true
+[diff]
+	colorMoved = default
+	tool = nvimdiff
+[delta "line-numbers"]
+	line-numbers = true
+	line-numbers-left-format = "{nm:>4}"
+	line-numbers-right-format = "{np:>4}│"
+	hunk-header-decoration-style = grey box
+[delta "decorations"]
+	commit-decoration-style = yellow
+	file-style = bold yellow
+	file-decoration-style = grey ul
+[rerere]
+	enabled = 1
+[filter "lfs"]
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
+[pull]
+  rebase = true
+[push]
+  default = upstream
+[init]
+  defaultBranch = main
+[commit]
+  gpgsign = false
+[credential]
+  helper = cache
+[rebase]
+  autoStash = true
+[gpg]
+  program = /opt/homebrew/bin/gpg

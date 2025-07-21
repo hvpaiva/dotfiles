@@ -1,0 +1,16 @@
+font-family = Pragmasevka Nerd Font
+font-style = default
+font-style-bold = default
+font-style-italic = default
+font-style-bold-italic = default
+font-size = 17
+adjust-underline-position = 4
+background-opacity = 0.9
+theme = tokyonight-storm
+scrollback-limit = 10000000
+shell-integration = fish
+macos-titlebar-style = hidden
+window-padding-x = 10
+window-padding-y = 8
+macos-option-as-alt = right
+initial-command = "/opt/homebrew/bin/zellij a -c home && nu"

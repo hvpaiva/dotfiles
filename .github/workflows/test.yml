@@ -20,16 +20,21 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
 
-      - name: Setup chezmoi config
+      - name: Setup chezmoi
         run: |
           mkdir -p ~/.config/chezmoi
-          cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
+          cat > ~/.config/chezmoi/chezmoi.toml <<'TOML'
           [data]
             profile = "desktop"
             purpose = "both"
             git_email = "test@example.com"
-          EOF
-          "$HOME/.local/bin/chezmoi" init --source="$PWD"
+          TOML
+          # Strip leading whitespace from heredoc
+          sed -i 's/^          //' ~/.config/chezmoi/chezmoi.toml
+          echo "--- chezmoi.toml ---"
+          cat ~/.config/chezmoi/chezmoi.toml
+          # Point chezmoi source to this checkout
+          ln -sfn "$PWD" ~/.local/share/chezmoi
 
       - name: Structure tests
         run: |
@@ -82,7 +87,7 @@ jobs:
       - name: Template syntax
         run: |
           echo "--- Unclosed template actions ---"
-          for tmpl in $(find . -name '*.tmpl' -type f); do
+          for tmpl in $(find . -name '*.tmpl' -not -path './.git/*' -type f); do
             unclosed=$(grep -cP '\{\{[^}]*$' "$tmpl" || true)
             if [ "$unclosed" -ne 0 ]; then
               echo "FAIL: $tmpl has unclosed {{ }}"
@@ -152,9 +157,9 @@ jobs:
           CHEZMOI="$HOME/.local/bin/chezmoi"
 
           echo "--- Managed files ---"
-          count=$($CHEZMOI managed 2>/dev/null | wc -l)
+          count=$($CHEZMOI managed 2>&1 | grep -v 'warning' | wc -l)
           echo "  Managed: $count files"
-          [ "$count" -gt 100 ] || { echo "FAIL: too few managed files"; exit 1; }
+          [ "$count" -gt 100 ] || { echo "FAIL: too few managed files ($count)"; exit 1; }
 
           echo "--- Template rendering ---"
           $CHEZMOI cat ~/.config/git/config 2>/dev/null | grep -q 'test@example.com'

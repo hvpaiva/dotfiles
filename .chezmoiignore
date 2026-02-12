@@ -1,0 +1,64 @@
+# Apps that manage their own config / contain secrets / are ephemeral
+1Password
+Bitwarden
+BraveSoftware
+Cursor
+Pinta
+Signal
+Typora
+alacritty
+brave-flags.conf.bak
+cargo-aoc
+chromium
+config
+dconf
+fcitx5
+fontconfig/.uuid
+google-chrome*
+gtk-*
+ibus
+kitty
+menus
+microsoft-edge*
+nautilus
+op
+pnpm
+pulse
+qalculate
+rclone
+retroarch
+task
+unity3d
+vivaldi*
+wally
+.keymapp
+windows
+xournalpp
+yay
+
+# Omarchy bulk (keep only current/ symlinks)
+omarchy/branding
+omarchy/hooks
+omarchy/themes
+
+# Backup files
+**/*.bak
+**/*.bak.*
+
+# Spotify user data (machine-specific)
+spotify/Users
+
+# Runtime state files (machine-specific, regenerated automatically)
+fish/fish_variables
+
+# Package snapshot (legacy, replaced by packages/*.txt)
+pkg-snapshot
+
+# Profile-specific ignores
+{{ if ne .profile "desktop" }}
+packages/desktop.txt
+packages/gaming.txt
+{{ end }}
+{{ if and (ne .purpose "work") (ne .purpose "both") }}
+packages/work.txt
+{{ end }}

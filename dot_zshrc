@@ -1,0 +1,101 @@
+# Set the GPG_TTY to be the same as the TTY, either via the env var
+# or via the tty command.
+if [ -n "$TTY" ]; then
+  export GPG_TTY=$(tty)
+else
+  export GPG_TTY="$TTY"
+fi
+
+PATH="$HOME/.go/bin:$PATH"
+PATH="$HOME/go/bin:$PATH"
+PATH="$HOME/.local/bin:$PATH"
+
+export EDITOR=nvim
+
+# Set the directory we want to store zinit and plugins
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+
+# Download Zinit, if it's not there yet
+if [ ! -d "$ZINIT_HOME" ]; then
+   mkdir -p "$(dirname $ZINIT_HOME)"
+   git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+fi
+
+# Source/Load zinit
+source "${ZINIT_HOME}/zinit.zsh"
+
+# Add in zsh plugins
+zinit light zsh-users/zsh-syntax-highlighting
+zinit light zsh-users/zsh-completions
+zinit light zsh-users/zsh-autosuggestions
+zinit light Aloxaf/fzf-tab
+zinit light jeffreytse/zsh-vi-mode
+
+# Add in snippets
+zinit snippet OMZP::git
+zinit snippet OMZP::sudo
+zinit snippet OMZP::archlinux
+zinit snippet OMZP::aws
+zinit snippet OMZP::kubectl
+zinit snippet OMZP::kubectx
+zinit snippet OMZP::command-not-found
+
+# Load completions
+zmodload zsh/complist
+autoload -Uz compinit && compinit
+
+zinit cdreplay -q
+
+# Prompt
+eval "$(oh-my-posh init zsh --config $HOME/.config/ohmyposh/zen.toml)"
+
+# Keybindings
+bindkey -e
+bindkey '^[[A' history-search-backward
+bindkey '^p' history-search-backward
+bindkey '^[[B' history-search-forward
+bindkey '^n' history-search-forward
+bindkey '^[w' kill-region
+
+zle_highlight+=(paste:none)
+
+# History
+HISTSIZE=5000
+HISTFILE=~/.local/share/zsh/history
+SAVEHIST=$HISTSIZE
+setopt appendhistory
+setopt sharehistory
+setopt hist_ignore_space
+setopt hist_ignore_all_dups
+setopt hist_save_no_dups
+setopt hist_ignore_dups
+setopt hist_find_no_dups
+
+# Completion styling
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' menu no
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+zstyle ':fzf-tab:*' fzf-flags --ansi --color=fg:#d8dee9,fg+:#eceff4,bg:#3b4252,bg+:#3b4252 --color=hl:#81a1c1,hl+:#88c0d0,info:#ebcb8b,marker:#a3be8b --color=prompt:#bf6069,spinner:#b48dac,pointer:#b48dac,header:#a3be8b --color=border:#4c566a,label:#d8dee9,query:#d9d9d9 --border="rounded" --border-label="" --preview-window="border-rounded" --prompt="❯ " --marker="*" --pointer="◆" --separator="─" --scrollbar="" --info="right"
+zstyle -d ':completion:*' format
+zstyle ':completion:*:descriptions' format '[%d]'
+
+# Aliases
+alias ls='ls --color'
+alias tree='tree -C'
+alias vim='nvim'
+alias c='clear'
+
+# Shell integrations
+eval "$(fzf --zsh)"
+export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
+  --color=fg:#d8dee9,fg+:#eceff4,bg:#3b4252,bg+:#3b4252
+  --color=hl:#81a1c1,hl+:#88c0d0,info:#ebcb8b,marker:#a3be8b
+  --color=prompt:#bf6069,spinner:#b48dac,pointer:#b48dac,header:#a3be8b
+  --color=border:#4c566a,label:#d8dee9,query:#d9d9d9
+  --border="rounded" --border-label="" --preview-window="border-rounded" --prompt="❯ "
+  --marker="*" --pointer="◆" --separator="─" --scrollbar=""
+  --info="right" --ansi'
+
+eval "$(zoxide init --cmd cd zsh)"

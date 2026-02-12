@@ -1,0 +1,186 @@
+# Core system packages — always installed
+# Format: PACKAGE ORIGIN
+
+# Base system
+base pacman
+base-devel pacman
+linux pacman
+linux-firmware pacman
+linux-headers pacman
+amd-ucode pacman
+efibootmgr pacman
+btrfs-progs pacman
+snapper pacman
+limine pacman
+limine-mkinitcpio-hook pacman
+limine-snapper-sync pacman
+plymouth pacman
+zram-generator pacman
+sddm pacman
+fwupd pacman
+
+# Wayland / Hyprland
+hyprland pacman
+hyprland-guiutils pacman
+hypridle pacman
+hyprlock pacman
+hyprpicker pacman
+hyprsunset pacman
+egl-wayland pacman
+qt5-wayland pacman
+qt6-wayland pacman
+xdg-desktop-portal-gtk pacman
+xdg-desktop-portal-hyprland pacman
+xdg-terminal-exec pacman
+uwsm pacman
+swaybg pacman
+wayfreeze pacman
+grim pacman
+slurp pacman
+satty pacman
+wl-clipboard pacman
+
+# Desktop UI
+waybar pacman
+mako pacman
+walker pacman
+omarchy-walker pacman
+swayosd pacman
+elephant pacman
+elephant-bluetooth pacman
+elephant-calc pacman
+elephant-clipboard pacman
+elephant-desktopapplications pacman
+elephant-files pacman
+elephant-menus pacman
+elephant-providerlist pacman
+elephant-runner pacman
+elephant-symbols pacman
+elephant-todo pacman
+elephant-unicode pacman
+elephant-websearch pacman
+polkit-gnome pacman
+gnome-keyring pacman
+gnome-themes-extra pacman
+kvantum-qt5 pacman
+yaru-icon-theme pacman
+woff2-font-awesome pacman
+
+# Shell & terminal
+fish pacman
+fisher pacman
+bash-completion pacman
+zsh pacman
+ghostty pacman
+starship pacman
+tmux pacman
+zoxide pacman
+btop pacman
+fastfetch pacman
+
+# Audio
+pipewire pacman
+pipewire-alsa pacman
+pipewire-jack pacman
+pipewire-pulse pacman
+gst-plugin-pipewire pacman
+libpulse pacman
+wireplumber pacman
+wiremix pacman
+pamixer pacman
+playerctl pacman
+
+# Network
+iwd pacman
+tailscale pacman
+nss-mdns pacman
+wireless-regdb pacman
+openbsd-netcat pacman
+ufw pacman
+ufw-docker pacman
+bind pacman
+freerdp pacman
+
+# Printing
+cups pacman
+cups-browsed pacman
+cups-filters pacman
+cups-pdf pacman
+system-config-printer pacman
+
+# Core CLI tools
+bat pacman
+eza pacman
+fd pacman
+fzf pacman
+ripgrep pacman
+sd pacman
+dust pacman
+choose pacman
+jq pacman
+less pacman
+tree pacman
+tldr pacman
+unzip pacman
+wget pacman
+whois pacman
+expac pacman
+inxi pacman
+inetutils pacman
+plocate pacman
+man-db pacman
+gum pacman
+xmlstarlet pacman
+
+# Fonts
+fontconfig pacman
+noto-fonts pacman
+noto-fonts-cjk pacman
+noto-fonts-emoji pacman
+noto-fonts-extra pacman
+ttf-cascadia-mono-nerd pacman
+ttf-ia-writer pacman
+ttf-jetbrains-mono-nerd pacman
+ttf-meslo-nerd pacman
+
+# Filesystem / device
+fprintd pacman
+brightnessctl pacman
+power-profiles-daemon pacman
+exfatprogs pacman
+gvfs-mtp pacman
+gvfs-nfs pacman
+gvfs-smb pacman
+impala pacman
+bluetui pacman
+
+# Input methods
+fcitx5 pacman
+fcitx5-gtk pacman
+fcitx5-qt pacman
+
+# Images / media
+imagemagick pacman
+ffmpegthumbnailer pacman
+imv pacman
+sushi pacman
+gpu-screen-recorder pacman
+
+# Misc core
+aether pacman
+asdcontrol pacman
+omarchy-keyring pacman
+omarchy-chromium pacman
+tzupdate pacman
+python-gobject pacman
+python-terminaltexteffects pacman
+libqalculate pacman
+figlet pacman
+lolcat pacman
+tobi-try pacman
+usage pacman
+stow pacman
+webkit2gtk-4.1 pacman
+
+# Package manager
+yay pacman

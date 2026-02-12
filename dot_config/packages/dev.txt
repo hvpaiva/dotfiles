@@ -1,0 +1,43 @@
+# Development tools — always installed
+# Format: PACKAGE ORIGIN
+
+# Version control
+git pacman
+github-cli pacman
+lazygit pacman
+pre-commit pacman
+
+# Editors
+neovim pacman
+omarchy-nvim pacman
+
+# Languages & runtimes
+rust pacman
+clang pacman
+llvm pacman
+gopls pacman
+luarocks pacman
+tree-sitter-cli pacman
+libyaml pacman
+python-poetry-core pacman
+
+# Containers
+docker pacman
+docker-buildx pacman
+docker-compose pacman
+podman pacman
+lazydocker pacman
+
+# Runtime management
+mise pacman
+sesh-bin yay
+
+# Task runner
+task pacman
+
+# Database libs
+mariadb-libs pacman
+postgresql-libs pacman
+
+# Libraries
+libva-nvidia-driver pacman

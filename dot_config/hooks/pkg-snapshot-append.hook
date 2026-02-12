@@ -1,0 +1,10 @@
+[Trigger]
+Type = Package
+Operation = Install
+Target = *
+
+[Action]
+Description = Append newly installed packages to user snapshot
+When = PostTransaction
+NeedsTargets
+Exec = /home/hvpaiva/.config/scripts/pkg-snapshot-update.sh

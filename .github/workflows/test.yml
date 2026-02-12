@@ -1,0 +1,171 @@
+name: Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    name: Validate dotfiles
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Setup chezmoi config
+        run: |
+          mkdir -p ~/.config/chezmoi
+          cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
+          [data]
+            profile = "desktop"
+            purpose = "both"
+            git_email = "test@example.com"
+          EOF
+          "$HOME/.local/bin/chezmoi" init --source="$PWD"
+
+      - name: Structure tests
+        run: |
+          echo "--- Required files ---"
+          test -f .chezmoi.toml.tmpl
+          test -f .chezmoiignore
+          test -f run_once_after_01-install-packages.sh.tmpl
+          test -f run_once_after_02-setup-pacman-hook.sh
+          test -f run_once_after_99-finalize.sh
+          test -d dot_config/packages
+          test -d dot_config/scripts
+          test -d private_dot_ssh
+          echo "--- No run_once_before scripts ---"
+          ! ls run_once_before_* 2>/dev/null | grep -q .
+          echo "PASS: structure"
+
+      - name: Package list integrity
+        run: |
+          PKGDIR=dot_config/packages
+
+          echo "--- All list files exist ---"
+          for f in apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt; do
+            test -f "$PKGDIR/$f" || { echo "FAIL: $f missing"; exit 1; }
+          done
+
+          echo "--- No duplicates ---"
+          dupes=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "FAIL: duplicate packages: $dupes"
+            exit 1
+          fi
+
+          echo "--- Valid format (NAME ORIGIN) ---"
+          bad=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 2')
+          if [ -n "$bad" ]; then
+            echo "FAIL: bad format: $bad"
+            exit 1
+          fi
+
+          echo "--- Valid origins ---"
+          bad_origins=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru"')
+          if [ -n "$bad_origins" ]; then
+            echo "FAIL: invalid origins: $bad_origins"
+            exit 1
+          fi
+
+          total=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
+          echo "PASS: $total packages, no duplicates, valid format"
+
+      - name: Template syntax
+        run: |
+          echo "--- Unclosed template actions ---"
+          for tmpl in $(find . -name '*.tmpl' -type f); do
+            unclosed=$(grep -cP '\{\{[^}]*$' "$tmpl" || true)
+            if [ "$unclosed" -ne 0 ]; then
+              echo "FAIL: $tmpl has unclosed {{ }}"
+              exit 1
+            fi
+          done
+
+          echo "--- Config template has required prompts ---"
+          grep -q 'promptChoiceOnce.*profile' .chezmoi.toml.tmpl
+          grep -q 'promptChoiceOnce.*purpose' .chezmoi.toml.tmpl
+          grep -q 'promptStringOnce.*git_email' .chezmoi.toml.tmpl
+          echo "PASS: templates valid"
+
+      - name: Script syntax (bash -n)
+        run: |
+          for script in dot_config/scripts/executable_*.sh run_once_*.sh; do
+            [ -f "$script" ] || continue
+            bash -n "$script" || { echo "FAIL: $script"; exit 1; }
+            echo "  OK: $script"
+          done
+          for script in run_once_*.sh.tmpl; do
+            [ -f "$script" ] || continue
+            sed '/{{.*}}/d' "$script" > /tmp/stripped.sh
+            bash -n /tmp/stripped.sh || { echo "FAIL: $script (stripped)"; exit 1; }
+            echo "  OK: $script (stripped)"
+          done
+          echo "PASS: all scripts parse"
+
+      - name: Shellcheck
+        run: |
+          for script in dot_config/scripts/executable_*.sh run_once_*.sh; do
+            [ -f "$script" ] || continue
+            shellcheck -S warning "$script" || { echo "FAIL: $script"; exit 1; }
+            echo "  OK: $script"
+          done
+          echo "PASS: shellcheck clean"
+
+      - name: Secret detection
+        run: |
+          echo "--- No private keys ---"
+          if grep -rlE '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' \
+            --include='*.sh' --include='*.tmpl' --include='*.toml' \
+            --include='*.conf' --include='*.yml' --include='*.json' .; then
+            echo "FAIL: private key found"
+            exit 1
+          fi
+
+          echo "--- No AWS keys ---"
+          if grep -rlE 'AKIA[A-Z0-9]{16}' .; then
+            echo "FAIL: AWS key found"
+            exit 1
+          fi
+
+          echo "--- No .env files ---"
+          if find . -name '.env' -o -name '.env.*' | grep -v '.git/' | grep -q .; then
+            echo "FAIL: .env file found"
+            exit 1
+          fi
+
+          echo "--- No SSH private keys ---"
+          test ! -f private_dot_ssh/id_ed25519
+          test ! -f private_dot_ssh/id_rsa
+          echo "PASS: no secrets"
+
+      - name: Chezmoi template rendering
+        run: |
+          CHEZMOI="$HOME/.local/bin/chezmoi"
+
+          echo "--- Managed files ---"
+          count=$($CHEZMOI managed 2>/dev/null | wc -l)
+          echo "  Managed: $count files"
+          [ "$count" -gt 100 ] || { echo "FAIL: too few managed files"; exit 1; }
+
+          echo "--- Template rendering ---"
+          $CHEZMOI cat ~/.config/git/config 2>/dev/null | grep -q 'test@example.com'
+          echo "  OK: git config renders with correct email"
+
+          $CHEZMOI cat ~/.config/hypr/monitors.conf 2>/dev/null | grep -q 'Desktop'
+          echo "  OK: monitors.conf renders for desktop profile"
+
+          $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'desktop.txt'
+          echo "  OK: install script includes desktop packages"
+
+          $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'work.txt'
+          echo "  OK: install script includes work packages"
+          echo "PASS: templates render correctly"

@@ -23,17 +23,11 @@ jobs:
       - name: Setup chezmoi
         run: |
           mkdir -p ~/.config/chezmoi
-          cat > ~/.config/chezmoi/chezmoi.toml <<'TOML'
-          [data]
-            profile = "desktop"
-            purpose = "both"
-            git_email = "test@example.com"
-          TOML
-          # Strip leading whitespace from heredoc
-          sed -i 's/^          //' ~/.config/chezmoi/chezmoi.toml
+          printf '[data]\n  profile = "desktop"\n  purpose = "both"\n  git_email = "test@example.com"\n' > ~/.config/chezmoi/chezmoi.toml
           echo "--- chezmoi.toml ---"
           cat ~/.config/chezmoi/chezmoi.toml
           # Point chezmoi source to this checkout
+          mkdir -p ~/.local/share
           ln -sfn "$PWD" ~/.local/share/chezmoi
 
       - name: Structure tests

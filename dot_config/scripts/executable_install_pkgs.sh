@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2024  # sudo redirects to user-owned log file intentionally
 set -Eeuo pipefail
 
 # install_pkgs.sh — Install packages from categorized list files.

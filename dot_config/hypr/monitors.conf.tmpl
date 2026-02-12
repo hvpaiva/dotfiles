@@ -1,0 +1,13 @@
+# See https://wiki.hyprland.org/Configuring/Monitors/
+# List current monitors and resolutions possible: hyprctl monitors
+# Format: monitor = [port], resolution, position, scale
+
+{{ if eq .profile "desktop" -}}
+# Desktop: optimized for retina-class 2x displays
+env = GDK_SCALE,2
+monitor=,preferred,auto,auto
+{{ else -}}
+# Notebook: built-in display at 2x scale
+env = GDK_SCALE,2
+monitor=eDP-1,preferred,auto,2
+{{ end }}

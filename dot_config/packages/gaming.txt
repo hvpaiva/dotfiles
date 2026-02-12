@@ -1,0 +1,44 @@
+# Gaming packages — RetroArch + cores (profile=desktop)
+# Format: PACKAGE ORIGIN
+
+retroarch pacman
+retroarch-assets-git yay
+retroarch-assets-glui pacman
+retroarch-assets-ozone pacman
+retroarch-assets-xmb pacman
+
+# Libretro cores
+libretro-beetle-pce pacman
+libretro-beetle-pce-fast pacman
+libretro-beetle-psx pacman
+libretro-beetle-psx-hw pacman
+libretro-beetle-supergrafx pacman
+libretro-blastem pacman
+libretro-bsnes pacman
+libretro-bsnes-hd pacman
+libretro-bsnes2014 pacman
+libretro-desmume pacman
+libretro-dolphin pacman
+libretro-fbneo-git yay
+libretro-flycast pacman
+libretro-gambatte pacman
+libretro-genesis-plus-gx pacman
+libretro-kronos pacman
+libretro-mame pacman
+libretro-mame2016 pacman
+libretro-melonds pacman
+libretro-mesen pacman
+libretro-mesen-s pacman
+libretro-mgba pacman
+libretro-mupen64plus-next pacman
+libretro-nestopia pacman
+libretro-overlays pacman
+libretro-parallel-n64 pacman
+libretro-picodrive pacman
+libretro-play pacman
+libretro-ppsspp pacman
+libretro-sameboy pacman
+libretro-scummvm pacman
+libretro-shaders-slang pacman
+libretro-snes9x pacman
+libretro-yabause pacman

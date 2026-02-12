@@ -1,0 +1,33 @@
+# Day-to-day applications — always installed
+# Format: PACKAGE ORIGIN
+
+# Passwords & security
+1password-beta pacman
+1password-cli pacman
+bitwarden pacman
+bitwarden-cli pacman
+
+# Browsers
+zen-browser-bin yay
+alacritty pacman
+
+# Communication
+signal-desktop pacman
+localsend pacman
+
+# Media
+spotify pacman
+mpv pacman
+obs-studio pacman
+kdenlive pacman
+
+# Productivity
+obsidian pacman
+libreoffice-fresh pacman
+evince pacman
+gnome-calculator pacman
+gnome-disk-utility pacman
+nautilus pacman
+pinta pacman
+typora pacman
+xournalpp pacman

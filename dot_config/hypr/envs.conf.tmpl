@@ -1,0 +1,6 @@
+# Extra env variables
+{{ if eq .profile "desktop" -}}
+# Desktop-specific env vars (e.g. NVIDIA)
+{{ else -}}
+# Notebook-specific env vars
+{{ end -}}

@@ -179,12 +179,16 @@ chezmoi update
 chezmoi init --data=false
 ```
 
-## Migrar do repo antigo
+## O que o bootstrap faz
 
-O repositorio anterior (`hvpaiva/config`) era um git direto em `~/.config/` com 2.671 arquivos trackeados, sem `.gitignore`, misturando configs com dados de apps e segredos. Este repositorio substitui aquele com uma abordagem seletiva e segura.
+O single command `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva` executa, em ordem:
 
-Para remover o repo antigo (apos confirmar que tudo funciona):
+1. **Instala chezmoi** em `~/.local/bin/`
+2. **Clona este repo** para `~/.local/share/chezmoi/`
+3. **Pergunta perfil** (desktop/notebook, personal/work/both, email)
+4. **Aplica todos os arquivos** — configs, scripts, SSH, packages lists
+5. **`run_once_after_01`** — instala yay se necessario, depois instala todos os pacotes em batch
+6. **`run_once_after_02`** — instala o hook do pacman em `/etc/pacman.d/hooks/`
+7. **`run_once_after_99`** — define fish como shell, instala runtimes mise, plugins fisher, servicos systemd
 
-```bash
-rm -rf ~/.config/.git
-```
+Resultado: maquina totalmente configurada. Abrir um terminal, logar no Hyprland, pronto.

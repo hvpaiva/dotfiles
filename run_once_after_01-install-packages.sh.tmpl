@@ -1,21 +1,36 @@
 #!/bin/bash
-# chezmoi run_once_before: Install packages based on profile
+# chezmoi run_once_after: Install all packages for this profile.
+# Runs once after chezmoi apply (files are already in place).
 set -euo pipefail
 
 PKGDIR="$HOME/.config/packages"
 SCRIPT="$HOME/.config/scripts/install_pkgs.sh"
 
-# Wait for package lists to exist (chezmoi applies them before running this)
 if [[ ! -d "$PKGDIR" ]]; then
-  echo "Package directory $PKGDIR not found yet, skipping."
-  exit 0
+  echo "ERROR: Package directory $PKGDIR not found."
+  exit 1
 fi
 
 if [[ ! -x "$SCRIPT" ]]; then
-  echo "Install script $SCRIPT not found yet, skipping."
-  exit 0
+  echo "ERROR: Install script $SCRIPT not found or not executable."
+  exit 1
 fi
 
+# Ensure sudo is available and cached
+if ! command -v sudo &>/dev/null; then
+  echo "ERROR: sudo not found. Cannot install packages."
+  exit 1
+fi
+echo "Caching sudo credentials..."
+sudo -v
+
+# Ensure yay is installed (needed for AUR packages)
+if ! command -v yay &>/dev/null; then
+  echo "Installing yay..."
+  sudo pacman -S --noconfirm --needed yay
+fi
+
+# Build the list of package files for this profile
 LISTS=("$PKGDIR/core.txt" "$PKGDIR/dev.txt" "$PKGDIR/apps.txt")
 
 {{ if eq .profile "desktop" -}}
@@ -25,7 +40,11 @@ LISTS+=("$PKGDIR/desktop.txt" "$PKGDIR/gaming.txt")
 LISTS+=("$PKGDIR/work.txt")
 {{ end -}}
 
-echo "Installing packages for profile={{ .profile }} purpose={{ .purpose }}"
+echo ""
+echo "======================================"
+echo " Package Installation"
+echo " profile={{ .profile }}  purpose={{ .purpose }}"
+echo "======================================"
 echo "Lists: ${LISTS[*]}"
 echo ""
 

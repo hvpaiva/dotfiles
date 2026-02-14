@@ -1,109 +1,109 @@
 # dotfiles
 
-Dotfiles para Arch Linux + [Hyprland](https://hyprland.org/) + [Omarchy](https://omarchy.com/), gerenciados com [chezmoi](https://www.chezmoi.io/).
+Dotfiles for Arch Linux + [Hyprland](https://hyprland.org/) + [Omarchy](https://omarchy.com/), managed with [chezmoi](https://www.chezmoi.io/).
 
 ## Bootstrap
 
-Em uma nova maquina com Arch/Omarchy instalado:
+On a fresh machine with Arch/Omarchy installed:
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
 ```
 
-O chezmoi vai:
+chezmoi will:
 
-1. Perguntar o **perfil** da maquina (`desktop` ou `notebook`)
-2. Perguntar o **proposito** (`personal`, `work` ou `both`)
-3. Perguntar o **email para git**
-4. Aplicar todas as configs
-5. Instalar todos os pacotes do perfil selecionado
-6. Configurar o hook do pacman para tracking automatico
-7. Definir fish como shell padrao, ativar mise e servicos systemd
+1. Ask for the machine **profile** (`desktop` or `notebook`)
+2. Ask for the **purpose** (`personal`, `work`, or `both`)
+3. Ask for the **git email**
+4. Apply all configs
+5. Install all packages for the selected profile
+6. Set up the pacman hook for automatic tracking
+7. Set fish as the default shell, activate mise and systemd services
 
-## Estrutura
+## Structure
 
 ```
 ~/.local/share/chezmoi/
-├── .chezmoi.toml.tmpl          # Perguntas de perfil (desktop/notebook, work/personal)
-├── .chezmoiignore              # Exclusoes por perfil
-├── run_once_after_01-*         # Instala pacotes
-├── run_once_after_02-*         # Instala hook do pacman
-├── run_once_after_99-*         # Setup final (shell, mise, systemd)
+├── .chezmoi.toml.tmpl          # Profile prompts (desktop/notebook, work/personal)
+├── .chezmoiignore              # Per-profile exclusions
+├── run_once_after_01-*         # Install packages
+├── run_once_after_02-*         # Install pacman hook
+├── run_once_after_99-*         # Final setup (shell, mise, systemd)
 │
 ├── dot_config/
-│   ├── packages/               # Listas categorizadas (249 pacotes)
-│   ├── hypr/                   # Hyprland (monitors.conf templateado)
+│   ├── packages/               # Categorized lists (249 packages)
+│   ├── hypr/                   # Hyprland (templated monitors.conf)
 │   ├── nvim/                   # Neovim (LazyVim)
-│   ├── git/                    # Git (email templateado)
+│   ├── git/                    # Git (templated email)
 │   ├── fish/ bash/ tmux/       # Shell
 │   ├── ghostty/                # Terminal
 │   ├── waybar/ mako/ walker/   # Desktop UI
 │   ├── scripts/                # install_pkgs.sh, pkg-reconcile.sh, etc.
 │   └── ...                     # btop, eza, lazygit, mise, sesh, etc.
 │
-├── private_dot_ssh/            # SSH config + chave publica
-│                               # (chave privada fica no 1Password)
+├── private_dot_ssh/            # SSH config + public key
+│                               # (private key lives in 1Password)
 └── test/
-    └── run_tests.sh            # Suite de testes automatizados
+    └── run_tests.sh            # Automated test suite
 ```
 
-## Perfis
+## Profiles
 
-O chezmoi usa templates para adaptar configs por maquina:
+chezmoi uses templates to adapt configs per machine:
 
-| Variavel | Opcoes | Afeta |
-|----------|--------|-------|
-| `profile` | `desktop`, `notebook` | monitors.conf, pacotes nvidia/gaming |
-| `purpose` | `personal`, `work`, `both` | pacotes terraform/helm/cursor |
-| `git_email` | qualquer email | git config |
+| Variable | Options | Affects |
+|----------|---------|---------|
+| `profile` | `desktop`, `notebook` | monitors.conf, nvidia/gaming packages |
+| `purpose` | `personal`, `work`, `both` | terraform/helm/cursor packages |
+| `git_email` | any email | git config |
 
-Os valores ficam em `~/.config/chezmoi/chezmoi.toml` (gerado no `chezmoi init`).
+Values are stored in `~/.config/chezmoi/chezmoi.toml` (generated during `chezmoi init`).
 
 ### Monitors
 
-- **desktop**: `monitor=,preferred,auto,auto` (detecta automaticamente)
-- **notebook**: `monitor=eDP-1,preferred,auto,2` (display integrado a 2x)
+- **desktop**: `monitor=,preferred,auto,auto` (auto-detect)
+- **notebook**: `monitor=eDP-1,preferred,auto,2` (built-in display at 2x)
 
-## Gerenciamento de pacotes
+## Package management
 
-### Categorias
+### Categories
 
-Os 249 pacotes estao divididos em 6 listas em `~/.config/packages/`:
+The 249 packages are split into 6 lists under `~/.config/packages/`:
 
-| Arquivo | Quando instala | Exemplos |
-|---------|---------------|----------|
-| `core.txt` | Sempre | base, hyprland, fish, pipewire, fonts |
-| `dev.txt` | Sempre | git, neovim, docker, rust, mise |
-| `apps.txt` | Sempre | 1password, zen-browser, signal, spotify |
+| File | When installed | Examples |
+|------|---------------|----------|
+| `core.txt` | Always | base, hyprland, fish, pipewire, fonts |
+| `dev.txt` | Always | git, neovim, docker, rust, mise |
+| `apps.txt` | Always | 1password, zen-browser, signal, spotify |
 | `desktop.txt` | profile=desktop | nvidia-open-dkms, steam |
 | `work.txt` | purpose=work\|both | terraform, helm, cursor-bin |
-| `gaming.txt` | profile=desktop | retroarch + 33 cores libretro |
+| `gaming.txt` | profile=desktop | retroarch + 33 libretro cores |
 
-Formato: uma linha por pacote, `NOME ORIGEM` (pacman/yay/paru).
+Format: one line per package, `NAME ORIGIN` (pacman/yay/paru).
 
-### Tracking automatico
+### Automatic tracking
 
-Um hook do pacman (`/etc/pacman.d/hooks/pkg-snapshot-append.hook`) detecta novos pacotes instalados e adiciona em `~/.config/packages/uncategorized.txt`. Voce depois move para a categoria certa.
+A pacman hook (`/etc/pacman.d/hooks/pkg-snapshot-append.hook`) detects newly installed packages and appends them to `~/.config/packages/uncategorized.txt`. You then move them to the appropriate category.
 
-### Reconciliacao
+### Reconciliation
 
 ```bash
 ~/.config/scripts/pkg-reconcile.sh
 ```
 
-Mostra pacotes instalados que nao estao em nenhuma lista, e pacotes nas listas que nao estao instalados.
+Shows packages that are installed but not in any list, and packages in the lists that are not installed.
 
-### Instalacao manual
+### Manual installation
 
 ```bash
 ~/.config/scripts/install_pkgs.sh ~/.config/packages/core.txt ~/.config/packages/dev.txt
 ```
 
-Instala em batch por origem (pacman primeiro, depois yay/paru). Se o batch falhar, tenta individualmente e reporta quais falharam.
+Installs in batch by origin (pacman first, then yay/paru). If the batch fails, it retries individually and reports which ones failed.
 
-## Segredos
+## Secrets
 
-Nenhum segredo neste repositorio. A chave SSH privada fica no vault do [1Password](https://1password.com/) e e acessada via SSH agent:
+No secrets in this repository. The private SSH key lives in the [1Password](https://1password.com/) vault and is accessed via the SSH agent:
 
 ```
 # ~/.ssh/config
@@ -111,84 +111,84 @@ Host *
     IdentityAgent ~/.1password/agent.sock
 ```
 
-O token do Advent of Code (`cargo-aoc`) e outros segredos ficam exclusivamente no 1Password.
+The Advent of Code token (`cargo-aoc`) and other secrets are stored exclusively in 1Password.
 
-## Decisoes de design
+## Design decisions
 
-### Por que chezmoi e nao stow/bare git?
+### Why chezmoi instead of stow/bare git?
 
-- **Templates**: configs variam por maquina (monitors, git email, pacotes nvidia)
-- **Scripts de bootstrap**: `run_once_after_*` instalam pacotes e configuram servicos automaticamente
-- **Ignore inteligente**: `.chezmoiignore` suporta templates — ignora `desktop.txt` se profile=notebook
-- **Merge nao-destrutivo**: chezmoi nunca sobrescreve sem mostrar diff primeiro
+- **Templates**: configs vary per machine (monitors, git email, nvidia packages)
+- **Bootstrap scripts**: `run_once_after_*` install packages and configure services automatically
+- **Smart ignore**: `.chezmoiignore` supports templates — ignores `desktop.txt` when profile=notebook
+- **Non-destructive merge**: chezmoi never overwrites without showing a diff first
 
-### Por que listas de pacotes em .txt e nao no script?
+### Why package lists in .txt instead of in the script?
 
-- **Legibilidade**: facil ver/editar o que esta instalado
-- **Reconciliacao**: `pkg-reconcile.sh` compara declarado vs instalado
-- **Hook automatico**: novos pacotes vao para `uncategorized.txt` automaticamente
-- **Perfis**: bootstrap inclui so as listas do perfil selecionado
+- **Readability**: easy to see/edit what is installed
+- **Reconciliation**: `pkg-reconcile.sh` compares declared vs installed
+- **Automatic hook**: new packages go to `uncategorized.txt` automatically
+- **Profiles**: bootstrap only includes the lists for the selected profile
 
-### Por que run_once_after e nao run_once_before?
+### Why run_once_after instead of run_once_before?
 
-Scripts `before` rodam *antes* do chezmoi aplicar os arquivos. Na primeira execucao, os scripts de pacotes e as listas `.txt` ainda nao existem. Por isso usamos `after` — garante que tudo ja foi copiado antes de tentar instalar.
+`before` scripts run *before* chezmoi applies the files. On the first run, the package scripts and `.txt` lists don't exist yet. That's why we use `after` — it ensures everything has been copied before attempting to install.
 
-### Por que nao versionar fish_variables?
+### Why not version fish_variables?
 
-`fish_variables` contem estado de runtime (PATH, variaveis de plugins). Cada maquina gera o seu. Versionar causaria conflitos constantes.
+`fish_variables` contains runtime state (PATH, plugin variables). Each machine generates its own. Versioning it would cause constant conflicts.
 
-### Por que manter lazy-lock.json?
+### Why keep lazy-lock.json?
 
-O lockfile do Lazy.nvim garante versoes reproduziveis dos plugins. Funciona como um `package-lock.json` — ao aplicar em nova maquina, os plugins serao instalados nas mesmas versoes.
+The Lazy.nvim lockfile ensures reproducible plugin versions. It works like a `package-lock.json` — when applying on a new machine, plugins are installed at the same versions.
 
-## Testes
+## Tests
 
 ```bash
 cd ~/.local/share/chezmoi
 ./test/run_tests.sh
 ```
 
-A suite valida:
+The suite validates:
 
-- **Estrutura**: arquivos essenciais existem, nenhum `run_once_before` acidental
-- **Pacotes**: sem duplicatas, formato correto, origens validas, 249+ declarados
-- **Templates**: sintaxe ok, prompts de perfil presentes
-- **Scripts**: `bash -n` em todos, shellcheck se disponivel
-- **Segredos**: nenhum AWS key, private key ou .env no repo
-- **Chezmoi**: >100 arquivos gerenciados, templates renderizam
+- **Structure**: essential files exist, no accidental `run_once_before`
+- **Packages**: no duplicates, correct format, valid origins, 249+ declared
+- **Templates**: syntax ok, profile prompts present
+- **Scripts**: `bash -n` on all, shellcheck if available
+- **Secrets**: no AWS keys, private keys, or .env in the repo
+- **chezmoi**: >100 managed files, templates render correctly
 
-## Uso diario
+## Daily usage
 
 ```bash
-# Editar uma config
+# Edit a config
 chezmoi edit ~/.config/hypr/bindings.conf
 
-# Ver diferenças antes de aplicar
+# See differences before applying
 chezmoi diff
 
-# Aplicar mudancas
+# Apply changes
 chezmoi apply
 
-# Adicionar novo arquivo ao chezmoi
-chezmoi add ~/.config/nova-app/config
+# Add a new file to chezmoi
+chezmoi add ~/.config/new-app/config
 
-# Atualizar de outra maquina
+# Update from another machine
 chezmoi update
 
-# Re-inicializar (mudar perfil)
+# Re-initialize (change profile)
 chezmoi init --data=false
 ```
 
-## O que o bootstrap faz
+## What the bootstrap does
 
-O single command `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva` executa, em ordem:
+The single command `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva` executes, in order:
 
-1. **Instala chezmoi** em `~/.local/bin/`
-2. **Clona este repo** para `~/.local/share/chezmoi/`
-3. **Pergunta perfil** (desktop/notebook, personal/work/both, email)
-4. **Aplica todos os arquivos** — configs, scripts, SSH, packages lists
-5. **`run_once_after_01`** — instala yay se necessario, depois instala todos os pacotes em batch
-6. **`run_once_after_02`** — instala o hook do pacman em `/etc/pacman.d/hooks/`
-7. **`run_once_after_99`** — define fish como shell, instala runtimes mise, plugins fisher, servicos systemd
+1. **Installs chezmoi** to `~/.local/bin/`
+2. **Clones this repo** to `~/.local/share/chezmoi/`
+3. **Asks for profile** (desktop/notebook, personal/work/both, email)
+4. **Applies all files** — configs, scripts, SSH, package lists
+5. **`run_once_after_01`** — installs yay if needed, then installs all packages in batch
+6. **`run_once_after_02`** — installs the pacman hook to `/etc/pacman.d/hooks/`
+7. **`run_once_after_99`** — sets fish as default shell, installs mise runtimes, fisher plugins, systemd services
 
-Resultado: maquina totalmente configurada. Abrir um terminal, logar no Hyprland, pronto.
+Result: fully configured machine. Open a terminal, log into Hyprland, ready to go.

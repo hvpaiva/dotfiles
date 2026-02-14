@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============================================================================
 #  SAFE UPDATE FOR ARCH / OMARCHY + BTRFS + LUKS + LIMINE
-#  Garantido para abortar com segurança se QUALQUER etapa crítica falhar.
+#  Guaranteed to abort safely if ANY critical step fails.
 # ============================================================================
 
 # ------- Pretty printing ----------------------------------------------------

@@ -1,6 +1,6 @@
-{{- $profile := promptChoiceOnce . "profile" "Perfil da máquina" (list "desktop" "notebook") -}}
-{{- $purpose := promptChoiceOnce . "purpose" "Propósito" (list "personal" "work" "both") -}}
-{{- $git_email := promptStringOnce . "git_email" "Email para git" "contact@hvpaiva.dev" -}}
+{{- $profile := promptChoiceOnce . "profile" "Machine profile" (list "desktop" "notebook") -}}
+{{- $purpose := promptChoiceOnce . "purpose" "Purpose" (list "personal" "work" "both") -}}
+{{- $git_email := promptStringOnce . "git_email" "Git email" "contact@hvpaiva.dev" -}}
 
 [data]
   profile = {{ $profile | quote }}

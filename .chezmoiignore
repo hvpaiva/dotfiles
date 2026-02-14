@@ -54,6 +54,9 @@ fish/fish_variables
 # Package snapshot (legacy, replaced by packages/*.txt)
 pkg-snapshot
 
+# Source-only test scripts (only work from chezmoi source dir)
+test/run-tests.sh
+
 # Profile-specific ignores
 {{ if ne .profile "desktop" }}
 packages/desktop.txt

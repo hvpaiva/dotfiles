@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# test/run_tests.sh — Automated validation for chezmoi dotfiles.
-# Run from repo root: ./test/run_tests.sh
+# test/run-tests.sh — Automated validation for chezmoi dotfiles.
+# Run from repo root: ./test/run-tests.sh
 # Requires: bash, chezmoi (optional: shellcheck)
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

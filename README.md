@@ -18,7 +18,7 @@ chezmoi will:
 4. Apply all configs
 5. Install all packages for the selected profile
 6. Set up the pacman hook for automatic tracking
-7. Set fish as the default shell, activate mise and systemd services
+7. Activate mise and systemd services
 
 ## Structure
 
@@ -199,6 +199,6 @@ The single command `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
 4. **Applies all files** — configs, scripts, SSH, package lists
 5. **`run_once_after_01`** — installs yay if needed, then installs all packages in batch
 6. **`run_once_after_02`** — installs the pacman hook to `/etc/pacman.d/hooks/`
-7. **`run_once_after_99`** — sets fish as default shell, installs mise runtimes, fisher plugins, systemd services
+7. **`run_once_after_99`** — ensures bash as default shell, installs mise runtimes, enables systemd services
 
 Result: fully configured machine. Open a terminal, log into Hyprland, ready to go.

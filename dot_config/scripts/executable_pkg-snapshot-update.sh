@@ -2,7 +2,9 @@
 # Append only newly-installed *explicit* package names to uncategorized.txt.
 # Reads package names from stdin (one per line) via a pacman hook with NeedsTargets.
 # Checks ALL category files so already-categorized packages are skipped.
-set -euo pipefail
+# Never exit non-zero — a broken snapshot must never block pacman or other hooks.
+set -uo pipefail
+trap 'exit 0' ERR
 
 TARGET_USER="${SUDO_USER:-$(logname 2>/dev/null || echo root)}"
 USER_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"

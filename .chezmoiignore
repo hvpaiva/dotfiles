@@ -51,7 +51,9 @@ spotify/Users
 # Runtime state files (machine-specific, regenerated automatically)
 fish/fish_variables
 
-# Package snapshot (legacy, replaced by packages/*.txt)
+# Runtime / generated state
+go
+helm
 pkg-snapshot
 
 # Source-only test scripts (only work from chezmoi source dir)

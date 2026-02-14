@@ -43,9 +43,9 @@ return {
       -- local function apply_whichkey_hl()
       --   vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'NONE' })
       --   vim.api.nvim_set_hl(0, 'WhichKeyNormal', { bg = 'NONE' })
-      --   -- Bordas/coerência (opcional):
+      --   -- Borders/consistency (optional):
       --   -- vim.api.nvim_set_hl(0, 'WhichKeyBorder', { fg = '#4C566A', bg = 'NONE' })
-      --   -- Título/separadores (opcional):
+      --   -- Title/separators (optional):
       --   -- vim.api.nvim_set_hl(0, 'WhichKeyTitle', { fg = '#E5E9F0', bg = 'NONE', bold = true })
       --   -- vim.api.nvim_set_hl(0, 'WhichKeySeparator', { fg = '#81A1C1', bg = 'NONE' })
       -- end

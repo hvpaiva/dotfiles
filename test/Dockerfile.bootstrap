@@ -1,0 +1,13 @@
+FROM archlinux:latest
+
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm --needed base-devel git curl sudo && \
+    pacman -Scc --noconfirm
+
+RUN useradd -m -G wheel -s /bin/bash testuser && \
+    echo 'testuser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+USER testuser
+WORKDIR /home/testuser
+
+CMD ["/bin/bash"]

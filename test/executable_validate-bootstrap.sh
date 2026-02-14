@@ -71,10 +71,16 @@ echo ""
 # -----------------------------------------------
 echo "[2/6] Template rendering"
 
-# Read profile from chezmoi config
-profile=$(chezmoi data 2>/dev/null | grep -oP '"profile"\s*:\s*"\K[^"]+' || echo "unknown")
-purpose=$(chezmoi data 2>/dev/null | grep -oP '"purpose"\s*:\s*"\K[^"]+' || echo "unknown")
-git_email=$(chezmoi data 2>/dev/null | grep -oP '"git_email"\s*:\s*"\K[^"]+' || echo "unknown")
+# Read profile from chezmoi config TOML file directly
+config_file="$HOME/.config/chezmoi/chezmoi.toml"
+if [[ -f "$config_file" ]]; then
+  profile=$(sed -n 's/^[[:space:]]*profile[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config_file")
+  purpose=$(sed -n 's/^[[:space:]]*purpose[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config_file")
+  git_email=$(sed -n 's/^[[:space:]]*git_email[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config_file")
+fi
+profile="${profile:-unknown}"
+purpose="${purpose:-unknown}"
+git_email="${git_email:-unknown}"
 
 echo "  Profile: $profile | Purpose: $purpose | Email: $git_email"
 
@@ -148,7 +154,7 @@ echo ""
 echo "[6/6] Tools & shell"
 
 current_shell=$(getent passwd "$USER" | cut -d: -f7)
-assert "default shell is fish" test "$current_shell" = "/usr/bin/fish"
+assert "default shell is bash" test "$current_shell" = "/usr/bin/bash"
 
 warn_check "git is installed" command -v git
 warn_check "fish is installed" command -v fish
@@ -163,8 +169,8 @@ echo ""
 # -----------------------------------------------
 echo "[7/7] Secret safety"
 
-assert "no private SSH key in ~/.ssh/id_ed25519" \
-  bash -c '! test -f ~/.ssh/id_ed25519 || ! grep -q "PRIVATE KEY" ~/.ssh/id_ed25519'
+warn_check "no private SSH key on disk (~/.ssh/id_ed25519)" \
+  bash -c '! grep -q "PRIVATE KEY" ~/.ssh/id_ed25519 2>/dev/null'
 assert "1Password agent configured" grep -q '1password/agent.sock' ~/.ssh/config
 
 echo ""

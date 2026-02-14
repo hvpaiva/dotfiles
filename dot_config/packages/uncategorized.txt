@@ -1,0 +1,3 @@
+shellcheck pacman
+qemu-full pacman
+sesh-bin-debug yay

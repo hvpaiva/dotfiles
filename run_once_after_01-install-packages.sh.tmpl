@@ -26,8 +26,12 @@ sudo -v
 
 # Ensure yay is installed (needed for AUR packages)
 if ! command -v yay &>/dev/null; then
-  echo "Installing yay..."
-  sudo pacman -S --noconfirm --needed yay
+  echo "Installing yay from AUR..."
+  sudo pacman -S --noconfirm --needed git base-devel
+  tmpdir=$(mktemp -d)
+  git clone https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
+  (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
+  rm -rf "$tmpdir"
 fi
 
 # Build the list of package files for this profile

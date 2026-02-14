@@ -8,7 +8,6 @@ Signal
 Typora
 alacritty
 brave-flags.conf.bak
-cargo-aoc
 chromium
 config
 dconf
@@ -47,9 +46,6 @@ omarchy/themes
 
 # Spotify user data (machine-specific)
 spotify/Users
-
-# Fish (no longer used)
-fish
 
 # Runtime / generated state
 go

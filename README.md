@@ -143,6 +143,8 @@ The Lazy.nvim lockfile ensures reproducible plugin versions. It works like a `pa
 
 ## Tests
 
+### Repository validation
+
 ```bash
 cd ~/.local/share/chezmoi
 ./test/run_tests.sh
@@ -156,6 +158,58 @@ The suite validates:
 - **Scripts**: `bash -n` on all, shellcheck if available
 - **Secrets**: no AWS keys, private keys, or .env in the repo
 - **chezmoi**: >100 managed files, templates render correctly
+
+### Bootstrap validation (live machine)
+
+```bash
+~/test/validate-bootstrap.sh
+```
+
+Run this after `chezmoi init --apply` to verify the live machine state: templates rendered, hooks installed, configs in place, tools available.
+
+### Testing on a clean machine
+
+To validate the full bootstrap flow end-to-end, spin up a fresh Arch Linux VM:
+
+1. **Create a VM** (QEMU/KVM, VirtualBox, or cloud):
+   ```bash
+   # QEMU example — download Arch ISO and boot
+   qemu-img create -f qcow2 archtest.qcow2 20G
+   qemu-system-x86_64 -m 4G -smp 2 -enable-kvm \
+     -cdrom archlinux-x86_64.iso -boot d \
+     -drive file=archtest.qcow2,format=qcow2 \
+     -nic user,hostfwd=tcp::2222-:22
+   ```
+
+2. **Install Arch** (or use [archinstall](https://wiki.archlinux.org/title/Archinstall)):
+   ```bash
+   archinstall  # follow prompts, pick a desktop profile or minimal
+   ```
+
+3. **Reboot into the new system**, then run the bootstrap:
+   ```bash
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
+   ```
+
+4. **Validate**:
+   ```bash
+   ~/test/validate-bootstrap.sh
+   ```
+
+**What to look for:**
+- chezmoi prompts appear in English (Machine profile, Purpose, Git email)
+- All configs land in the right places (`~/.config/hypr/`, `~/.config/nvim/`, etc.)
+- Packages install without errors (check `run_once_after_01` output)
+- Pacman hook is active (`ls -l /etc/pacman.d/hooks/pkg-snapshot-append.hook`)
+- `validate-bootstrap.sh` exits with 0 failures
+
+**Quick smoke test without full install** — on any existing Arch machine:
+```bash
+# Dry run: see what chezmoi would apply without changing anything
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init hvpaiva
+chezmoi diff
+chezmoi doctor
+```
 
 ## Daily usage
 

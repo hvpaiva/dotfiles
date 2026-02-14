@@ -67,8 +67,6 @@ yaru-icon-theme pacman
 woff2-font-awesome pacman
 
 # Shell & terminal
-fish pacman
-fisher pacman
 bash-completion pacman
 zsh pacman
 ghostty pacman

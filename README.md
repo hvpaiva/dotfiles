@@ -35,7 +35,7 @@ chezmoi will:
 │   ├── hypr/                   # Hyprland (templated monitors.conf)
 │   ├── nvim/                   # Neovim (LazyVim)
 │   ├── git/                    # Git (templated email)
-│   ├── fish/ bash/ tmux/       # Shell
+│   ├── bash/ tmux/             # Shell
 │   ├── ghostty/                # Terminal
 │   ├── waybar/ mako/ walker/   # Desktop UI
 │   ├── scripts/                # install_pkgs.sh, pkg-reconcile.sh, etc.
@@ -72,7 +72,7 @@ The 249 packages are split into 6 lists under `~/.config/packages/`:
 
 | File | When installed | Examples |
 |------|---------------|----------|
-| `core.txt` | Always | base, hyprland, fish, pipewire, fonts |
+| `core.txt` | Always | base, hyprland, bash-completion, pipewire, fonts |
 | `dev.txt` | Always | git, neovim, docker, rust, mise |
 | `apps.txt` | Always | 1password, zen-browser, signal, spotify |
 | `desktop.txt` | profile=desktop | nvidia-open-dkms, steam |
@@ -133,9 +133,6 @@ The Advent of Code token (`cargo-aoc`) and other secrets are stored exclusively 
 
 `before` scripts run *before* chezmoi applies the files. On the first run, the package scripts and `.txt` lists don't exist yet. That's why we use `after` — it ensures everything has been copied before attempting to install.
 
-### Why not version fish_variables?
-
-`fish_variables` contains runtime state (PATH, plugin variables). Each machine generates its own. Versioning it would cause constant conflicts.
 
 ### Why keep lazy-lock.json?
 

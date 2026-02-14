@@ -48,8 +48,8 @@ omarchy/themes
 # Spotify user data (machine-specific)
 spotify/Users
 
-# Runtime state files (machine-specific, regenerated automatically)
-fish/fish_variables
+# Fish (no longer used)
+fish
 
 # Runtime / generated state
 go

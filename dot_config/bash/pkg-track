@@ -1,0 +1,55 @@
+# Package manager wrappers with automatic tracking.
+# Wraps install commands to append new packages to ~/.config/packages/*.txt
+# similar to the pacman hook for uncategorized.txt.
+
+PKGDIR="$HOME/.config/packages"
+
+_pkg_track() {
+  local file="$1" pkg="$2"
+  [[ -z "$pkg" || "$pkg" == -* ]] && return
+  mkdir -p "$PKGDIR"
+  touch "$PKGDIR/$file"
+  if ! grep -qxF "$pkg" "$PKGDIR/$file" 2>/dev/null; then
+    echo "$pkg" >> "$PKGDIR/$file"
+  fi
+}
+
+# cargo install <crate> → installs and tracks in cargo.txt
+ci() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: ci <crate> [cargo flags...]"
+    return 1
+  fi
+  local pkg="$1"
+  cargo install "$@" && _pkg_track cargo.txt "$pkg"
+}
+
+# npm install -g <pkg> → installs and tracks in npm.txt
+ni() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: ni <package> [npm flags...]"
+    return 1
+  fi
+  local pkg="$1"
+  npm install -g "$@" && _pkg_track npm.txt "$pkg"
+}
+
+# go install <module@version> → installs and tracks in go.txt
+gi() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: gi <module@version>"
+    return 1
+  fi
+  local pkg="$1"
+  go install "$@" && _pkg_track go.txt "$pkg"
+}
+
+# pipx install <pkg> → installs and tracks in pip.txt
+pi() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: pi <package>"
+    return 1
+  fi
+  local pkg="$1"
+  pipx install "$@" && _pkg_track pip.txt "$pkg"
+}

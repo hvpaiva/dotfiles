@@ -1,0 +1,2 @@
+# npm global packages — installed via `npm install -g`
+# One package per line. Auto-tracked by pkg-track wrapper.

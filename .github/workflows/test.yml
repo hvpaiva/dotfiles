@@ -49,29 +49,41 @@ jobs:
         run: |
           PKGDIR=dot_config/packages
 
-          echo "--- All list files exist ---"
-          for f in apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt; do
+          echo "--- Pacman list files exist ---"
+          for f in apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt uncategorized.txt; do
             test -f "$PKGDIR/$f" || { echo "FAIL: $f missing"; exit 1; }
           done
 
-          echo "--- No duplicates ---"
-          dupes=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort | uniq -d)
+          echo "--- Non-pacman list files exist ---"
+          for f in cargo.txt npm.txt go.txt pip.txt; do
+            test -f "$PKGDIR/$f" || { echo "FAIL: $f missing"; exit 1; }
+          done
+
+          echo "--- No duplicates in pacman lists ---"
+          dupes=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort | uniq -d)
           if [ -n "$dupes" ]; then
             echo "FAIL: duplicate packages: $dupes"
             exit 1
           fi
 
-          echo "--- Valid format (NAME ORIGIN) ---"
-          bad=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 2')
+          echo "--- Pacman lists: valid format (NAME ORIGIN) ---"
+          bad=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 2')
           if [ -n "$bad" ]; then
             echo "FAIL: bad format: $bad"
             exit 1
           fi
 
-          echo "--- Valid origins ---"
-          bad_origins=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru"')
+          echo "--- Pacman lists: valid origins ---"
+          bad_origins=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru"')
           if [ -n "$bad_origins" ]; then
             echo "FAIL: invalid origins: $bad_origins"
+            exit 1
+          fi
+
+          echo "--- Non-pacman lists: single-column format ---"
+          bad_other=$(cat "$PKGDIR"/{cargo,npm,go,pip}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 1')
+          if [ -n "$bad_other" ]; then
+            echo "FAIL: bad format in non-pacman list: $bad_other"
             exit 1
           fi
 

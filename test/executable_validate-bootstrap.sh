@@ -135,7 +135,7 @@ echo ""
 # -----------------------------------------------
 echo "[5/6] Key configs"
 
-assert "fish config exists" test -f ~/.config/fish/config.fish
+assert "blesh config exists" test -f ~/.config/blesh/init.sh
 assert "nvim init.lua exists" test -f ~/.config/nvim/init.lua
 assert "hyprland.conf exists" test -f ~/.config/hypr/hyprland.conf
 assert "ghostty config exists" test -d ~/.config/ghostty
@@ -157,10 +157,10 @@ current_shell=$(getent passwd "$USER" | cut -d: -f7)
 assert "default shell is bash" test "$current_shell" = "/usr/bin/bash"
 
 warn_check "git is installed" command -v git
-warn_check "fish is installed" command -v fish
 warn_check "nvim is installed" command -v nvim
 warn_check "mise is installed" command -v mise
 warn_check "docker is installed" command -v docker
+warn_check "ble.sh is installed" test -d ~/.local/share/blesh
 
 echo ""
 

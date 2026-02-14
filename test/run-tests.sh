@@ -74,31 +74,44 @@ echo ""
 # -----------------------------------------------
 echo "[2/7] Package lists"
 
-EXPECTED_LISTS="apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt"
-for f in $EXPECTED_LISTS; do
+# Pacman-managed lists (two-column: NAME ORIGIN)
+PACMAN_LISTS="apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt uncategorized.txt"
+for f in $PACMAN_LISTS; do
   assert "package list $f exists" test -f "$PKGDIR/$f"
 done
 
-# No duplicates across all lists
-dupes=$(cat "$PKGDIR"/*.txt \
+# Non-pacman lists (single-column: just package name)
+OTHER_LISTS="cargo.txt npm.txt go.txt pip.txt"
+for f in $OTHER_LISTS; do
+  assert "package list $f exists" test -f "$PKGDIR/$f"
+done
+
+# No duplicates within pacman lists
+dupes=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk '{print $1}' \
   | sort | uniq -d)
-assert "no duplicate packages across lists" test -z "$dupes"
+assert "no duplicate packages across pacman lists" test -z "$dupes"
 
-# Every line has exactly 2 fields: NAME ORIGIN
-bad_lines=$(cat "$PKGDIR"/*.txt \
+# Pacman lists: every line has exactly 2 fields: NAME ORIGIN
+bad_lines=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk 'NF != 2 {print FILENAME": "$0}')
-assert "all package lines have NAME ORIGIN format" test -z "$bad_lines"
+assert "pacman lists have NAME ORIGIN format" test -z "$bad_lines"
 
-# Valid origins only
-bad_origins=$(cat "$PKGDIR"/*.txt \
+# Pacman lists: valid origins only
+bad_origins=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru" {print $0}')
-assert "all origins are pacman/yay/paru" test -z "$bad_origins"
+assert "pacman origins are pacman/yay/paru" test -z "$bad_origins"
 
-# Count total packages
+# Non-pacman lists: every line has exactly 1 field (package name only)
+bad_other=$(cat "$PKGDIR"/{cargo,npm,go,pip}.txt \
+  | grep -Ev '^\s*(#|$)' \
+  | awk 'NF != 1 {print FILENAME": "$0}')
+assert "non-pacman lists have single-column format" test -z "$bad_other"
+
+# Count total packages across all lists
 total=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
 assert "at least 200 packages declared" test "$total" -ge 200
 

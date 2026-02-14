@@ -1,0 +1,2 @@
+# Python packages — installed via `pipx install`
+# One package per line. Auto-tracked by pkg-track wrapper.

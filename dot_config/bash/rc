@@ -4,4 +4,5 @@ source ~/.config/bash/functions
 source ~/.config/bash/prompt
 source ~/.config/bash/init
 source ~/.config/bash/envs
+source ~/.config/bash/pkg-track
 # [[ $- == *i* ]] && bind -f ~/.config/bash/inputrc

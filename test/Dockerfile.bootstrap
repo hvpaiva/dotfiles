@@ -1,13 +1,17 @@
 FROM archlinux:latest
 
+# Install bootstrap prerequisites (same as a fresh Omarchy install)
 RUN pacman -Syu --noconfirm && \
     pacman -S --noconfirm --needed base-devel git curl sudo && \
     pacman -Scc --noconfirm
 
-RUN useradd -m -G wheel -s /bin/bash testuser && \
-    echo 'testuser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+# Create non-root user with passwordless sudo (mirrors real Omarchy setup)
+RUN useradd -m -G wheel -s /bin/bash user && \
+    echo 'user ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
-USER testuser
-WORKDIR /home/testuser
+USER user
+WORKDIR /home/user
 
+# Drop into a shell — run the bootstrap yourself:
+#   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
 CMD ["/bin/bash"]

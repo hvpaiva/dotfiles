@@ -1,109 +1,122 @@
 # dotfiles
 
-Dotfiles for Arch Linux + [Hyprland](https://hyprland.org/) + [Omarchy](https://omarchy.com/), managed with [chezmoi](https://www.chezmoi.io/).
+Personal dotfiles for Arch Linux + Hyprland + Omarchy, managed with [chezmoi](https://www.chezmoi.io/).
 
-## Bootstrap
+> **Personal project.** Public as inspiration only — not intended to be used by others as-is,
+> no stability guarantees, may break without notice.
 
-On a fresh machine with Arch/Omarchy installed:
+---
+
+## Fresh machine
+
+Requires Arch Linux + Omarchy already installed. Then:
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
 ```
 
-chezmoi will:
+You'll be prompted for:
+- **Profile**: `desktop` (NVIDIA, gaming) or `notebook` (built-in display)
+- **Purpose**: `personal`, `work`, or `both` (adds terraform, helm, cursor)
+- **Git email**
 
-1. Ask for the machine **profile** (`desktop` or `notebook`)
-2. Ask for the **purpose** (`personal`, `work`, or `both`)
-3. Ask for the **git email**
-4. Apply all configs
-5. Install all packages for the selected profile
-6. Set up the pacman hook for automatic tracking
-7. Activate mise and systemd services
+That's it. Packages install, configs apply, shell and services are set up.
 
-## Structure
-
-```
-~/.local/share/chezmoi/
-├── .chezmoi.toml.tmpl          # Profile prompts (desktop/notebook, work/personal)
-├── .chezmoiignore              # Per-profile exclusions
-├── run_once_after_01-*         # Install packages
-├── run_once_after_02-*         # Install pacman hook
-├── run_once_after_99-*         # Final setup (shell, mise, systemd)
-│
-├── dot_config/
-│   ├── packages/               # Categorized lists (249 packages)
-│   ├── hypr/                   # Hyprland (templated monitors.conf)
-│   ├── nvim/                   # Neovim (LazyVim)
-│   ├── git/                    # Git (templated email)
-│   ├── bash/ tmux/             # Shell
-│   ├── ghostty/                # Terminal
-│   ├── waybar/ mako/ walker/   # Desktop UI
-│   ├── scripts/                # install_pkgs.sh, pkg-reconcile.sh, etc.
-│   └── ...                     # btop, eza, lazygit, mise, sesh, etc.
-│
-├── private_dot_ssh/            # SSH config + public key
-│                               # (private key lives in 1Password)
-└── test/
-    └── run-tests.sh            # Automated test suite
-```
+---
 
 ## Profiles
 
-chezmoi uses templates to adapt configs per machine:
+Stored in `~/.config/chezmoi/chezmoi.toml`. To change profile after the fact:
+
+```bash
+chezmoi init --data=false   # re-prompts for all values
+chezmoi apply
+```
+
+What each profile affects:
 
 | Variable | Options | Affects |
 |----------|---------|---------|
-| `profile` | `desktop`, `notebook` | monitors.conf, nvidia/gaming packages |
-| `purpose` | `personal`, `work`, `both` | terraform/helm/cursor packages |
-| `git_email` | any email | git config |
+| `profile` | `desktop`, `notebook` | monitors.conf, NVIDIA packages, gaming packages |
+| `purpose` | `personal`, `work`, `both` | work packages (terraform, helm, cursor-bin) |
+| `git_email` | any email | `~/.config/git/config` |
 
-Values are stored in `~/.config/chezmoi/chezmoi.toml` (generated during `chezmoi init`).
+---
 
-### Monitors
+## Daily usage
 
-- **desktop**: `monitor=,preferred,auto,auto` (auto-detect)
-- **notebook**: `monitor=eDP-1,preferred,auto,2` (built-in display at 2x)
+```bash
+chezmoi edit ~/.config/hypr/bindings.conf  # open config in $EDITOR via chezmoi
+chezmoi diff                                # preview what would change on disk
+chezmoi apply                               # apply source → disk
+chezmoi add ~/.config/new-app/config        # start tracking a new file
+chezmoi re-add ~/.config/some/file          # sync disk changes back to source
+chezmoi update                              # git pull + apply (use on other machines)
+```
 
-## Package management
+To edit directly on disk and sync back to the repo:
 
-### Categories
+```bash
+# Edit normally
+nvim ~/.config/hypr/bindings.conf
 
-The 249 packages are split into 6 lists under `~/.config/packages/`:
+# Sync the change back to chezmoi source
+chezmoi re-add ~/.config/hypr/bindings.conf
 
-| File | When installed | Examples |
-|------|---------------|----------|
-| `core.txt` | Always | base, hyprland, bash-completion, pipewire, fonts |
-| `dev.txt` | Always | git, neovim, docker, rust, mise |
-| `apps.txt` | Always | 1password, zen-browser, signal, spotify |
-| `desktop.txt` | profile=desktop | nvidia-open-dkms, steam |
-| `work.txt` | purpose=work\|both | terraform, helm, cursor-bin |
-| `gaming.txt` | profile=desktop | retroarch + 33 libretro cores |
+# Commit and push
+chezmoi cd
+git add -A && git commit -m "..." && git push
+```
 
-Format: one line per package, `NAME ORIGIN` (pacman/yay/paru).
+---
 
-### Automatic tracking
+## Syncing across machines
 
-A pacman hook (`/etc/pacman.d/hooks/pkg-snapshot-append.hook`) detects newly installed packages and appends them to `~/.config/packages/uncategorized.txt`. You then move them to the appropriate category.
+After changing something on machine A:
 
-### Reconciliation
+```bash
+chezmoi cd
+git add -A && git commit -m "..." && git push
+```
+
+On machine B:
+
+```bash
+chezmoi update   # pulls from git and applies
+```
+
+If a config varies per machine (e.g. monitors), it's a template — each machine
+renders its own version from `chezmoi.toml`. No conflicts.
+
+---
+
+## Packages
+
+Packages are tracked in `~/.config/packages/` as plain text lists (`NAME ORIGIN`).
+
+**New package installed?** The pacman hook appends it automatically to `uncategorized.txt`.
+Move it to the right category file when convenient.
+
+**Check for drift** (installed but not tracked, or tracked but not installed):
 
 ```bash
 ~/.config/scripts/pkg-reconcile.sh
 ```
 
-Shows packages that are installed but not in any list, and packages in the lists that are not installed.
-
-### Manual installation
+**Manually install all packages for this profile:**
 
 ```bash
-~/.config/scripts/install_pkgs.sh ~/.config/packages/core.txt ~/.config/packages/dev.txt
+~/.config/scripts/install_pkgs.sh \
+  ~/.config/packages/core.txt \
+  ~/.config/packages/dev.txt \
+  ~/.config/packages/apps.txt
 ```
 
-Installs in batch by origin (pacman first, then yay/paru). If the batch fails, it retries individually and reports which ones failed.
+---
 
 ## Secrets
 
-No secrets in this repository. The private SSH key lives in the [1Password](https://1password.com/) vault and is accessed via the SSH agent:
+No secrets in this repo. Private SSH key lives in 1Password, accessed via its SSH agent:
 
 ```
 # ~/.ssh/config
@@ -111,91 +124,33 @@ Host *
     IdentityAgent ~/.1password/agent.sock
 ```
 
-The Advent of Code token (`cargo-aoc`) and other secrets are stored exclusively in 1Password.
+The `cargo-aoc` session token and anything else sensitive lives exclusively in 1Password.
+If 1Password isn't running, those files are rendered empty — sign in and re-run `chezmoi apply`.
 
-## Design decisions
+---
 
-### Why chezmoi instead of stow/bare git?
+## Does it work on macOS?
 
-- **Templates**: configs vary per machine (monitors, git email, nvidia packages)
-- **Bootstrap scripts**: `run_once_after_*` install packages and configure services automatically
-- **Smart ignore**: `.chezmoiignore` supports templates — ignores `desktop.txt` when profile=notebook
-- **Non-destructive merge**: chezmoi never overwrites without showing a diff first
+No. The bootstrap scripts use `pacman`/`yay`, configs assume Hyprland/Wayland,
+and services target systemd. macOS would need a separate profile and scripts.
 
-### Why package lists in .txt instead of in the script?
+---
 
-- **Readability**: easy to see/edit what is installed
-- **Reconciliation**: `pkg-reconcile.sh` compares declared vs installed
-- **Automatic hook**: new packages go to `uncategorized.txt` automatically
-- **Profiles**: bootstrap only includes the lists for the selected profile
+## Simulate a fresh machine
 
-### Why run_once_after instead of run_once_before?
-
-`before` scripts run *before* chezmoi applies the files. On the first run, the package scripts and `.txt` lists don't exist yet. That's why we use `after` — it ensures everything has been copied before attempting to install.
-
-
-### Why keep lazy-lock.json?
-
-The Lazy.nvim lockfile ensures reproducible plugin versions. It works like a `package-lock.json` — when applying on a new machine, plugins are installed at the same versions.
-
-## Tests
-
-### Repository validation
+To test the bootstrap without a real machine:
 
 ```bash
-cd ~/.local/share/chezmoi
-./test/run-tests.sh
+# Build a clean Arch Linux container
+docker build -t arch-fresh -f ~/.local/share/chezmoi/test/Dockerfile.bootstrap \
+  ~/.local/share/chezmoi/test/
+
+# Enter it — you're now a fresh machine
+docker run -it --rm arch-fresh
+
+# Inside the container, run the real bootstrap:
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
 ```
 
-The suite validates:
-
-- **Structure**: essential files exist, no accidental `run_once_before`
-- **Packages**: no duplicates, correct format, valid origins, 249+ declared
-- **Templates**: syntax ok, profile prompts present
-- **Scripts**: `bash -n` on all, shellcheck if available
-- **Secrets**: no AWS keys, private keys, or .env in the repo
-- **chezmoi**: >100 managed files, templates render correctly
-
-### Bootstrap validation (live machine)
-
-```bash
-~/test/validate-bootstrap.sh
-```
-
-Run this after `chezmoi init --apply` to verify the live machine state: templates rendered, hooks installed, configs in place, tools available.
-
-## Daily usage
-
-```bash
-# Edit a config
-chezmoi edit ~/.config/hypr/bindings.conf
-
-# See differences before applying
-chezmoi diff
-
-# Apply changes
-chezmoi apply
-
-# Add a new file to chezmoi
-chezmoi add ~/.config/new-app/config
-
-# Update from another machine
-chezmoi update
-
-# Re-initialize (change profile)
-chezmoi init --data=false
-```
-
-## What the bootstrap does
-
-The single command `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva` executes, in order:
-
-1. **Installs chezmoi** to `~/.local/bin/`
-2. **Clones this repo** to `~/.local/share/chezmoi/`
-3. **Asks for profile** (desktop/notebook, personal/work/both, email)
-4. **Applies all files** — configs, scripts, SSH, package lists
-5. **`run_once_after_01`** — installs yay if needed, then installs all packages in batch
-6. **`run_once_after_02`** — installs the pacman hook to `/etc/pacman.d/hooks/`
-7. **`run_once_after_99`** — ensures bash as default shell, installs mise runtimes, enables systemd services
-
-Result: fully configured machine. Open a terminal, log into Hyprland, ready to go.
+Note: `run_once_after` scripts will run. Package installation may be partial
+(AUR/yay needs real mirrors); configs and templates apply fully.

@@ -1,3 +1,4 @@
+{{ if ne .chezmoi.os "darwin" -}}
 #!/bin/bash
 # chezmoi run_once_after: Install pacman hook for automatic package tracking.
 set -euo pipefail
@@ -16,3 +17,4 @@ echo "======================================"
 echo ""
 
 "$HOOK_SCRIPT"
+{{ end -}}

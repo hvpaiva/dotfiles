@@ -129,5 +129,24 @@ If 1Password isn't running, those files render empty — sign in and re-run `che
 
 ## Does it work on macOS?
 
-No. Bootstrap scripts use `pacman`/`yay`, configs assume Hyprland/Wayland,
-services target systemd. macOS would need a separate profile and scripts from scratch.
+Yes — for the terminal environment. The `macos` profile is auto-detected on macOS
+(no prompt needed) and skips all Wayland/systemd/Arch-specific configs.
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
+```
+
+What works on macOS:
+- Shell (bash + ble.sh), fish, starship, tmux
+- Editor (neovim), lazygit, lazydocker, mise, sesh
+- All CLI tools (fzf, ripgrep, fd, bat, eza, zoxide, etc.)
+- Dev tools (git, gh, mise runtimes, cargo, npm, go, pipx)
+- Apps via Homebrew Cask (1Password, Ghostty, Signal, Spotify, Obsidian, Docker)
+
+What is skipped on macOS:
+- Hyprland, Waybar, Mako, Walker and all other Wayland compositing configs
+- systemd user services
+- pacman hook for package tracking
+- Arch/Linux-specific scripts (`pkg-reconcile`, `pkg-snapshot-update`, etc.)
+
+Packages are managed via `~/.config/packages/Brewfile` (and `Brewfile.work` for work purpose).

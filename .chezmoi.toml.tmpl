@@ -1,4 +1,10 @@
-{{- $profile := promptChoiceOnce . "profile" "Machine profile" (list "desktop" "notebook") -}}
+{{- $os := .chezmoi.os -}}
+{{- $profile := "" -}}
+{{- if eq $os "linux" -}}
+{{-   $profile = promptChoiceOnce . "profile" "Machine profile" (list "desktop" "notebook") -}}
+{{- else -}}
+{{-   $profile = "macos" -}}
+{{- end -}}
 {{- $purpose := promptChoiceOnce . "purpose" "Purpose" (list "personal" "work" "both") -}}
 {{- $git_email := promptStringOnce . "git_email" "Git email" "contact@hvpaiva.dev" -}}
 

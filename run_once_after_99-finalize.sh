@@ -11,7 +11,17 @@ echo "======================================"
 echo ""
 
 # Ensure bash is the default shell
-BASH_PATH="/usr/bin/bash"
+if [[ "$(uname)" == "Darwin" ]]; then
+  if [[ -x /opt/homebrew/bin/bash ]]; then
+    BASH_PATH="/opt/homebrew/bin/bash"
+  elif [[ -x /usr/local/bin/bash ]]; then
+    BASH_PATH="/usr/local/bin/bash"
+  else
+    BASH_PATH="/bin/bash"
+  fi
+else
+  BASH_PATH="/usr/bin/bash"
+fi
 if [[ "$SHELL" != "$BASH_PATH" ]]; then
   echo "Setting bash as default shell..."
   chsh -s "$BASH_PATH" || echo "WARN: Could not change shell (run: chsh -s $BASH_PATH)"
@@ -85,8 +95,8 @@ if command -v pipx &>/dev/null && [[ -f "$PKGDIR/pip.txt" ]]; then
   done < "$PKGDIR/pip.txt"
 fi
 
-# Enable systemd user services
-if command -v systemctl &>/dev/null; then
+# Enable systemd user services (Linux only)
+if [[ "$(uname)" != "Darwin" ]] && command -v systemctl &>/dev/null; then
   echo "Enabling user services..."
   systemctl --user daemon-reload || true
   systemctl --user enable --now elephant.service 2>/dev/null || true
@@ -100,4 +110,6 @@ echo ""
 echo "Next steps:"
 echo "  - Run 'exec bash -l' to reload shell with ble.sh"
 echo "  - Run 'nvim' to trigger Lazy plugin install"
-echo "  - Log out/in for full Hyprland session"
+if [[ "$(uname)" != "Darwin" ]]; then
+  echo "  - Log out/in for full Hyprland session"
+fi

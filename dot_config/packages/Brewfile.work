@@ -1,0 +1,4 @@
+brew "terraform"
+brew "tflint"
+brew "helm"
+cask "cursor"

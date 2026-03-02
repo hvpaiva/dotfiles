@@ -5,9 +5,15 @@ HISTSIZE=32768
 HISTFILESIZE="${HISTSIZE}"
 
 # Autocompletion
+{{ if eq .chezmoi.os "darwin" -}}
+if [[ ! -v BASH_COMPLETION_VERSINFO && -f /opt/homebrew/share/bash-completion/bash_completion ]]; then
+  source /opt/homebrew/share/bash-completion/bash_completion
+fi
+{{ else -}}
 if [[ ! -v BASH_COMPLETION_VERSINFO && -f /usr/share/bash-completion/bash_completion ]]; then
   source /usr/share/bash-completion/bash_completion
 fi
+{{ end -}}
 
 # Ensure command hashing is off for mise
 set +h

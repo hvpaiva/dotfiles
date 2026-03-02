@@ -36,7 +36,7 @@ jobs:
           test -f .chezmoi.toml.tmpl
           test -f .chezmoiignore
           test -f run_once_after_01-install-packages.sh.tmpl
-          test -f run_once_after_02-setup-pacman-hook.sh
+          test -f run_once_after_02-setup-pacman-hook.sh.tmpl
           test -f run_once_after_99-finalize.sh
           test -d dot_config/packages
           test -d dot_config/scripts

@@ -19,9 +19,11 @@ if command -v zoxide &> /dev/null; then
   }
 fi
 
+{{ if ne .chezmoi.os "darwin" -}}
 open() {
   xdg-open "$@" >/dev/null 2>&1 &
 }
+{{ end -}}
 
 # Directories
 alias ..='cd ..'

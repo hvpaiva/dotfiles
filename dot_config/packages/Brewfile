@@ -1,0 +1,39 @@
+# Shell & terminal
+brew "fish"
+brew "bash"
+brew "starship"
+brew "tmux"
+
+# CLI tools
+brew "fzf"
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "eza"
+brew "jq"
+brew "yq"
+brew "zoxide"
+brew "wget"
+brew "tree"
+brew "tokei"
+
+# Editor & dev
+brew "neovim"
+brew "git"
+brew "gh"
+brew "lazygit"
+brew "lazydocker"
+brew "mise"
+brew "sesh"
+
+# System
+brew "btop"
+brew "fastfetch"
+
+# Apps
+cask "1password"
+cask "ghostty"
+cask "signal"
+cask "spotify"
+cask "obsidian"
+cask "docker"

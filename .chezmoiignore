@@ -63,3 +63,26 @@ packages/gaming.txt
 {{ if and (ne .purpose "work") (ne .purpose "both") }}
 packages/work.txt
 {{ end }}
+
+# macOS: ignore Wayland/systemd/Arch-only paths
+{{ if eq .profile "macos" -}}
+.config/hypr
+.config/waybar
+.config/mako
+.config/walker
+.config/swayosd
+.config/uwsm
+.config/autostart
+.config/omarchy
+.config/elephant
+.config/environment.d
+.config/systemd
+.config/fontconfig
+.config/mimeapps.list
+.config/xdg-terminals.list
+.config/user-dirs.dirs
+.config/scripts/safe-update.sh
+.config/scripts/install-pkg-snapshot-hook.sh
+.config/scripts/pkg-snapshot-update.sh
+.config/scripts/pkg-reconcile.sh
+{{ end -}}

@@ -3,6 +3,34 @@
 # Runs once after chezmoi apply (files are already in place).
 set -euo pipefail
 
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS: Homebrew
+if ! command -v brew &>/dev/null; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+
+BREWFILE="$HOME/.config/packages/Brewfile"
+[[ -f "$BREWFILE" ]] || { echo "ERROR: $BREWFILE not found"; exit 1; }
+
+LISTS=("$BREWFILE")
+{{ if or (eq .purpose "work") (eq .purpose "both") -}}
+LISTS+=("$HOME/.config/packages/Brewfile.work")
+{{ end -}}
+
+echo ""
+echo "======================================"
+echo " Package Installation (Homebrew)"
+echo " profile={{ .profile }}  purpose={{ .purpose }}"
+echo "======================================"
+echo "Brewfiles: ${LISTS[*]}"
+echo ""
+
+for f in "${LISTS[@]}"; do
+  [[ -f "$f" ]] && brew bundle --file="$f" --no-lock
+done
+
+{{ else -}}
 PKGDIR="$HOME/.config/packages"
 SCRIPT="$HOME/.config/scripts/install_pkgs.sh"
 
@@ -53,3 +81,4 @@ echo "Lists: ${LISTS[*]}"
 echo ""
 
 "$SCRIPT" "${LISTS[@]}"
+{{ end -}}

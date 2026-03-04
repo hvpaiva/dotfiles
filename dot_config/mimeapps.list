@@ -51,6 +51,7 @@ text/x-c=nvim.desktop
 text/x-c++=nvim.desktop
 application/xml=nvim.desktop
 text/xml=nvim.desktop
+inode/directory=org.gnome.Nautilus.desktop
 
 [Added Associations]
 x-scheme-handler/http=zen.desktop;

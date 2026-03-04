@@ -1,3 +1,13 @@
 shellcheck pacman
 qemu-full pacman
 sesh-bin-debug yay
+bolt pacman
+hyprland-preview-share-picker pacman
+dotnet-runtime-9.0 pacman
+opencode pacman
+kernel-modules-hook pacman
+nautilus-python pacman
+chromium pacman
+libretro-fbneo-git-debug yay
+python-openpyxl pacman
+claude-code pacman

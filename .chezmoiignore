@@ -64,6 +64,12 @@ packages/gaming.txt
 packages/work.txt
 {{ end }}
 
+# Linux: ignore macOS-only files
+{{ if ne .profile "macos" -}}
+packages/Brewfile
+packages/Brewfile.work
+{{ end -}}
+
 # macOS: ignore Wayland/systemd/Arch-only paths
 {{ if eq .profile "macos" -}}
 .config/hypr

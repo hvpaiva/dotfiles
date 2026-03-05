@@ -66,8 +66,8 @@ packages/work.txt
 
 # Linux: ignore macOS-only files
 {{ if ne .profile "macos" -}}
-packages/Brewfile
-packages/Brewfile.work
+.config/packages/Brewfile
+.config/packages/Brewfile.work
 {{ end -}}
 
 # macOS: ignore Wayland/systemd/Arch-only paths

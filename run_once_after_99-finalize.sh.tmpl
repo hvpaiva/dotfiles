@@ -106,6 +106,23 @@ if [[ "$(uname)" != "Darwin" ]] && command -v systemctl &>/dev/null; then
 {{- end }}
 fi
 
+{{ if .has_1password -}}
+# Re-apply chezmoi now that tools (op, hyprctl, etc.) are in PATH.
+# This re-evaluates .chezmoi.toml.tmpl (picks up [onepassword] section)
+# and re-renders templates that depend on lookPath.
+# run_once scripts won't re-run — chezmoi tracks them by hash.
+if command -v op &>/dev/null; then
+  echo ""
+  echo "======================================"
+  echo " Re-applying chezmoi (1Password now available)"
+  echo "======================================"
+  echo ""
+  CHEZMOI="$(command -v chezmoi || echo "$HOME/.local/bin/chezmoi")"
+  "$CHEZMOI" init --data=false
+  "$CHEZMOI" apply
+fi
+{{ end -}}
+
 echo ""
 echo "======================================"
 echo " Bootstrap complete!"
@@ -114,6 +131,9 @@ echo ""
 echo "Next steps:"
 echo "  - Run 'exec bash -l' to reload shell with ble.sh"
 echo "  - Run 'nvim' to trigger Lazy plugin install"
+{{ if .has_1password -}}
+echo "  - Run 'op signin' to authenticate 1Password, then 'chezmoi apply' for secrets"
+{{ end -}}
 {{ if eq .chezmoi.os "linux" -}}
 if command -v hyprctl &>/dev/null; then
   echo "  - Log out/in for full Hyprland session"

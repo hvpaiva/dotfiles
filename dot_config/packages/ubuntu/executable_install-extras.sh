@@ -229,23 +229,20 @@ fi
 if command -v hyprpicker &>/dev/null; then
   SKIPPED+=("hyprpicker")
 else
-  if command -v cmake &>/dev/null; then
-    try_install "hyprpicker" bash -c 'set -e
-      sudo apt-get install -y libwayland-dev libpango1.0-dev libcairo2-dev wayland-protocols libxkbcommon-dev 2>/dev/null
-      tmpdir=$(mktemp -d)
-      V=$(curl -sf "https://api.github.com/repos/hyprwm/hyprpicker/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
-      curl -fL "https://github.com/hyprwm/hyprpicker/archive/refs/tags/v${V}.tar.gz" -o "$tmpdir/hyprpicker.tar.gz"
-      tar xzf "$tmpdir/hyprpicker.tar.gz" -C "$tmpdir"
-      cd "$tmpdir/hyprpicker-${V}"
-      cmake -B build
-      cmake --build build -j"$(nproc)"
-      sudo install build/hyprpicker /usr/local/bin/
-      rm -rf "$tmpdir"
-    '
-  else
-    echo "  [hyprpicker] skipped (cmake not available — install cmake first)"
-    SKIPPED+=("hyprpicker")
-  fi
+  try_install "hyprpicker" bash -c 'set -e
+    sudo apt-get install -y cmake pkgconf libwayland-dev wayland-protocols \
+      libxkbcommon-dev libcairo2-dev libpango1.0-dev libjpeg-dev \
+      libhyprutils-dev hyprwayland-scanner hyprland-protocols
+    tmpdir=$(mktemp -d)
+    V=$(curl -sf "https://api.github.com/repos/hyprwm/hyprpicker/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -fL "https://github.com/hyprwm/hyprpicker/archive/refs/tags/v${V}.tar.gz" -o "$tmpdir/hyprpicker.tar.gz"
+    tar xzf "$tmpdir/hyprpicker.tar.gz" -C "$tmpdir"
+    cd "$tmpdir/hyprpicker-${V}"
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local
+    cmake --build build -j"$(nproc)"
+    sudo install build/hyprpicker /usr/local/bin/
+    rm -rf "$tmpdir"
+  '
 fi
 
 # ─── gtk4-layer-shell (not packaged on Ubuntu 24.04, needed by SwayOSD) ──

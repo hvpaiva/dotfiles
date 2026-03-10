@@ -33,14 +33,27 @@ fi
 BLESH_DIR="$HOME/.local/share/blesh"
 if [[ ! -d "$BLESH_DIR" ]]; then
   echo "Installing ble.sh..."
+  # ble.sh needs gawk to build
+  if ! command -v gawk &>/dev/null; then
+    sudo apt-get install -y gawk 2>/dev/null || true
+  fi
   tmpdir=$(mktemp -d)
   git clone --recursive --depth 1 https://github.com/akinomyoga/ble.sh.git "$tmpdir/ble.sh"
-  make -C "$tmpdir/ble.sh" install PREFIX="$HOME/.local" 2>/dev/null || {
+  make -C "$tmpdir/ble.sh" install PREFIX="$HOME/.local" || {
     echo "WARN: ble.sh build failed. Install manually: https://github.com/akinomyoga/ble.sh"
   }
   rm -rf "$tmpdir"
 else
   echo "ble.sh already installed."
+fi
+
+# Install TPM (Tmux Plugin Manager)
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [[ ! -d "$TPM_DIR" ]]; then
+  echo "Installing TPM..."
+  git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
+else
+  echo "TPM already installed."
 fi
 
 # Install mise runtimes

@@ -1,6 +1,6 @@
 #!/bin/bash
 # chezmoi run_once_after: Final setup — shell, runtimes, tools, services.
-set -euo pipefail
+set -uo pipefail
 
 PKGDIR="$HOME/.config/packages/universal"
 
@@ -117,9 +117,13 @@ if command -v op &>/dev/null; then
   echo " Re-applying chezmoi (1Password now available)"
   echo "======================================"
   echo ""
-  CHEZMOI="$(command -v chezmoi || echo "$HOME/.local/bin/chezmoi")"
-  "$CHEZMOI" init --data=false
-  "$CHEZMOI" apply
+  CHEZMOI="$(command -v chezmoi 2>/dev/null || which chezmoi 2>/dev/null || echo "$HOME/bin/chezmoi")"
+  if [[ -x "$CHEZMOI" ]]; then
+    "$CHEZMOI" init --data=false
+    "$CHEZMOI" apply
+  else
+    echo "WARN: chezmoi binary not found. Run 'chezmoi init --data=false && chezmoi apply' manually."
+  fi
 fi
 {{ end -}}
 

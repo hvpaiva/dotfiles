@@ -20,7 +20,7 @@ playerctl
 wlogout
 swaybg
 mako-notifier
-policykit-1-gnome
+hyprpolkitagent
 pamixer
 
 # Session manager

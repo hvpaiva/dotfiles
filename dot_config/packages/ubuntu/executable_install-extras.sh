@@ -248,13 +248,31 @@ else
   fi
 fi
 
-# ─── SwayOSD (needs to be built from source — skip if no cargo) ──────
+# ─── gtk4-layer-shell (not packaged on Ubuntu 24.04, needed by SwayOSD) ──
+if pkg-config --exists gtk4-layer-shell-0 2>/dev/null; then
+  SKIPPED+=("gtk4-layer-shell")
+else
+  try_install "gtk4-layer-shell" bash -c 'set -e
+    sudo apt-get install -y meson ninja-build libwayland-dev wayland-protocols \
+      libgtk-4-dev gobject-introspection libgirepository1.0-dev valac
+    tmpdir=$(mktemp -d)
+    git clone --depth 1 --branch v1.3.0 https://github.com/wmww/gtk4-layer-shell.git "$tmpdir/gtk4-layer-shell"
+    cd "$tmpdir/gtk4-layer-shell"
+    meson setup build --prefix=/usr -Dtests=false -Ddocs=false -Dexamples=false
+    ninja -C build
+    sudo ninja -C build install
+    sudo ldconfig
+    rm -rf "$tmpdir"
+  '
+fi
+
+# ─── SwayOSD (needs gtk4-layer-shell + cargo) ─────────────────────────
 if command -v swayosd-server &>/dev/null; then
   SKIPPED+=("swayosd")
 else
-  if command -v cargo &>/dev/null; then
+  if command -v cargo &>/dev/null && pkg-config --exists gtk4-layer-shell-0 2>/dev/null; then
     try_install "swayosd-server" bash -c 'set -e
-      sudo apt-get install -y libgtk-4-dev libgtk-4-layer-shell-dev libpulse-dev libevdev-dev libudev-dev libdbus-1-dev libinput-dev 2>/dev/null
+      sudo apt-get install -y libgtk-4-dev libpulse-dev libevdev-dev libudev-dev libdbus-1-dev libinput-dev
       tmpdir=$(mktemp -d)
       git clone https://github.com/ErikReider/SwayOSD.git "$tmpdir/swayosd"
       cd "$tmpdir/swayosd"
@@ -264,7 +282,7 @@ else
       rm -rf "$tmpdir"
     '
   else
-    echo "  [swayosd] skipped (cargo not available yet — install Rust first, then re-run)"
+    echo "  [swayosd] skipped (needs cargo + gtk4-layer-shell — retry after installing both)"
     SKIPPED+=("swayosd")
   fi
 fi

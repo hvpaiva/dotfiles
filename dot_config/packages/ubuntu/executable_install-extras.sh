@@ -1,174 +1,223 @@
 #!/usr/bin/env bash
 # Install tools not available via apt on Ubuntu.
 # Each tool is guarded — only installs if not already present.
-set -euo pipefail
+# Does NOT exit on error — collects results and shows overview at the end.
 
-echo "Installing extra tools..."
+echo ""
+echo "======================================"
+echo " Installing extra tools"
+echo "======================================"
+echo ""
 
 mkdir -p "$HOME/.local/bin"
 
+SUCCEEDED=()
+FAILED=()
+SKIPPED=()
+
+try_install() {
+  local name="$1"
+  shift
+  echo "  [$name] installing..."
+  if "$@"; then
+    SUCCEEDED+=("$name")
+    echo "  [$name] OK"
+  else
+    FAILED+=("$name")
+    echo "  [$name] FAILED"
+  fi
+}
+
 # ─── oh-my-posh (prompt) ─────────────────────────────────────────────
-if ! command -v oh-my-posh &>/dev/null; then
-  echo "  Installing oh-my-posh..."
-  curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
+if command -v oh-my-posh &>/dev/null; then
+  SKIPPED+=("oh-my-posh")
+else
+  try_install "oh-my-posh" bash -c 'curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"'
 fi
 
 # ─── Starship (prompt) ───────────────────────────────────────────────
-if ! command -v starship &>/dev/null; then
-  echo "  Installing starship..."
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
+if command -v starship &>/dev/null; then
+  SKIPPED+=("starship")
+else
+  try_install "starship" bash -c 'curl -sS https://starship.rs/install.sh | sh -s -- -y'
 fi
 
 # ─── Ghostty (terminal) ──────────────────────────────────────────────
-if ! command -v ghostty &>/dev/null; then
-  echo "  Installing ghostty..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)" || {
-    echo "  WARN: Ghostty install failed. See https://github.com/mkasberg/ghostty-ubuntu"
-  }
+if command -v ghostty &>/dev/null; then
+  SKIPPED+=("ghostty")
+else
+  try_install "ghostty" bash -c '
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+  '
 fi
 
 # ─── Lazygit ──────────────────────────────────────────────────────────
-if ! command -v lazygit &>/dev/null; then
-  echo "  Installing lazygit..."
-  LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/lazygit.tar.gz \
-    "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-  tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
-  sudo install /tmp/lazygit /usr/local/bin/
-  rm -f /tmp/lazygit /tmp/lazygit.tar.gz
+if command -v lazygit &>/dev/null; then
+  SKIPPED+=("lazygit")
+else
+  try_install "lazygit" bash -c '
+    V=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${V}/lazygit_${V}_Linux_x86_64.tar.gz"
+    tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
+    sudo install /tmp/lazygit /usr/local/bin/
+    rm -f /tmp/lazygit /tmp/lazygit.tar.gz
+  '
 fi
 
 # ─── Lazydocker ───────────────────────────────────────────────────────
-if ! command -v lazydocker &>/dev/null; then
-  echo "  Installing lazydocker..."
-  LAZYDOCKER_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazydocker/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/lazydocker.tar.gz \
-    "https://github.com/jesseduffield/lazydocker/releases/download/v${LAZYDOCKER_VERSION}/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz"
-  tar xf /tmp/lazydocker.tar.gz -C /tmp lazydocker
-  sudo install /tmp/lazydocker /usr/local/bin/
-  rm -f /tmp/lazydocker /tmp/lazydocker.tar.gz
+if command -v lazydocker &>/dev/null; then
+  SKIPPED+=("lazydocker")
+else
+  try_install "lazydocker" bash -c '
+    V=$(curl -s "https://api.github.com/repos/jesseduffield/lazydocker/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/v${V}/lazydocker_${V}_Linux_x86_64.tar.gz"
+    tar xf /tmp/lazydocker.tar.gz -C /tmp lazydocker
+    sudo install /tmp/lazydocker /usr/local/bin/
+    rm -f /tmp/lazydocker /tmp/lazydocker.tar.gz
+  '
 fi
 
 # ─── sesh (tmux session manager) ─────────────────────────────────────
-if ! command -v sesh &>/dev/null; then
-  echo "  Installing sesh..."
-  SESH_VERSION=$(curl -s "https://api.github.com/repos/joshmedeski/sesh/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/sesh.tar.gz \
-    "https://github.com/joshmedeski/sesh/releases/download/v${SESH_VERSION}/sesh_Linux_x86_64.tar.gz"
-  tar xf /tmp/sesh.tar.gz -C /tmp sesh
-  sudo install /tmp/sesh /usr/local/bin/
-  rm -f /tmp/sesh /tmp/sesh.tar.gz
+if command -v sesh &>/dev/null; then
+  SKIPPED+=("sesh")
+else
+  try_install "sesh" bash -c '
+    V=$(curl -s "https://api.github.com/repos/joshmedeski/sesh/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/sesh.tar.gz "https://github.com/joshmedeski/sesh/releases/download/v${V}/sesh_Linux_x86_64.tar.gz"
+    tar xf /tmp/sesh.tar.gz -C /tmp sesh
+    sudo install /tmp/sesh /usr/local/bin/
+    rm -f /tmp/sesh /tmp/sesh.tar.gz
+  '
 fi
 
 # ─── gum (TUI toolkit) ───────────────────────────────────────────────
-if ! command -v gum &>/dev/null; then
-  echo "  Installing gum..."
-  GUM_VERSION=$(curl -s "https://api.github.com/repos/charmbracelet/gum/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/gum.deb \
-    "https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_amd64.deb"
-  sudo dpkg -i /tmp/gum.deb || sudo apt-get install -f -y
-  rm -f /tmp/gum.deb
+if command -v gum &>/dev/null; then
+  SKIPPED+=("gum")
+else
+  try_install "gum" bash -c '
+    V=$(curl -s "https://api.github.com/repos/charmbracelet/gum/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/gum.deb "https://github.com/charmbracelet/gum/releases/download/v${V}/gum_${V}_amd64.deb"
+    sudo dpkg -i /tmp/gum.deb || sudo apt-get install -f -y
+    rm -f /tmp/gum.deb
+  '
 fi
 
 # ─── tflint ───────────────────────────────────────────────────────────
-if ! command -v tflint &>/dev/null; then
-  echo "  Installing tflint..."
-  curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+if command -v tflint &>/dev/null; then
+  SKIPPED+=("tflint")
+else
+  try_install "tflint" bash -c 'curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash'
 fi
 
 # ─── helm ─────────────────────────────────────────────────────────────
-if ! command -v helm &>/dev/null; then
-  echo "  Installing helm..."
-  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+if command -v helm &>/dev/null; then
+  SKIPPED+=("helm")
+else
+  try_install "helm" bash -c 'curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash'
 fi
 
 # ─── Rust (via rustup) ───────────────────────────────────────────────
-if ! command -v rustup &>/dev/null; then
-  echo "  Installing Rust via rustup..."
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  # shellcheck source=/dev/null
-  source "$HOME/.cargo/env"
+if command -v rustup &>/dev/null; then
+  SKIPPED+=("rust")
+else
+  try_install "rust" bash -c '
+    curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    # shellcheck source=/dev/null
+    source "$HOME/.cargo/env"
+  '
 fi
 
 # ─── Nerd Fonts ───────────────────────────────────────────────────────
 FONT_DIR="$HOME/.local/share/fonts"
-if [[ ! -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ]]; then
-  echo "  Installing Nerd Fonts (JetBrainsMono, Meslo, CascadiaMono)..."
-  mkdir -p "$FONT_DIR"
-  for font in JetBrainsMono Meslo CascadiaMono; do
-    curl -Lo "/tmp/${font}.tar.xz" \
-      "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
-    tar xf "/tmp/${font}.tar.xz" -C "$FONT_DIR"
-    rm -f "/tmp/${font}.tar.xz"
-  done
-  fc-cache -fv
+if [[ -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ]]; then
+  SKIPPED+=("nerd-fonts")
+else
+  try_install "nerd-fonts" bash -c '
+    FONT_DIR="$HOME/.local/share/fonts"
+    mkdir -p "$FONT_DIR"
+    for font in JetBrainsMono Meslo CascadiaMono; do
+      curl -Lo "/tmp/${font}.tar.xz" \
+        "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${font}.tar.xz"
+      tar xf "/tmp/${font}.tar.xz" -C "$FONT_DIR"
+      rm -f "/tmp/${font}.tar.xz"
+    done
+    fc-cache -fv
+  '
 fi
 
 # ─── eza (ls replacement, not in Ubuntu 24.04 repos) ─────────────────
-if ! command -v eza &>/dev/null; then
-  echo "  Installing eza..."
-  EZA_VERSION=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/eza.tar.gz \
-    "https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_x86_64-unknown-linux-gnu.tar.gz"
-  tar xf /tmp/eza.tar.gz -C /tmp
-  sudo install /tmp/eza /usr/local/bin/
-  rm -f /tmp/eza /tmp/eza.tar.gz
+if command -v eza &>/dev/null; then
+  SKIPPED+=("eza")
+else
+  try_install "eza" bash -c '
+    V=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/eza.tar.gz "https://github.com/eza-community/eza/releases/download/v${V}/eza_x86_64-unknown-linux-gnu.tar.gz"
+    tar xf /tmp/eza.tar.gz -C /tmp
+    sudo install /tmp/eza /usr/local/bin/
+    rm -f /tmp/eza /tmp/eza.tar.gz
+  '
 fi
 
 # ─── zoxide (cd replacement, may not be in older Ubuntu repos) ───────
-if ! command -v zoxide &>/dev/null; then
-  echo "  Installing zoxide..."
-  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+if command -v zoxide &>/dev/null; then
+  SKIPPED+=("zoxide")
+else
+  try_install "zoxide" bash -c 'curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'
 fi
 
 # ─── fastfetch (system info, not in Ubuntu 24.04 repos) ──────────────
-if ! command -v fastfetch &>/dev/null; then
-  echo "  Installing fastfetch..."
-  FF_VERSION=$(curl -s "https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest" \
-    | grep -Po '"tag_name": *"\K[^"]*')
-  curl -Lo /tmp/fastfetch.deb \
-    "https://github.com/fastfetch-cli/fastfetch/releases/download/${FF_VERSION}/fastfetch-linux-amd64.deb"
-  sudo dpkg -i /tmp/fastfetch.deb || sudo apt-get install -f -y
-  rm -f /tmp/fastfetch.deb
+if command -v fastfetch &>/dev/null; then
+  SKIPPED+=("fastfetch")
+else
+  try_install "fastfetch" bash -c '
+    V=$(curl -s "https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest" | grep -Po "\"tag_name\": *\"\K[^\"]*")
+    curl -Lo /tmp/fastfetch.deb "https://github.com/fastfetch-cli/fastfetch/releases/download/${V}/fastfetch-linux-amd64.deb"
+    sudo dpkg -i /tmp/fastfetch.deb || sudo apt-get install -f -y
+    rm -f /tmp/fastfetch.deb
+  '
 fi
 
-# ─── Walker (app launcher, not in Ubuntu repos) ─────────────────────
-if ! command -v walker &>/dev/null; then
-  echo "  Installing walker..."
-  WALKER_VERSION=$(curl -s "https://api.github.com/repos/abenz1267/walker/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  curl -Lo /tmp/walker.deb \
-    "https://github.com/abenz1267/walker/releases/download/v${WALKER_VERSION}/walker-amd64.deb"
-  sudo dpkg -i /tmp/walker.deb || sudo apt-get install -f -y
-  rm -f /tmp/walker.deb
+# ─── Walker (app launcher — tarball, no .deb available) ──────────────
+if command -v walker &>/dev/null; then
+  SKIPPED+=("walker")
+else
+  try_install "walker" bash -c '
+    V=$(curl -s "https://api.github.com/repos/abenz1267/walker/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/walker.tar.gz "https://github.com/abenz1267/walker/releases/download/v${V}/walker-v${V}-x86_64-unknown-linux-gnu.tar.gz"
+    tar xf /tmp/walker.tar.gz -C /tmp
+    sudo install /tmp/walker /usr/local/bin/
+    rm -f /tmp/walker /tmp/walker.tar.gz
+  '
 fi
 
-# ─── SwayOSD (on-screen display, not in Ubuntu 24.04 repos) ─────────
-if ! command -v swayosd-server &>/dev/null; then
-  echo "  Installing swayosd..."
-  SWAYOSD_VERSION=$(curl -s "https://api.github.com/repos/ErikReider/SwayOSD/releases/latest" \
-    | grep -Po '"tag_name": *"v\K[^"]*')
-  if [[ -n "$SWAYOSD_VERSION" ]]; then
-    curl -Lo /tmp/swayosd.tar.gz \
-      "https://github.com/ErikReider/SwayOSD/releases/download/v${SWAYOSD_VERSION}/swayosd-v${SWAYOSD_VERSION}-x86_64.tar.gz"
-    sudo tar xf /tmp/swayosd.tar.gz -C /usr/local
-    rm -f /tmp/swayosd.tar.gz
+# ─── SwayOSD (needs to be built from source — skip if no cargo) ──────
+if command -v swayosd-server &>/dev/null; then
+  SKIPPED+=("swayosd")
+else
+  if command -v cargo &>/dev/null; then
+    try_install "swayosd" bash -c '
+      sudo apt-get install -y libgtk-4-dev libpulse-dev libevdev-dev libudev-dev 2>/dev/null
+      tmpdir=$(mktemp -d)
+      git clone https://github.com/ErikReider/SwayOSD.git "$tmpdir/swayosd"
+      cd "$tmpdir/swayosd"
+      cargo build --release
+      sudo install target/release/swayosd-server /usr/local/bin/
+      sudo install target/release/swayosd-client /usr/local/bin/
+      rm -rf "$tmpdir"
+    '
   else
-    echo "  WARN: Could not determine SwayOSD version. Skipping."
+    echo "  [swayosd] skipped (cargo not available yet — install Rust first, then re-run)"
+    SKIPPED+=("swayosd")
   fi
 fi
 
 # ─── uwsm (Universal Wayland Session Manager) ───────────────────────
-if ! command -v uwsm-app &>/dev/null; then
-  echo "  Installing uwsm via pip..."
-  pipx install uwsm 2>/dev/null || pip install --user uwsm 2>/dev/null || {
-    echo "  WARN: uwsm install failed. Install manually."
-  }
+if command -v uwsm-app &>/dev/null; then
+  SKIPPED+=("uwsm")
+else
+  try_install "uwsm" bash -c '
+    pipx install uwsm 2>/dev/null || pip install --user uwsm 2>/dev/null
+  '
 fi
 
 # ─── Symlinks for Ubuntu-renamed binaries ─────────────────────────────
@@ -182,4 +231,21 @@ if command -v fdfind &>/dev/null && [[ ! -e "$HOME/.local/bin/fd" ]]; then
   ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 fi
 
-echo "Extra tools installed."
+# ─── Overview ─────────────────────────────────────────────────────────
+echo ""
+echo "======================================"
+echo " Extra tools — Overview"
+echo "======================================"
+echo ""
+if [[ ${#SUCCEEDED[@]} -gt 0 ]]; then
+  echo "  Installed: ${SUCCEEDED[*]}"
+fi
+if [[ ${#SKIPPED[@]} -gt 0 ]]; then
+  echo "  Skipped (already present): ${SKIPPED[*]}"
+fi
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+  echo "  FAILED: ${FAILED[*]}"
+  echo ""
+  echo "  Some tools failed to install. You can retry them manually later."
+fi
+echo ""

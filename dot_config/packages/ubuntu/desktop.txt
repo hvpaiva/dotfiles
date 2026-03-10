@@ -21,7 +21,7 @@ playerctl
 wlogout
 swaybg
 mako-notifier
-polkit-gnome
+policykit-1-gnome
 pamixer
 
 # Utilities

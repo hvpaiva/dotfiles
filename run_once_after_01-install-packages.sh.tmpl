@@ -1,7 +1,7 @@
 #!/bin/bash
 # chezmoi run_once_after: Install all packages for this profile.
 # Runs once after chezmoi apply (files are already in place).
-set -euo pipefail
+set -uo pipefail
 
 {{ if eq .chezmoi.os "darwin" -}}
 # ─── macOS: Homebrew ─────────────────────────────────────────────────

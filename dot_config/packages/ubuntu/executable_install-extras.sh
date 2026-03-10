@@ -21,7 +21,7 @@ try_install() {
   echo "  [$name] installing..."
   if "$@" 2>&1; then
     # Verify the command is now available
-    if command -v "$name" &>/dev/null || [[ "$name" == "nerd-fonts" ]] || [[ "$name" == "adw-gtk3" ]] || [[ "$name" == "rust" ]]; then
+    if command -v "$name" &>/dev/null || [[ "$name" == "nerd-fonts" ]] || [[ "$name" == "adw-gtk3" ]] || [[ "$name" == "rust" ]] || [[ "$name" == "gtk4-layer-shell" ]]; then
       SUCCEEDED+=("$name")
       echo "  [$name] OK"
     else

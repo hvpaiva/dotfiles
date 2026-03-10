@@ -47,13 +47,18 @@ else
   echo "ble.sh already installed."
 fi
 
-# Install TPM (Tmux Plugin Manager)
+# Install TPM (Tmux Plugin Manager) and plugins
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 if [[ ! -d "$TPM_DIR" ]]; then
   echo "Installing TPM..."
   git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM_DIR"
 else
   echo "TPM already installed."
+fi
+# Auto-install tmux plugins if TPM is present
+if [[ -x "$TPM_DIR/bin/install_plugins" ]]; then
+  echo "Installing tmux plugins via TPM..."
+  "$TPM_DIR/bin/install_plugins" 2>/dev/null || echo "WARN: TPM plugin install failed (run prefix+I inside tmux)"
 fi
 
 # Install mise runtimes
@@ -118,6 +123,30 @@ if [[ "$(uname)" != "Darwin" ]] && command -v systemctl &>/dev/null; then
   fi
 {{- end }}
 fi
+
+{{ if .has_hyprland -}}
+# Ensure Hyprland session file exists for display managers (GDM, SDDM, etc.)
+SESSION_DIR="/usr/share/wayland-sessions"
+if [[ -d "$SESSION_DIR" ]] && [[ ! -f "$SESSION_DIR/hyprland.desktop" ]]; then
+  echo "Creating Hyprland session entry..."
+  sudo tee "$SESSION_DIR/hyprland.desktop" > /dev/null <<'DESKTOP'
+[Desktop Entry]
+Name=Hyprland
+Comment=An intelligent dynamic tiling Wayland compositor
+Exec=Hyprland
+Type=Application
+DesktopNames=Hyprland
+DESKTOP
+fi
+
+# Set GTK theme to dark (Catppuccin Mocha via adw-gtk3-dark or system dark)
+if command -v gsettings &>/dev/null; then
+  echo "Setting GTK dark theme..."
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || \
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
+fi
+{{ end -}}
 
 {{ if .has_1password -}}
 # Re-apply chezmoi now that tools (op, hyprctl, etc.) are in PATH.

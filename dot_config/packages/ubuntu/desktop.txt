@@ -6,7 +6,6 @@
 hyprland
 hyprlock
 hypridle
-hyprpaper
 xdg-desktop-portal-hyprland
 
 # Status bar

@@ -211,12 +211,16 @@ else
   fi
 fi
 
-# ─── uwsm (Universal Wayland Session Manager) ───────────────────────
-if command -v uwsm-app &>/dev/null; then
-  SKIPPED+=("uwsm")
+# ─── adw-gtk3 (dark GTK theme for Hyprland standalone) ──────────────
+if [[ -d "$HOME/.local/share/themes/adw-gtk3-dark" ]] || dpkg -l adw-gtk3 &>/dev/null 2>&1; then
+  SKIPPED+=("adw-gtk3")
 else
-  try_install "uwsm" bash -c '
-    pipx install uwsm 2>/dev/null || pip install --user uwsm 2>/dev/null
+  try_install "adw-gtk3" bash -c '
+    V=$(curl -s "https://api.github.com/repos/lassekongo83/adw-gtk3/releases/latest" | grep -Po "\"tag_name\": *\"\K[^\"]*")
+    curl -Lo /tmp/adw-gtk3.tar.xz "https://github.com/lassekongo83/adw-gtk3/releases/download/${V}/adw-gtk3${V}.tar.xz"
+    mkdir -p "$HOME/.local/share/themes"
+    tar xf /tmp/adw-gtk3.tar.xz -C "$HOME/.local/share/themes"
+    rm -f /tmp/adw-gtk3.tar.xz
   '
 fi
 

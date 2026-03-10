@@ -1,6 +1,10 @@
-{{ if ne (lookPath "omarchy-version") "" -}}
+{{ if .has_omarchy -}}
 # Dynamic theme colors (Omarchy)
 config-file = ?"~/.config/omarchy/current/theme/ghostty.conf"
+{{ else -}}
+# Catppuccin Mocha (standalone — no Omarchy)
+theme = "Catppuccin Mocha"
+background = #0f0f0f
 {{ end -}}
 
 # Font
@@ -15,6 +19,7 @@ window-padding-y = 4
 confirm-close-surface=false
 resize-overlay = never
 {{ if eq .chezmoi.os "linux" -}}
+gtk-titlebar = false
 gtk-toolbar-style = flat
 {{ end -}}
 
@@ -44,7 +49,7 @@ command = {{ lookPath "sesh" }} connect home
 # Slowdown mouse scrolling
 mouse-scroll-multiplier = 0.95
 
-{{ if ne (lookPath "hyprctl") "" -}}
+{{ if .has_hyprland -}}
 # Fix general slowness on hyprland (https://github.com/ghostty-org/ghostty/discussions/3224)
 async-backend = epoll
 {{ end -}}

@@ -209,16 +209,17 @@ else
     BASE="https://github.com/abenz1267/elephant/releases/download/v${V}"
     tmpdir=$(mktemp -d)
 
-    # Install daemon
+    # Install daemon (binary is named elephant-linux-amd64 inside tarball)
     curl -fLo "$tmpdir/elephant.tar.gz" "$BASE/elephant-linux-amd64.tar.gz"
     tar xf "$tmpdir/elephant.tar.gz" -C "$tmpdir"
-    sudo install "$tmpdir/elephant" /usr/local/bin/
+    sudo install "$tmpdir/elephant-linux-amd64" /usr/local/bin/elephant
 
-    # Install providers
+    # Install providers (files are named {provider}-linux-amd64.so)
     mkdir -p "$HOME/.config/elephant/providers"
     for p in desktopapplications websearch files symbols calc clipboard providerlist; do
       curl -fLo "$tmpdir/$p.tar.gz" "$BASE/$p-linux-amd64.tar.gz"
-      tar xf "$tmpdir/$p.tar.gz" -C "$HOME/.config/elephant/providers"
+      tar xf "$tmpdir/$p.tar.gz" -C "$tmpdir"
+      install "$tmpdir/$p-linux-amd64.so" "$HOME/.config/elephant/providers/$p.so"
     done
 
     rm -rf "$tmpdir"

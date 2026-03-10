@@ -152,6 +152,16 @@ DesktopNames=Hyprland
 DESKTOP
 fi
 
+# Fix uwsm session: GDM uses VT2 but uwsm defaults to only allowing VT1.
+# Pass "0" to disable VT check so the uwsm-managed session works from GDM.
+if [[ -f "$SESSION_DIR/hyprland-uwsm.desktop" ]]; then
+  if grep -q 'uwsm start' "$SESSION_DIR/hyprland-uwsm.desktop" && \
+     ! grep -q -- '-- 0' "$SESSION_DIR/hyprland-uwsm.desktop"; then
+    echo "Patching uwsm session to allow any VT..."
+    sudo sed -i 's|Exec=uwsm start|Exec=uwsm start -- 0|' "$SESSION_DIR/hyprland-uwsm.desktop"
+  fi
+fi
+
 # Set GTK theme to dark (Catppuccin Mocha via adw-gtk3-dark or system dark)
 if command -v gsettings &>/dev/null; then
   echo "Setting GTK dark theme..."

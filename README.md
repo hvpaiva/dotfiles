@@ -10,7 +10,17 @@ Personal dotfiles for Linux and macOS, managed with [chezmoi](https://www.chezmo
 ## Fresh machine
 
 ```bash
+# 1. Install everything (answer the prompts)
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply hvpaiva
+
+# 2. Reload shell
+exec bash -l
+
+# 3. (Optional) Authenticate 1Password to fill secrets
+op signin
+chezmoi apply
+
+# 4. (Linux + Hyprland) Log out and select "Hyprland" at the login screen
 ```
 
 On **macOS**, the profile is detected automatically. On **Linux**, you'll be asked a few questions.

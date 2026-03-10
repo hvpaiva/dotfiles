@@ -200,6 +200,31 @@ else
   '
 fi
 
+# ─── Elephant (search backend for Walker) ─────────────────────────────
+if command -v elephant &>/dev/null; then
+  SKIPPED+=("elephant")
+else
+  try_install "elephant" bash -c 'set -e
+    V=$(curl -sf "https://api.github.com/repos/abenz1267/elephant/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    BASE="https://github.com/abenz1267/elephant/releases/download/v${V}"
+    tmpdir=$(mktemp -d)
+
+    # Install daemon
+    curl -fLo "$tmpdir/elephant.tar.gz" "$BASE/elephant-linux-amd64.tar.gz"
+    tar xf "$tmpdir/elephant.tar.gz" -C "$tmpdir"
+    sudo install "$tmpdir/elephant" /usr/local/bin/
+
+    # Install providers
+    mkdir -p "$HOME/.config/elephant/providers"
+    for p in desktopapplications websearch files symbols calc clipboard providerlist; do
+      curl -fLo "$tmpdir/$p.tar.gz" "$BASE/$p-linux-amd64.tar.gz"
+      tar xf "$tmpdir/$p.tar.gz" -C "$HOME/.config/elephant/providers"
+    done
+
+    rm -rf "$tmpdir"
+  '
+fi
+
 # ─── bluetuith (Bluetooth TUI) ────────────────────────────────────────
 if command -v bluetuith &>/dev/null; then
   SKIPPED+=("bluetuith")

@@ -7,4 +7,4 @@ Target = *
 Description = Append newly installed packages to user snapshot
 When = PostTransaction
 NeedsTargets
-Exec = /home/hvpaiva/.config/scripts/pkg-snapshot-update.sh
+Exec = {{ .chezmoi.homeDir }}/.config/scripts/pkg-snapshot-update.sh

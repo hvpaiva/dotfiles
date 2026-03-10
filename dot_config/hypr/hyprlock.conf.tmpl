@@ -1,5 +1,13 @@
+{{ if .has_omarchy -}}
 source = ~/.config/omarchy/current/theme/hyprlock.conf
- 
+{{ else -}}
+# Catppuccin Mocha
+$color = rgba(24,24,36,1.0)
+$inner_color = rgba(24,24,36,0.8)
+$outer_color = rgba(205,214,244,1.0)
+$font_color = rgba(205,214,244,1.0)
+$check_color = rgba(68, 157, 171, 1.0)
+{{ end }}
 general {
     ignore_empty_input = true
 }
@@ -7,7 +15,11 @@ general {
 background {
     monitor =
     color = $color
+{{ if .has_omarchy -}}
     path = ~/.config/omarchy/current/background
+{{ else -}}
+    path = screenshot
+{{ end -}}
     blur_passes = 3
 }
 

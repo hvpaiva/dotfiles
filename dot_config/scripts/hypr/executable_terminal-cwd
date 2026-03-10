@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# terminal-cwd — get CWD of the focused terminal window
+pid=$(hyprctl activewindow -j 2>/dev/null | jq -r '.pid // empty')
+if [[ -n "$pid" ]] && [[ -d "/proc/$pid/cwd" ]]; then
+    readlink "/proc/$pid/cwd" 2>/dev/null
+else
+    echo "$HOME"
+fi

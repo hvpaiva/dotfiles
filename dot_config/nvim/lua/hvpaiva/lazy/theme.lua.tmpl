@@ -1,0 +1,23 @@
+{{ if ne (lookPath "omarchy-version") "" -}}
+-- Omarchy dynamic theme: symlink managed by Omarchy
+-- This file is overwritten by chezmoi; the real config lives at
+-- ~/.config/omarchy/current/theme/neovim.lua
+return dofile(vim.fn.expand("~/.config/omarchy/current/theme/neovim.lua"))
+{{ else -}}
+-- Standalone Catppuccin Mocha (no Omarchy)
+return {
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
+    lazy = false,
+    opts = {
+      flavour = 'mocha',
+      transparent_background = true,
+    },
+    config = function()
+      vim.cmd.colorscheme 'catppuccin'
+    end,
+  },
+}
+{{ end -}}

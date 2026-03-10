@@ -1,0 +1,11 @@
+# Day-to-day applications — Ubuntu
+# One package per line. Installed via apt.
+# Apps not in repos (1Password, Signal, Spotify, Obsidian, etc.)
+# are handled by install-extras.sh or installed manually.
+
+# Apps available in apt repos
+mpv
+obs-studio
+kdenlive
+libreoffice
+xournalpp

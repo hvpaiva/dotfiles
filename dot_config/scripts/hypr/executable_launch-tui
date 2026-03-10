@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# launch-tui CMD — open a TUI app in a new terminal
+exec uwsm-app -- xdg-terminal-exec -e "$@"

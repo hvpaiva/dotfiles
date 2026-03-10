@@ -1,0 +1,22 @@
+if command -v mise &> /dev/null; then
+  eval "$(mise activate bash)"
+fi
+
+# if command -v starship &> /dev/null; then
+#   eval "$(starship init bash)"
+# fi
+
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init bash)"
+fi
+
+if command -v fzf &> /dev/null; then
+  for _fzf_dir in /opt/homebrew/share/fzf /usr/share/fzf /usr/share/doc/fzf/examples /usr/share/fzf/shell; do
+    if [[ -f "$_fzf_dir/completion.bash" ]]; then
+      source "$_fzf_dir/completion.bash"
+      [[ -f "$_fzf_dir/key-bindings.bash" ]] && source "$_fzf_dir/key-bindings.bash"
+      break
+    fi
+  done
+  unset _fzf_dir
+fi

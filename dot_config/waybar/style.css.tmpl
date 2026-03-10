@@ -1,5 +1,10 @@
+{{ if .has_omarchy -}}
 @import "../omarchy/current/theme/waybar.css";
-
+{{ else -}}
+/* Catppuccin Mocha */
+@define-color foreground #cdd6f4;
+@define-color background rgba(30, 30, 46, 0.95);
+{{ end }}
 * {
   background-color: @background;
   color: @foreground;
@@ -33,9 +38,12 @@
 #cpu,
 #battery,
 #pulseaudio,
+{{ if .has_omarchy -}}
 #custom-omarchy,
-
 #custom-update {
+{{ else -}}
+#custom-apps {
+{{ end -}}
   min-width: 12px;
   margin: 0 7.5px;
 }
@@ -60,10 +68,6 @@ tooltip {
   padding: 2px;
 }
 
-#custom-update {
-  font-size: 10px;
-}
-
 #clock {
   margin-left: 5px;
 }
@@ -71,7 +75,10 @@ tooltip {
 .hidden {
   opacity: 0;
 }
-
+{{ if .has_omarchy }}
+#custom-update {
+  font-size: 10px;
+}
 
 #custom-screenrecording-indicator,
 #custom-idle-indicator,
@@ -100,3 +107,4 @@ tooltip {
 #custom-notification-silencing-indicator.active {
   color: #a55555;
 }
+{{ end -}}

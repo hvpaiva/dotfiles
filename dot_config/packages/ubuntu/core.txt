@@ -1,0 +1,48 @@
+# Core system packages — Ubuntu
+# One package per line. Installed via apt.
+
+# Build tools
+build-essential
+curl
+wget
+ca-certificates
+gnupg
+software-properties-common
+
+# Shell & terminal
+bash-completion
+zsh
+tmux
+btop
+
+# CLI tools (eza, fastfetch, zoxide installed via install-extras.sh)
+bat
+fd-find
+fzf
+ripgrep
+jq
+tree
+unzip
+whois
+plocate
+man-db
+xmlstarlet
+inxi
+stow
+figlet
+lolcat
+
+# Fonts
+fontconfig
+fonts-noto
+fonts-noto-cjk
+fonts-noto-color-emoji
+
+# Media
+imagemagick
+ffmpegthumbnailer
+
+# Network
+ufw
+ncat
+dnsutils

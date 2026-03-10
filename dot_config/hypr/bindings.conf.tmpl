@@ -1,0 +1,60 @@
+{{ if .has_omarchy -}}
+# Application bindings (Omarchy)
+bindd = SUPER ALT, RETURN, Tmux, exec, uwsm-app -- xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)" tmux new
+$terminal = uwsm-app -- xdg-terminal-exec
+$browser = omarchy-launch-browser
+
+bindd = SUPER, RETURN, Terminal, exec, $terminal --dir="$(omarchy-cmd-terminal-cwd)"
+bindd = SUPER SHIFT, RETURN, Browser, exec, omarchy-launch-browser
+bindd = SUPER SHIFT, F, File manager, exec, uwsm-app -- nautilus --new-window
+bindd = SUPER SHIFT ALT, F, File manager (cwd), exec, uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"
+bindd = SUPER SHIFT, B, Browser, exec, $browser
+bindd = SUPER SHIFT ALT, B, Browser (private), exec, $browser --private
+bindd = SUPER SHIFT, M, Music, exec, omarchy-launch-or-focus spotify
+bindd = SUPER SHIFT, N, Editor, exec, omarchy-launch-editor
+bindd = SUPER SHIFT, T, Activity, exec, omarchy-launch-tui btop
+bindd = SUPER SHIFT, D, Docker, exec, omarchy-launch-tui lazydocker
+bindd = SUPER SHIFT, G, Signal, exec, omarchy-launch-or-focus signal "uwsm-app -- signal-desktop"
+bindd = SUPER SHIFT, O, Obsidian, exec, omarchy-launch-or-focus "^obsidian$" "uwsm-app -- obsidian -disable-gpu --enable-wayland-ime"
+bindd = SUPER SHIFT, SLASH, Passwords, exec, uwsm-app -- 1password
+
+# If your web app url contains #, type it as ## to prevent hyperland treat it as comments
+bindd = SUPER SHIFT, A, ChatGPT, exec, omarchy-launch-webapp "https://chatgpt.com"
+bindd = SUPER SHIFT ALT, A, Grok, exec, omarchy-launch-webapp "https://grok.com"
+bindd = SUPER SHIFT, C, Calendar, exec, omarchy-launch-webapp "https://app.hey.com/calendar/weeks/"
+bindd = SUPER SHIFT, E, Email, exec, omarchy-launch-webapp "https://app.hey.com"
+bindd = SUPER SHIFT, Y, YouTube, exec, omarchy-launch-webapp "https://youtube.com/"
+bindd = SUPER SHIFT ALT, G, WhatsApp, exec, omarchy-launch-or-focus-webapp WhatsApp "https://web.whatsapp.com/"
+bindd = SUPER SHIFT CTRL, G, Google Messages, exec, omarchy-launch-or-focus-webapp "Google Messages" "https://messages.google.com/web/conversations"
+bindd = SUPER SHIFT, X, X, exec, omarchy-launch-webapp "https://x.com/"
+bindd = SUPER SHIFT ALT, X, X Post, exec, omarchy-launch-webapp "https://x.com/compose/post"
+{{ else -}}
+# Application bindings (standalone)
+$terminal = uwsm-app -- xdg-terminal-exec
+$scripts = ~/.config/scripts/hypr
+
+bindd = SUPER, RETURN, Terminal, exec, $terminal --dir="$($scripts/terminal-cwd)"
+bindd = SUPER ALT, RETURN, Tmux, exec, $terminal --dir="$($scripts/terminal-cwd)" tmux new
+bindd = SUPER SHIFT, RETURN, Browser, exec, $scripts/launch-browser
+bindd = SUPER SHIFT, F, File manager, exec, uwsm-app -- nautilus --new-window
+bindd = SUPER SHIFT ALT, F, File manager (cwd), exec, uwsm-app -- nautilus --new-window "$($scripts/terminal-cwd)"
+bindd = SUPER SHIFT, B, Browser, exec, $scripts/launch-browser
+bindd = SUPER SHIFT ALT, B, Browser (private), exec, $scripts/launch-browser --private
+bindd = SUPER SHIFT, M, Music, exec, $scripts/launch-or-focus spotify "uwsm-app -- spotify"
+bindd = SUPER SHIFT, N, Editor, exec, $terminal -e $EDITOR
+bindd = SUPER SHIFT, T, Activity, exec, $scripts/launch-tui btop
+bindd = SUPER SHIFT, D, Docker, exec, $scripts/launch-tui lazydocker
+bindd = SUPER SHIFT, G, Signal, exec, $scripts/launch-or-focus signal "uwsm-app -- signal-desktop"
+bindd = SUPER SHIFT, O, Obsidian, exec, $scripts/launch-or-focus "^obsidian$" "uwsm-app -- obsidian -disable-gpu --enable-wayland-ime"
+bindd = SUPER SHIFT, SLASH, Passwords, exec, uwsm-app -- 1password
+
+bindd = SUPER SHIFT, A, ChatGPT, exec, $scripts/launch-webapp "https://chatgpt.com"
+bindd = SUPER SHIFT ALT, A, Grok, exec, $scripts/launch-webapp "https://grok.com"
+bindd = SUPER SHIFT, C, Calendar, exec, $scripts/launch-webapp "https://app.hey.com/calendar/weeks/"
+bindd = SUPER SHIFT, E, Email, exec, $scripts/launch-webapp "https://app.hey.com"
+bindd = SUPER SHIFT, Y, YouTube, exec, $scripts/launch-webapp "https://youtube.com/"
+bindd = SUPER SHIFT ALT, G, WhatsApp, exec, $scripts/launch-webapp "https://web.whatsapp.com/"
+bindd = SUPER SHIFT CTRL, G, Google Messages, exec, $scripts/launch-webapp "https://messages.google.com/web/conversations"
+bindd = SUPER SHIFT, X, X, exec, $scripts/launch-webapp "https://x.com/"
+bindd = SUPER SHIFT ALT, X, X Post, exec, $scripts/launch-webapp "https://x.com/compose/post"
+{{ end -}}

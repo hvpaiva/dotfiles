@@ -4,18 +4,19 @@
 set -euo pipefail
 
 {{ if eq .chezmoi.os "darwin" -}}
-# macOS: Homebrew
+# ─── macOS: Homebrew ─────────────────────────────────────────────────
 if ! command -v brew &>/dev/null; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
 
-BREWFILE="$HOME/.config/packages/Brewfile"
+BREWDIR="$HOME/.config/packages/macos"
+BREWFILE="$BREWDIR/Brewfile"
 [[ -f "$BREWFILE" ]] || { echo "ERROR: $BREWFILE not found"; exit 1; }
 
 LISTS=("$BREWFILE")
 {{ if or (eq .purpose "work") (eq .purpose "both") -}}
-LISTS+=("$HOME/.config/packages/Brewfile.work")
+LISTS+=("$BREWDIR/Brewfile.work")
 {{ end -}}
 
 echo ""
@@ -30,8 +31,9 @@ for f in "${LISTS[@]}"; do
   [[ -f "$f" ]] && brew bundle --file="$f" --no-lock
 done
 
-{{ else -}}
-PKGDIR="$HOME/.config/packages"
+{{ else if eq .distro "arch" -}}
+# ─── Arch Linux: pacman / yay / paru ────────────────────────────────
+PKGDIR="$HOME/.config/packages/arch"
 SCRIPT="$HOME/.config/scripts/install_pkgs.sh"
 
 if [[ ! -d "$PKGDIR" ]]; then
@@ -74,11 +76,112 @@ LISTS+=("$PKGDIR/work.txt")
 
 echo ""
 echo "======================================"
-echo " Package Installation"
+echo " Package Installation (pacman/yay)"
 echo " profile={{ .profile }}  purpose={{ .purpose }}"
 echo "======================================"
 echo "Lists: ${LISTS[*]}"
 echo ""
 
 "$SCRIPT" "${LISTS[@]}"
+
+{{ else if or (eq .distro "ubuntu") (eq .distro_family "debian") -}}
+# ─── Ubuntu/Debian: apt ──────────────────────────────────────────────
+PKGDIR="$HOME/.config/packages/ubuntu"
+SETUP_REPOS="$PKGDIR/ppas-and-repos.sh"
+INSTALL_EXTRAS="$PKGDIR/install-extras.sh"
+SCRIPT="$PKGDIR/install_pkgs.sh"
+
+if [[ ! -d "$PKGDIR" ]]; then
+  echo "ERROR: Package directory $PKGDIR not found."
+  exit 1
+fi
+
+# Ensure sudo is available and cached
+if ! command -v sudo &>/dev/null; then
+  echo "ERROR: sudo not found. Cannot install packages."
+  exit 1
+fi
+echo "Caching sudo credentials..."
+sudo -v
+
+# 1. Setup external repos (PPAs, Docker, GitHub CLI, etc.)
+if [[ -x "$SETUP_REPOS" ]]; then
+  echo ""
+  echo "======================================"
+  echo " Setting up APT repositories"
+  echo "======================================"
+  echo ""
+  "$SETUP_REPOS"
+fi
+
+# 2. Install apt packages
+LISTS=("$PKGDIR/core.txt" "$PKGDIR/dev.txt" "$PKGDIR/apps.txt")
+
+{{ if .has_hyprland -}}
+LISTS+=("$PKGDIR/desktop.txt")
+{{ end -}}
+
+{{ if or (eq .purpose "work") (eq .purpose "both") -}}
+LISTS+=("$PKGDIR/work.txt")
+{{ end -}}
+
+echo ""
+echo "======================================"
+echo " Package Installation (apt)"
+echo " distro={{ .distro }}  purpose={{ .purpose }}"
+echo "======================================"
+echo "Lists: ${LISTS[*]}"
+echo ""
+
+if [[ -x "$SCRIPT" ]]; then
+  "$SCRIPT" "${LISTS[@]}"
+else
+  echo "ERROR: Install script $SCRIPT not found or not executable."
+  exit 1
+fi
+
+{{ if .has_1password -}}
+# 3. Install 1Password CLI
+if ! command -v op &>/dev/null; then
+  echo ""
+  echo "======================================"
+  echo " Installing 1Password CLI"
+  echo "======================================"
+  echo ""
+  curl -sS https://downloads.1password.com/linux/keys/1password.asc \
+    | sudo gpg --dearmor -o /usr/share/keyrings/1password-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" \
+    | sudo tee /etc/apt/sources.list.d/1password.list > /dev/null
+  sudo apt-get update
+  sudo apt-get install -y 1password-cli
+fi
+{{ end -}}
+
+# Install extras (binaries, tools not in apt)
+if [[ -x "$INSTALL_EXTRAS" ]]; then
+  echo ""
+  echo "======================================"
+  echo " Installing extra tools"
+  echo "======================================"
+  echo ""
+  "$INSTALL_EXTRAS"
+fi
+
+{{ else -}}
+# ─── Unsupported distro: skip system packages ───────────────────────
+echo ""
+echo "======================================"
+echo " Package Installation"
+echo " distro={{ .distro }} (no system package support yet)"
+echo "======================================"
+echo ""
+echo "System package installation is not configured for {{ .distro }}."
+echo "Only universal packages (cargo, npm, go, pip) will be installed"
+echo "by the finalize script."
+echo ""
+echo "To add support for {{ .distro }}:"
+echo "  1. Create ~/.local/share/chezmoi/dot_config/packages/{{ .distro }}/"
+echo "  2. Add package lists (core.txt, dev.txt, etc.)"
+echo "  3. Create an installer script or extend install_pkgs.sh"
+echo ""
 {{ end -}}

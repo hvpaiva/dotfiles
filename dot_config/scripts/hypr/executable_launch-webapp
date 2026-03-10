@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# launch-webapp URL — open a URL as a webapp (chromium --app mode)
+url="$1"
+browser=$(xdg-settings get default-web-browser 2>/dev/null | sed 's/\.desktop$//')
+
+case "$browser" in
+    *chrom*|*brave*|*edge*|*vivaldi*)
+        uwsm-app -- "$browser" --app="$url"
+        ;;
+    *)
+        uwsm-app -- xdg-open "$url"
+        ;;
+esac

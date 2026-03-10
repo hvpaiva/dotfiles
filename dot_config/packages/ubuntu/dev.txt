@@ -1,0 +1,32 @@
+# Development tools — Ubuntu
+# One package per line. Installed via apt.
+# Tools needing external repos (gh, docker, mise, neovim) are
+# set up by ppas-and-repos.sh before this file is processed.
+
+# Version control
+git
+gh
+pre-commit
+
+# Editors
+neovim
+
+# Languages & build tools
+clang
+llvm
+luarocks
+libyaml-dev
+
+# Containers (docker-ce comes from Docker repo)
+docker-ce
+docker-ce-cli
+docker-buildx-plugin
+docker-compose-plugin
+podman
+
+# Runtime management
+mise
+
+# Database libs
+libmariadb-dev
+libpq-dev

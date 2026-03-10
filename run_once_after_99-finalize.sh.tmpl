@@ -2,7 +2,7 @@
 # chezmoi run_once_after: Final setup — shell, runtimes, tools, services.
 set -euo pipefail
 
-PKGDIR="$HOME/.config/packages"
+PKGDIR="$HOME/.config/packages/universal"
 
 echo ""
 echo "======================================"
@@ -20,7 +20,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     BASH_PATH="/bin/bash"
   fi
 else
-  BASH_PATH="/usr/bin/bash"
+  BASH_PATH="$(command -v bash 2>/dev/null || echo /usr/bin/bash)"
 fi
 if [[ "$SHELL" != "$BASH_PATH" ]]; then
   echo "Setting bash as default shell..."
@@ -99,7 +99,11 @@ fi
 if [[ "$(uname)" != "Darwin" ]] && command -v systemctl &>/dev/null; then
   echo "Enabling user services..."
   systemctl --user daemon-reload || true
-  systemctl --user enable --now elephant.service 2>/dev/null || true
+{{- if eq .distro "arch" }}
+  if command -v omarchy-version &>/dev/null; then
+    systemctl --user enable --now elephant.service 2>/dev/null || true
+  fi
+{{- end }}
 fi
 
 echo ""
@@ -110,6 +114,8 @@ echo ""
 echo "Next steps:"
 echo "  - Run 'exec bash -l' to reload shell with ble.sh"
 echo "  - Run 'nvim' to trigger Lazy plugin install"
-if [[ "$(uname)" != "Darwin" ]]; then
+{{ if eq .chezmoi.os "linux" -}}
+if command -v hyprctl &>/dev/null; then
   echo "  - Log out/in for full Hyprland session"
 fi
+{{ end -}}

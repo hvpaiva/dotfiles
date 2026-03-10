@@ -1,0 +1,30 @@
+# Hyprland desktop packages — Ubuntu
+# Hyprland itself comes from PPA (ppa:cppiber/hyprland)
+# set up by ppas-and-repos.sh
+
+# Compositor & core
+hyprland
+hyprlock
+hypridle
+hyprpaper
+xdg-desktop-portal-hyprland
+
+# Status bar
+waybar
+
+# Wayland tools
+wl-clipboard
+grim
+slurp
+brightnessctl
+playerctl
+wlogout
+swaybg
+mako-notifier
+polkit-gnome
+pamixer
+
+# Utilities
+nautilus
+network-manager-gnome
+bluez

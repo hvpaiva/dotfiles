@@ -3,10 +3,10 @@
 set -Eeuo pipefail
 
 # install_pkgs.sh — Install packages from categorized list files.
-# Reads package lists from ~/.config/packages/*.txt, groups by origin,
+# Reads package lists from ~/.config/packages/arch/*.txt, groups by origin,
 # and installs in batch for speed.
 
-PKGDIR="${PKGDIR:-$HOME/.config/packages}"
+PKGDIR="${PKGDIR:-$HOME/.config/packages/arch}"
 LOG_DIR="${LOG_DIR:-$HOME/.local/state/pkg-restore}"
 
 mkdir -p "$LOG_DIR"

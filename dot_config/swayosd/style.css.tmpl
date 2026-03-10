@@ -1,5 +1,13 @@
+{{ if .has_omarchy -}}
 @import "../omarchy/current/theme/swayosd.css";
-
+{{ else -}}
+/* Catppuccin Mocha */
+@define-color border-color rgba(205,214,244,0.3);
+@define-color background-color rgba(30,30,46,0.95);
+@define-color label #cdd6f4;
+@define-color image #cdd6f4;
+@define-color progress #89b4fa;
+{{ end }}
 window {
   border-radius: 0;
   opacity: 0.97;

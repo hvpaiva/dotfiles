@@ -4,7 +4,7 @@ set -euo pipefail
 # pkg-reconcile.sh — Compare declared package lists vs actually installed.
 # Shows: (1) installed but not declared, (2) declared but not installed.
 
-PKGDIR="${PKGDIR:-$HOME/.config/packages}"
+PKGDIR="${PKGDIR:-$HOME/.config/packages/arch}"
 
 if [[ ! -d "$PKGDIR" ]]; then
   echo "ERROR: Package directory $PKGDIR not found."

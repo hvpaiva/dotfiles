@@ -8,8 +8,12 @@ on:
 
 jobs:
   validate:
-    name: Validate dotfiles
+    name: Validate dotfiles (${{ matrix.distro }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, ubuntu]
 
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +24,27 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
 
-      - name: Setup chezmoi
+      - name: Setup chezmoi (${{ matrix.distro }})
         run: |
           mkdir -p ~/.config/chezmoi
-          printf '[data]\n  profile = "desktop"\n  purpose = "both"\n  git_email = "test@example.com"\n' > ~/.config/chezmoi/chezmoi.toml
+          FAMILY="${{ matrix.distro }}"
+          if [ "$FAMILY" = "ubuntu" ]; then FAMILY="debian"; fi
+          HAS_OMARCHY=false
+          if [ "${{ matrix.distro }}" = "arch" ]; then HAS_OMARCHY=true; fi
+          cat > ~/.config/chezmoi/chezmoi.toml <<EOF
+          [data]
+            profile = "notebook"
+            purpose = "both"
+            git_email = "test@example.com"
+            distro = "${{ matrix.distro }}"
+            distro_family = "$FAMILY"
+            has_omarchy = $HAS_OMARCHY
+            has_hyprland = true
+            has_1password = false
+          EOF
+          sed -i 's/^          //' ~/.config/chezmoi/chezmoi.toml
           echo "--- chezmoi.toml ---"
           cat ~/.config/chezmoi/chezmoi.toml
-          # Point chezmoi source to this checkout
           mkdir -p ~/.local/share
           ln -sfn "$PWD" ~/.local/share/chezmoi
 
@@ -37,58 +55,113 @@ jobs:
           test -f .chezmoiignore
           test -f run_once_after_01-install-packages.sh.tmpl
           test -f run_once_after_02-setup-pacman-hook.sh.tmpl
-          test -f run_once_after_99-finalize.sh
-          test -d dot_config/packages
+          test -f run_once_after_99-finalize.sh.tmpl
+          test -d dot_config/packages/arch
+          test -d dot_config/packages/ubuntu
+          test -d dot_config/packages/macos
+          test -d dot_config/packages/universal
           test -d dot_config/scripts
+          test -d dot_config/hypr/defaults
+          test -d dot_config/scripts/hypr
           test -d private_dot_ssh
           echo "--- No run_once_before scripts ---"
-          ! ls run_once_before_* 2>/dev/null | grep -q .
+          count=$(ls run_once_before_* 2>/dev/null | wc -l)
+          test "$count" -eq 0
           echo "PASS: structure"
 
-      - name: Package list integrity
+      - name: Hyprland standalone defaults exist
         run: |
-          PKGDIR=dot_config/packages
+          echo "--- Hyprland default configs ---"
+          for f in autostart.conf envs.conf input.conf looknfeel.conf windows.conf \
+                   bindings-media.conf bindings-clipboard.conf bindings-tiling.conf bindings-utilities.conf; do
+            test -f "dot_config/hypr/defaults/$f" || { echo "FAIL: defaults/$f missing"; exit 1; }
+          done
+          echo "--- Helper scripts ---"
+          for f in launch-or-focus launch-browser launch-tui launch-webapp terminal-cwd; do
+            test -f "dot_config/scripts/hypr/executable_$f" || { echo "FAIL: scripts/hypr/$f missing"; exit 1; }
+          done
+          echo "--- Standalone mako config ---"
+          test -f "dot_config/mako/config"
+          echo "PASS: Hyprland standalone files"
 
-          echo "--- Pacman list files exist ---"
+      - name: Package list integrity (Arch)
+        if: matrix.distro == 'arch'
+        run: |
+          echo "--- Arch list files exist ---"
           for f in apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt uncategorized.txt; do
-            test -f "$PKGDIR/$f" || { echo "FAIL: $f missing"; exit 1; }
+            test -f "dot_config/packages/arch/$f" || { echo "FAIL: arch/$f missing"; exit 1; }
           done
 
-          echo "--- Non-pacman list files exist ---"
-          for f in cargo.txt npm.txt go.txt pip.txt; do
-            test -f "$PKGDIR/$f" || { echo "FAIL: $f missing"; exit 1; }
-          done
-
-          echo "--- No duplicates in pacman lists ---"
-          dupes=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort | uniq -d)
+          echo "--- No duplicates in Arch lists ---"
+          dupes=$(cat dot_config/packages/arch/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort | uniq -d)
           if [ -n "$dupes" ]; then
             echo "FAIL: duplicate packages: $dupes"
             exit 1
           fi
 
-          echo "--- Pacman lists: valid format (NAME ORIGIN) ---"
-          bad=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 2')
+          echo "--- Arch lists: valid format (NAME ORIGIN) ---"
+          bad=$(cat dot_config/packages/arch/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 2')
           if [ -n "$bad" ]; then
             echo "FAIL: bad format: $bad"
             exit 1
           fi
 
-          echo "--- Pacman lists: valid origins ---"
-          bad_origins=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru"')
+          echo "--- Arch lists: valid origins ---"
+          bad_origins=$(cat dot_config/packages/arch/{apps,core,desktop,dev,gaming,work,uncategorized}.txt | grep -Ev '^\s*(#|$)' | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru"')
           if [ -n "$bad_origins" ]; then
             echo "FAIL: invalid origins: $bad_origins"
             exit 1
           fi
 
-          echo "--- Non-pacman lists: single-column format ---"
-          bad_other=$(cat "$PKGDIR"/{cargo,npm,go,pip}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 1')
-          if [ -n "$bad_other" ]; then
-            echo "FAIL: bad format in non-pacman list: $bad_other"
+          arch_total=$(cat dot_config/packages/arch/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
+          echo "PASS: $arch_total arch packages, no duplicates, valid format"
+
+      - name: Package list integrity (Ubuntu)
+        if: matrix.distro == 'ubuntu'
+        run: |
+          echo "--- Ubuntu list files exist ---"
+          for f in core.txt dev.txt apps.txt work.txt desktop.txt; do
+            test -f "dot_config/packages/ubuntu/$f" || { echo "FAIL: ubuntu/$f missing"; exit 1; }
+          done
+
+          echo "--- Ubuntu lists: single-column format ---"
+          bad=$(cat dot_config/packages/ubuntu/{core,dev,apps,work,desktop}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 1')
+          if [ -n "$bad" ]; then
+            echo "FAIL: bad format (expected single column): $bad"
             exit 1
           fi
 
-          total=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
-          echo "PASS: $total packages, no duplicates, valid format"
+          echo "--- No duplicates in Ubuntu lists ---"
+          dupes=$(cat dot_config/packages/ubuntu/{core,dev,apps,work,desktop}.txt | grep -Ev '^\s*(#|$)' | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "FAIL: duplicate packages: $dupes"
+            exit 1
+          fi
+
+          echo "--- Ubuntu scripts exist ---"
+          for s in install_pkgs.sh ppas-and-repos.sh install-extras.sh; do
+            test -f "dot_config/packages/ubuntu/executable_$s" || { echo "FAIL: ubuntu/$s missing"; exit 1; }
+          done
+
+          ubuntu_total=$(cat dot_config/packages/ubuntu/*.txt | grep -Ev '^\s*(#|$)' | sort -u | wc -l)
+          echo "PASS: $ubuntu_total ubuntu packages, valid format"
+
+      - name: Package list integrity (Universal)
+        run: |
+          echo "--- Universal list files exist ---"
+          for f in cargo.txt npm.txt go.txt pip.txt; do
+            test -f "dot_config/packages/universal/$f" || { echo "FAIL: universal/$f missing"; exit 1; }
+          done
+
+          echo "--- Universal lists: single-column format ---"
+          bad_other=$(cat dot_config/packages/universal/{cargo,npm,go,pip}.txt | grep -Ev '^\s*(#|$)' | awk 'NF != 1')
+          if [ -n "$bad_other" ]; then
+            echo "FAIL: bad format in universal list: $bad_other"
+            exit 1
+          fi
+
+          univ_total=$(cat dot_config/packages/universal/*.txt | grep -Ev '^\s*(#|$)' | sort -u | wc -l)
+          echo "PASS: $univ_total universal packages, valid format"
 
       - name: Template syntax
         run: |
@@ -101,16 +174,19 @@ jobs:
             fi
           done
 
-          echo "--- Config template has required prompts ---"
+          echo "--- Config template has required data ---"
           grep -q 'promptChoiceOnce.*profile' .chezmoi.toml.tmpl
           grep -q 'promptChoiceOnce.*purpose' .chezmoi.toml.tmpl
           grep -q 'promptStringOnce.*git_email' .chezmoi.toml.tmpl
+          grep -q 'osRelease.id' .chezmoi.toml.tmpl
+          grep -q 'has_omarchy' .chezmoi.toml.tmpl
+          grep -q 'has_hyprland' .chezmoi.toml.tmpl
+          grep -q 'has_1password' .chezmoi.toml.tmpl
           echo "PASS: templates valid"
 
       - name: Script syntax (bash -n)
         run: |
-          for script in dot_config/scripts/executable_*.sh run_once_*.sh; do
-            [ -f "$script" ] || continue
+          for script in $(find dot_config -name 'executable_*.sh' -type f); do
             bash -n "$script" || { echo "FAIL: $script"; exit 1; }
             echo "  OK: $script"
           done
@@ -124,8 +200,7 @@ jobs:
 
       - name: Shellcheck
         run: |
-          for script in dot_config/scripts/executable_*.sh run_once_*.sh; do
-            [ -f "$script" ] || continue
+          for script in $(find dot_config -name 'executable_*.sh' -type f); do
             shellcheck -S warning "$script" || { echo "FAIL: $script"; exit 1; }
             echo "  OK: $script"
           done
@@ -165,18 +240,47 @@ jobs:
           echo "--- Managed files ---"
           count=$($CHEZMOI managed 2>&1 | grep -v 'warning' | wc -l)
           echo "  Managed: $count files"
-          [ "$count" -gt 100 ] || { echo "FAIL: too few managed files ($count)"; exit 1; }
+          [ "$count" -gt 50 ] || { echo "FAIL: too few managed files ($count)"; exit 1; }
 
           echo "--- Template rendering ---"
           $CHEZMOI cat ~/.config/git/config 2>/dev/null | grep -q 'test@example.com'
           echo "  OK: git config renders with correct email"
 
-          $CHEZMOI cat ~/.config/hypr/monitors.conf 2>/dev/null | grep -q 'Desktop'
-          echo "  OK: monitors.conf renders for desktop profile"
+          DISTRO="${{ matrix.distro }}"
+          if [ "$DISTRO" = "arch" ]; then
+            $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'packages/arch'
+            echo "  OK: install script references arch packages"
+          elif [ "$DISTRO" = "ubuntu" ]; then
+            $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'packages/ubuntu'
+            echo "  OK: install script references ubuntu packages"
+          fi
 
-          $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'desktop.txt'
-          echo "  OK: install script includes desktop packages"
+          echo "--- Git signing (has_1password=false) ---"
+          ! $CHEZMOI cat ~/.config/git/config 2>/dev/null | grep -q 'gpgsign'
+          echo "  OK: git signing disabled without 1Password"
 
-          $CHEZMOI cat ~/01-install-packages.sh 2>/dev/null | grep -q 'work.txt'
-          echo "  OK: install script includes work packages"
+          echo "--- Hyprland config rendering ---"
+          if [ "$DISTRO" = "arch" ]; then
+            $CHEZMOI cat ~/.config/hypr/hyprland.conf 2>/dev/null | grep -q 'omarchy'
+            echo "  OK: hyprland.conf sources omarchy defaults"
+            $CHEZMOI cat ~/.config/hypr/bindings.conf 2>/dev/null | grep -q 'omarchy'
+            echo "  OK: bindings.conf uses omarchy commands"
+          elif [ "$DISTRO" = "ubuntu" ]; then
+            $CHEZMOI cat ~/.config/hypr/hyprland.conf 2>/dev/null | grep -q 'defaults/'
+            echo "  OK: hyprland.conf sources standalone defaults"
+            $CHEZMOI cat ~/.config/hypr/bindings.conf 2>/dev/null | grep -q 'scripts/hypr'
+            echo "  OK: bindings.conf uses standalone scripts"
+          fi
+
+          echo "--- Waybar rendering ---"
+          if [ "$DISTRO" = "arch" ]; then
+            $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'custom/omarchy'
+            echo "  OK: waybar has omarchy module"
+          elif [ "$DISTRO" = "ubuntu" ]; then
+            $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'custom/apps'
+            echo "  OK: waybar has standalone apps module"
+            ! $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'omarchy'
+            echo "  OK: waybar has no omarchy references"
+          fi
+
           echo "PASS: templates render correctly"

@@ -1,0 +1,36 @@
+general {
+{{ if .has_omarchy -}}
+    lock_cmd = omarchy-lock-screen
+{{ else -}}
+    lock_cmd = pidof hyprlock || hyprlock
+{{ end -}}
+    before_sleep_cmd = loginctl lock-session
+    after_sleep_cmd = sleep 1 && hyprctl dispatch dpms on
+    inhibit_sleep = 3
+}
+
+listener {
+    timeout = 150
+{{ if .has_omarchy -}}
+    on-timeout = pidof hyprlock || omarchy-launch-screensaver
+{{ else -}}
+    on-timeout = loginctl lock-session
+{{ end -}}
+}
+
+listener {
+    timeout = 151
+    on-timeout = loginctl lock-session
+}
+
+listener {
+    timeout = 330
+    on-timeout = brightnessctl -sd '*::kbd_backlight' set 0
+    on-resume = brightnessctl -rd '*::kbd_backlight'
+}
+
+listener {
+    timeout = 330
+    on-timeout = hyprctl dispatch dpms off
+    on-resume = hyprctl dispatch dpms on && brightnessctl -r
+}

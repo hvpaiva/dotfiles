@@ -10,6 +10,7 @@
 [user]
 	name = Highlander Paiva
 	email = {{ .git_email }}
+{{- if .has_1password }}
 	signingKey = ~/.ssh/id_ed25519_signing.pub
 [commit]
 	gpgsign = true
@@ -18,3 +19,4 @@
 [gpg "ssh"]
 	program = {{ if eq .chezmoi.os "darwin" }}/Applications/1Password.app/Contents/MacOS/op-ssh-sign{{ else }}/opt/1Password/op-ssh-sign{{ end }}
 	allowedSignersFile = ~/.config/git/allowed_signers
+{{- end }}

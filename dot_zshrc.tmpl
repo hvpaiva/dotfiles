@@ -34,7 +34,11 @@ zinit light jeffreytse/zsh-vi-mode
 # Add in snippets
 zinit snippet OMZP::git
 zinit snippet OMZP::sudo
+{{ if eq .distro "arch" -}}
 zinit snippet OMZP::archlinux
+{{ else if or (eq .distro "ubuntu") (eq .distro_family "debian") -}}
+zinit snippet OMZP::ubuntu
+{{ end -}}
 zinit snippet OMZP::aws
 zinit snippet OMZP::kubectl
 zinit snippet OMZP::kubectx

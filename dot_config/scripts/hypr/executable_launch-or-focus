@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# launch-or-focus CLASS CMD — focus existing window or launch new one
+# Usage: launch-or-focus spotify "uwsm-app -- spotify"
+#        launch-or-focus "^obsidian$" "uwsm-app -- obsidian"
+
+class="$1"
+shift
+cmd="$*"
+
+if hyprctl clients -j | jq -e ".[] | select(.class | test(\"$class\"))" &>/dev/null; then
+    hyprctl dispatch focuswindow "class:$class"
+else
+    eval "$cmd"
+fi

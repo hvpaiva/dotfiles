@@ -55,23 +55,33 @@ pkg-snapshot
 # Source-only test scripts (only work from chezmoi source dir)
 test/run-tests.sh
 
-# Profile-specific ignores
+# ─── Feature detection ───────────────────────────────────────────────
+{{- $has_pacman := ne (lookPath "pacman") "" }}
+{{- $has_systemd := ne (lookPath "systemctl") "" }}
+
+# ─── Package lists: only deploy the matching platform ────────────────
+{{ if ne .chezmoi.os "darwin" }}
+.config/packages/macos
+{{ end }}
+{{ if or (eq .chezmoi.os "darwin") (ne .distro "arch") }}
+.config/packages/arch
+{{ end }}
+{{ if and (ne .distro "ubuntu") (ne .distro_family "debian") }}
+.config/packages/ubuntu
+{{ end }}
+
+# ─── Profile-specific ignores ────────────────────────────────────────
 {{ if ne .profile "desktop" }}
-packages/desktop.txt
-packages/gaming.txt
+.config/packages/arch/desktop.txt
+.config/packages/arch/gaming.txt
 {{ end }}
 {{ if and (ne .purpose "work") (ne .purpose "both") }}
-packages/work.txt
+.config/packages/arch/work.txt
+.config/packages/macos/Brewfile.work
 {{ end }}
 
-# Linux: ignore macOS-only files
-{{ if ne .profile "macos" -}}
-.config/packages/Brewfile
-.config/packages/Brewfile.work
-{{ end -}}
-
-# macOS: ignore Wayland/systemd/Arch-only paths
-{{ if eq .profile "macos" -}}
+# ─── macOS: ignore Linux-only paths ─────────────────────────────────
+{{ if eq .chezmoi.os "darwin" }}
 .config/hypr
 .config/waybar
 .config/mako
@@ -87,8 +97,65 @@ packages/work.txt
 .config/mimeapps.list
 .config/xdg-terminals.list
 .config/user-dirs.dirs
+.config/aether
 .config/scripts/safe-update.sh
 .config/scripts/install-pkg-snapshot-hook.sh
 .config/scripts/pkg-snapshot-update.sh
 .config/scripts/pkg-reconcile.sh
-{{ end -}}
+.config/scripts/install_pkgs.sh
+.config/hooks
+{{ end }}
+
+# ─── No Hyprland: ignore Wayland compositor stack ────────────────────
+{{ if and (ne .chezmoi.os "darwin") (not .has_hyprland) }}
+.config/hypr
+.config/waybar
+.config/walker
+.config/swayosd
+.config/uwsm
+.config/autostart
+.config/xdg-terminals.list
+.config/mimeapps.list
+{{ end }}
+
+# ─── Omarchy: standalone defaults not needed ─────────────────────────
+{{ if and (ne .chezmoi.os "darwin") .has_omarchy }}
+.config/hypr/defaults
+.config/scripts/hypr
+.config/mako/config
+{{ end }}
+
+# ─── No Omarchy: ignore Omarchy-dependent configs ───────────────────
+{{ if and (ne .chezmoi.os "darwin") (not .has_omarchy) }}
+.config/omarchy
+.config/elephant
+.config/aether
+.config/systemd/user/elephant.service
+.config/systemd/user/graphical-session.target.wants
+.config/systemd/user/omarchy-battery-monitor.service
+.config/systemd/user/omarchy-battery-monitor.timer
+# Symlinks that point to Omarchy theme paths
+.config/btop/themes/current.theme
+.config/eza/theme.yml
+.config/hypr/shaders
+{{ end }}
+
+# ─── No pacman: ignore Arch-specific package tooling ─────────────────
+{{ if not $has_pacman }}
+.config/hooks
+.config/scripts/install_pkgs.sh
+.config/scripts/install-pkg-snapshot-hook.sh
+.config/scripts/pkg-snapshot-update.sh
+.config/scripts/pkg-reconcile.sh
+.config/scripts/safe-update.sh
+{{ end }}
+
+# ─── No systemd: ignore systemd units ───────────────────────────────
+{{ if and (ne .chezmoi.os "darwin") (not $has_systemd) }}
+.config/systemd
+{{ end }}
+
+# ─── No fcitx: ignore input method config ────────────────────────────
+{{ if and (ne .chezmoi.os "darwin") (eq (lookPath "fcitx5") "") }}
+.config/environment.d/fcitx.conf
+{{ end }}

@@ -9,7 +9,7 @@ trap 'exit 0' ERR
 TARGET_USER="${SUDO_USER:-$(logname 2>/dev/null || echo root)}"
 USER_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
-PKGDIR="${USER_HOME}/.config/packages"
+PKGDIR="${USER_HOME}/.config/packages/arch"
 UNCATEGORIZED="${PKGDIR}/uncategorized.txt"
 
 mkdir -p "$PKGDIR"

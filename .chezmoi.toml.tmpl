@@ -1,18 +1,50 @@
 {{- $os := .chezmoi.os -}}
+
+{{/* --- Profile (hardware) ------------------------------------------------- */}}
 {{- $profile := "" -}}
 {{- if eq $os "linux" -}}
 {{-   $profile = promptChoiceOnce . "profile" "Machine profile" (list "desktop" "notebook") -}}
 {{- else -}}
 {{-   $profile = "macos" -}}
 {{- end -}}
+
+{{/* --- Purpose & email ---------------------------------------------------- */}}
 {{- $purpose := promptChoiceOnce . "purpose" "Purpose" (list "personal" "work" "both") -}}
 {{- $git_email := promptStringOnce . "git_email" "Git email" "contact@hvpaiva.dev" -}}
+
+{{/* --- Distro detection (Linux only) -------------------------------------- */}}
+{{- $distro := "" -}}
+{{- $distro_family := "" -}}
+{{- if eq $os "linux" -}}
+{{-   $distro = .chezmoi.osRelease.id -}}
+{{-   if hasKey .chezmoi.osRelease "idLike" -}}
+{{-     $distro_family = .chezmoi.osRelease.idLike -}}
+{{-   else -}}
+{{-     $distro_family = $distro -}}
+{{-   end -}}
+{{- end -}}
+
+{{/* --- Feature detection (set at init time) -------------------------------- */}}
+{{- $has_omarchy := ne (lookPath "omarchy-version") "" -}}
+{{- $has_hyprland := false -}}
+{{- $has_1password := ne (lookPath "op") "" -}}
+{{- if eq $os "linux" -}}
+{{-   $has_hyprland = promptBoolOnce . "has_hyprland" "Enable Hyprland desktop" $has_omarchy -}}
+{{-   $has_1password = promptBoolOnce . "has_1password" "Enable 1Password integration (SSH signing, secrets)" $has_1password -}}
+{{- end -}}
 
 [data]
   profile = {{ $profile | quote }}
   purpose = {{ $purpose | quote }}
   git_email = {{ $git_email | quote }}
+  distro = {{ $distro | quote }}
+  distro_family = {{ $distro_family | quote }}
+  has_omarchy = {{ $has_omarchy }}
+  has_hyprland = {{ $has_hyprland }}
+  has_1password = {{ $has_1password }}
 
+{{ if $has_1password -}}
 [onepassword]
   command = "op"
   prompt = true
+{{- end }}

@@ -1,4 +1,4 @@
-{{ if ne .chezmoi.os "darwin" -}}
+{{ if and (eq .chezmoi.os "linux") (eq .distro "arch") -}}
 #!/bin/bash
 # chezmoi run_once_after: Install pacman hook for automatic package tracking.
 set -euo pipefail

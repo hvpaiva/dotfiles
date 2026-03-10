@@ -26,6 +26,9 @@ pamixer
 # Session manager
 uwsm
 
+# Audio / Bluetooth TUI
+pulsemixer
+
 # Utilities
 nautilus
 network-manager-gnome

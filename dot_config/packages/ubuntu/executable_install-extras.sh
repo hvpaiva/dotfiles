@@ -200,6 +200,19 @@ else
   '
 fi
 
+# ─── bluetuith (Bluetooth TUI) ────────────────────────────────────────
+if command -v bluetuith &>/dev/null; then
+  SKIPPED+=("bluetuith")
+else
+  try_install "bluetuith" bash -c 'set -e
+    V=$(curl -sf "https://api.github.com/repos/bluetuith-org/bluetuith/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -fLo /tmp/bluetuith.tar.gz "https://github.com/bluetuith-org/bluetuith/releases/download/v${V}/bluetuith_${V}_Linux_x86_64.tar.gz"
+    tar xf /tmp/bluetuith.tar.gz -C /tmp bluetuith
+    sudo install /tmp/bluetuith /usr/local/bin/
+    rm -f /tmp/bluetuith /tmp/bluetuith.tar.gz
+  '
+fi
+
 # ─── xdg-terminal-exec (freedesktop terminal launcher) ───────────────
 if command -v xdg-terminal-exec &>/dev/null; then
   SKIPPED+=("xdg-terminal-exec")

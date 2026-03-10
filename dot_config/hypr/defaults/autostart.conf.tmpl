@@ -2,8 +2,9 @@
 exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}hypridle
 exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}mako
 exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}waybar
-exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}swaybg -i ~/.config/hypr/wallpaper.jpg -m fill
+exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}bash -c 'WP="$HOME/.config/hypr/wallpaper"; [ ! -e "$WP" ] && [ -f /usr/share/hypr/wall0.png ] && ln -sf /usr/share/hypr/wall0.png "$WP"; exec swaybg -i "$WP" -m fill'
 exec-once = {{ if $uwsm }}uwsm-app -- {{ end }}swayosd-server
+exec-once = walker --gapplication-service
 exec-once = /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
 
 # Import environment for systemd/dbus (portal support, screen sharing, etc.)

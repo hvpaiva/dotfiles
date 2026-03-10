@@ -7,6 +7,9 @@ github-cli pacman
 lazygit pacman
 pre-commit pacman
 
+# Linting
+shellcheck pacman
+
 # Editors
 neovim pacman
 omarchy-nvim pacman

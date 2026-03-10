@@ -1,3 +1,4 @@
+{{- $uwsm := ne (lookPath "uwsm-app") "" -}}
 # App launcher
 bindd = SUPER, SPACE, Launch apps, exec, walker
 bindd = SUPER CTRL, E, Emoji picker, exec, walker -m symbols
@@ -24,10 +25,10 @@ bindd = SUPER, ESCAPE, System menu, exec, wlogout
 bindld = , XF86PowerOff, Power menu, exec, wlogout
 
 # Control panels
-bindd = SUPER CTRL, A, Audio, exec, uwsm-app -- xdg-terminal-exec -e pulsemixer
-bindd = SUPER CTRL, B, Bluetooth, exec, uwsm-app -- xdg-terminal-exec -e bluetuith
-bindd = SUPER CTRL, W, Wifi, exec, uwsm-app -- xdg-terminal-exec -e nmtui
-bindd = SUPER CTRL, T, Activity, exec, uwsm-app -- xdg-terminal-exec -e btop
+bindd = SUPER CTRL, A, Audio, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e pulsemixer
+bindd = SUPER CTRL, B, Bluetooth, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e bluetuith
+bindd = SUPER CTRL, W, Wifi, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e nmtui
+bindd = SUPER CTRL, T, Activity, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e btop
 
 # Lock
 bindd = SUPER CTRL, L, Lock, exec, pidof hyprlock || hyprlock

@@ -30,23 +30,24 @@ bindd = SUPER SHIFT, X, X, exec, omarchy-launch-webapp "https://x.com/"
 bindd = SUPER SHIFT ALT, X, X Post, exec, omarchy-launch-webapp "https://x.com/compose/post"
 {{ else -}}
 # Application bindings (standalone)
-$terminal = uwsm-app -- xdg-terminal-exec
+{{- $uwsm := ne (lookPath "uwsm-app") "" }}
+$terminal = {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec
 $scripts = ~/.config/scripts/hypr
 
 bindd = SUPER, RETURN, Terminal, exec, $terminal --dir="$($scripts/terminal-cwd)"
 bindd = SUPER ALT, RETURN, Tmux, exec, $terminal --dir="$($scripts/terminal-cwd)" tmux new
 bindd = SUPER SHIFT, RETURN, Browser, exec, $scripts/launch-browser
-bindd = SUPER SHIFT, F, File manager, exec, uwsm-app -- nautilus --new-window
-bindd = SUPER SHIFT ALT, F, File manager (cwd), exec, uwsm-app -- nautilus --new-window "$($scripts/terminal-cwd)"
+bindd = SUPER SHIFT, F, File manager, exec, {{ if $uwsm }}uwsm-app -- {{ end }}nautilus --new-window
+bindd = SUPER SHIFT ALT, F, File manager (cwd), exec, {{ if $uwsm }}uwsm-app -- {{ end }}nautilus --new-window "$($scripts/terminal-cwd)"
 bindd = SUPER SHIFT, B, Browser, exec, $scripts/launch-browser
 bindd = SUPER SHIFT ALT, B, Browser (private), exec, $scripts/launch-browser --private
-bindd = SUPER SHIFT, M, Music, exec, $scripts/launch-or-focus spotify "uwsm-app -- spotify"
+bindd = SUPER SHIFT, M, Music, exec, $scripts/launch-or-focus spotify "{{ if $uwsm }}uwsm-app -- {{ end }}spotify"
 bindd = SUPER SHIFT, N, Editor, exec, $terminal -e $EDITOR
 bindd = SUPER SHIFT, T, Activity, exec, $scripts/launch-tui btop
 bindd = SUPER SHIFT, D, Docker, exec, $scripts/launch-tui lazydocker
-bindd = SUPER SHIFT, G, Signal, exec, $scripts/launch-or-focus signal "uwsm-app -- signal-desktop"
-bindd = SUPER SHIFT, O, Obsidian, exec, $scripts/launch-or-focus "^obsidian$" "uwsm-app -- obsidian -disable-gpu --enable-wayland-ime"
-bindd = SUPER SHIFT, SLASH, Passwords, exec, uwsm-app -- 1password
+bindd = SUPER SHIFT, G, Signal, exec, $scripts/launch-or-focus signal "{{ if $uwsm }}uwsm-app -- {{ end }}signal-desktop"
+bindd = SUPER SHIFT, O, Obsidian, exec, $scripts/launch-or-focus "^obsidian$" "{{ if $uwsm }}uwsm-app -- {{ end }}obsidian -disable-gpu --enable-wayland-ime"
+bindd = SUPER SHIFT, SLASH, Passwords, exec, {{ if $uwsm }}uwsm-app -- {{ end }}1password
 
 bindd = SUPER SHIFT, A, ChatGPT, exec, $scripts/launch-webapp "https://chatgpt.com"
 bindd = SUPER SHIFT ALT, A, Grok, exec, $scripts/launch-webapp "https://grok.com"

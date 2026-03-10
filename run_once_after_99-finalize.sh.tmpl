@@ -35,7 +35,13 @@ if [[ ! -d "$BLESH_DIR" ]]; then
   echo "Installing ble.sh..."
   # ble.sh needs gawk to build
   if ! command -v gawk &>/dev/null; then
+{{ if or (eq .distro "ubuntu") (eq .distro_family "debian") -}}
     sudo apt-get install -y gawk 2>/dev/null || true
+{{ else if eq .distro "arch" -}}
+    sudo pacman -S --noconfirm --needed gawk 2>/dev/null || true
+{{ else -}}
+    echo "WARN: gawk not found. Install it manually for ble.sh build."
+{{ end -}}
   fi
   tmpdir=$(mktemp -d)
   git clone --recursive --depth 1 https://github.com/akinomyoga/ble.sh.git "$tmpdir/ble.sh"
@@ -161,10 +167,9 @@ if command -v op &>/dev/null; then
   echo ""
   CHEZMOI="$(command -v chezmoi 2>/dev/null || which chezmoi 2>/dev/null || echo "$HOME/bin/chezmoi")"
   if [[ -x "$CHEZMOI" ]]; then
-    "$CHEZMOI" init --data=false
-    "$CHEZMOI" apply
+    "$CHEZMOI" init --apply
   else
-    echo "WARN: chezmoi binary not found. Run 'chezmoi init --data=false && chezmoi apply' manually."
+    echo "WARN: chezmoi binary not found. Run 'chezmoi init --apply' manually."
   fi
 fi
 {{ end -}}

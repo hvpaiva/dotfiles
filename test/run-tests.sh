@@ -58,7 +58,7 @@ assert "chezmoi.toml.tmpl exists" test -f "$REPO_ROOT/.chezmoi.toml.tmpl"
 assert ".chezmoiignore exists" test -f "$REPO_ROOT/.chezmoiignore"
 assert "run_once_after_01 exists" test -f "$REPO_ROOT/run_once_after_01-install-packages.sh.tmpl"
 assert "run_once_after_02 exists" test -f "$REPO_ROOT/run_once_after_02-setup-pacman-hook.sh.tmpl"
-assert "run_once_after_99 exists" test -f "$REPO_ROOT/run_once_after_99-finalize.sh"
+assert "run_once_after_99 exists" test -f "$REPO_ROOT/run_once_after_99-finalize.sh.tmpl"
 assert "packages dir exists" test -d "$PKGDIR"
 assert "scripts dir exists" test -d "$SCRIPTS_DIR"
 assert "private_dot_ssh exists" test -d "$REPO_ROOT/private_dot_ssh"
@@ -74,45 +74,64 @@ echo ""
 # -----------------------------------------------
 echo "[2/7] Package lists"
 
-# Pacman-managed lists (two-column: NAME ORIGIN)
+# Arch pacman-managed lists (two-column: NAME ORIGIN)
 PACMAN_LISTS="apps.txt core.txt desktop.txt dev.txt gaming.txt work.txt uncategorized.txt"
 for f in $PACMAN_LISTS; do
-  assert "package list $f exists" test -f "$PKGDIR/$f"
+  assert "arch/$f exists" test -f "$PKGDIR/arch/$f"
 done
 
-# Non-pacman lists (single-column: just package name)
-OTHER_LISTS="cargo.txt npm.txt go.txt pip.txt"
-for f in $OTHER_LISTS; do
-  assert "package list $f exists" test -f "$PKGDIR/$f"
+# Universal lists (single-column: just package name)
+UNIVERSAL_LISTS="cargo.txt npm.txt go.txt pip.txt"
+for f in $UNIVERSAL_LISTS; do
+  assert "universal/$f exists" test -f "$PKGDIR/universal/$f"
 done
 
-# No duplicates within pacman lists
-dupes=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
+# Ubuntu lists (single-column: just package name)
+UBUNTU_LISTS="apps.txt core.txt desktop.txt dev.txt work.txt"
+for f in $UBUNTU_LISTS; do
+  assert "ubuntu/$f exists" test -f "$PKGDIR/ubuntu/$f"
+done
+
+# No duplicates within arch lists
+dupes=$(cat "$PKGDIR/arch"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk '{print $1}' \
   | sort | uniq -d)
-assert "no duplicate packages across pacman lists" test -z "$dupes"
+assert "no duplicate packages across arch lists" test -z "$dupes"
 
-# Pacman lists: every line has exactly 2 fields: NAME ORIGIN
-bad_lines=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
+# Arch lists: every line has exactly 2 fields: NAME ORIGIN
+bad_lines=$(cat "$PKGDIR/arch"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk 'NF != 2 {print FILENAME": "$0}')
-assert "pacman lists have NAME ORIGIN format" test -z "$bad_lines"
+assert "arch lists have NAME ORIGIN format" test -z "$bad_lines"
 
-# Pacman lists: valid origins only
-bad_origins=$(cat "$PKGDIR"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
+# Arch lists: valid origins only
+bad_origins=$(cat "$PKGDIR/arch"/{apps,core,desktop,dev,gaming,work,uncategorized}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk '$2 != "pacman" && $2 != "yay" && $2 != "paru" {print $0}')
-assert "pacman origins are pacman/yay/paru" test -z "$bad_origins"
+assert "arch origins are pacman/yay/paru" test -z "$bad_origins"
 
-# Non-pacman lists: every line has exactly 1 field (package name only)
-bad_other=$(cat "$PKGDIR"/{cargo,npm,go,pip}.txt \
+# Universal lists: every line has exactly 1 field (package name only)
+bad_universal=$(cat "$PKGDIR/universal"/{cargo,npm,go,pip}.txt \
   | grep -Ev '^\s*(#|$)' \
   | awk 'NF != 1 {print FILENAME": "$0}')
-assert "non-pacman lists have single-column format" test -z "$bad_other"
+assert "universal lists have single-column format" test -z "$bad_universal"
 
-# Count total packages across all lists
-total=$(cat "$PKGDIR"/*.txt | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
+# Ubuntu lists: single-column format
+bad_ubuntu=$(cat "$PKGDIR/ubuntu"/{apps,core,desktop,dev,work}.txt \
+  | grep -Ev '^\s*(#|$)' \
+  | awk 'NF != 1 {print FILENAME": "$0}')
+assert "ubuntu lists have single-column format" test -z "$bad_ubuntu"
+
+# No duplicates within ubuntu lists
+ubuntu_dupes=$(cat "$PKGDIR/ubuntu"/{apps,core,desktop,dev,work}.txt \
+  | grep -Ev '^\s*(#|$)' \
+  | sort | uniq -d)
+assert "no duplicate packages across ubuntu lists" test -z "$ubuntu_dupes"
+
+# Count total packages across all platforms
+total=$(cat "$PKGDIR/arch"/*.txt "$PKGDIR/universal"/*.txt "$PKGDIR/ubuntu"/*.txt 2>/dev/null \
+  | grep -Ev '^\s*(#|$)' | awk '{print $1}' | sort -u | wc -l)
 assert "at least 200 packages declared" test "$total" -ge 200
 
 echo "  (total declared: $total)"

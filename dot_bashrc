@@ -10,7 +10,4 @@ source ~/.config/bash/rc
 
 # Make an alias for invoking commands you use constantly
 # alias p='python'
-. "$HOME/.cargo/env"
-
 [[ -f ~/.local/share/blesh/ble.sh ]] && source -- ~/.local/share/blesh/ble.sh
-export PATH="$HOME/.local/bin:$PATH"

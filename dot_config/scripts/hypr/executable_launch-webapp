@@ -3,11 +3,19 @@
 url="$1"
 browser=$(xdg-settings get default-web-browser 2>/dev/null | sed 's/\.desktop$//')
 
+run() {
+  if command -v uwsm-app &>/dev/null; then
+    uwsm-app -- "$@"
+  else
+    "$@"
+  fi
+}
+
 case "$browser" in
     *chrom*|*brave*|*edge*|*vivaldi*)
-        uwsm-app -- "$browser" --app="$url"
+        run "$browser" --app="$url"
         ;;
     *)
-        uwsm-app -- xdg-open "$url"
+        run xdg-open "$url"
         ;;
 esac

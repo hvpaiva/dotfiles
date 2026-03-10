@@ -2,12 +2,20 @@
 # launch-browser [--private] — open default browser via xdg
 browser=$(xdg-settings get default-web-browser 2>/dev/null | sed 's/\.desktop$//')
 
+run() {
+  if command -v uwsm-app &>/dev/null; then
+    uwsm-app -- "$@"
+  else
+    "$@"
+  fi
+}
+
 if [[ "$1" == "--private" ]]; then
     case "$browser" in
-        *firefox*|*zen*|*librewolf*) uwsm-app -- "$browser" --private-window ;;
-        *chrom*|*brave*|*edge*)      uwsm-app -- "$browser" --incognito ;;
-        *)                           uwsm-app -- xdg-open "https://" ;;
+        *firefox*|*zen*|*librewolf*) run "$browser" --private-window ;;
+        *chrom*|*brave*|*edge*)      run "$browser" --incognito ;;
+        *)                           run xdg-open "https://" ;;
     esac
 else
-    uwsm-app -- xdg-open "https://"
+    run xdg-open "https://"
 fi

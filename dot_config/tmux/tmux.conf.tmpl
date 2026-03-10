@@ -17,7 +17,7 @@ bind -T copy-mode-vi C-c send-keys -X clear-selection
 tmux_dir="~/.config/tmux"
 tmux_data_dir="~/.tmux/data"
 tmux_conf_dir="$tmux_dir/conf"
-tmux_plugins_dir="$tmux_data_dir/plugins"
+tmux_plugins_dir="~/.tmux/plugins"
 
 ################################## CONF FILES ##################################
 source "$tmux_conf_dir/opts.conf"
@@ -46,7 +46,6 @@ set -g @yank_with_mouse on                          # Just select with the mouse
 set -g @resurrect-dir "$tmux_data_dir/resurrect"
 set -g @resurrect-save 'S'
 set -g @resurrect-restore 'R'
-set -g @resurrect-restore 'off'
 
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run "~/.tmux/plugins/tpm/tpm"

@@ -47,8 +47,12 @@ walker, swayosd, uwsm, hypridle, hyprlock, and mako configs.
 
 **Git email** — used in `~/.config/git/config`. Defaults to `contact@hvpaiva.dev`.
 
-**Git signing** — commit signing via 1Password SSH agent is enabled automatically when `op` is detected.
-If 1Password isn't installed, signing is disabled and commits work normally without GPG/SSH signatures.
+**1Password integration** — whether to enable 1Password for SSH signing and secrets (asked on Linux only).
+Defaults to `true` if `op` CLI is detected, `false` otherwise. When enabled, the finalize script
+re-runs `chezmoi apply` after 1Password becomes available so templates can resolve secrets.
+
+**Git signing** — commit signing via 1Password SSH agent is enabled automatically when 1Password integration is on.
+If disabled, signing is off and commits work normally without GPG/SSH signatures.
 
 ---
 
@@ -154,8 +158,7 @@ packages/
 Profile values are stored in `~/.config/chezmoi/chezmoi.toml`. To re-prompt:
 
 ```bash
-chezmoi init --data=false
-chezmoi apply
+chezmoi init --data=false --apply
 ```
 
 ---

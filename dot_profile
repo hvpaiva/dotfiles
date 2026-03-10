@@ -1,1 +1,7 @@
-. "$HOME/.cargo/env"
+# ~/.profile — login shell environment (sourced once)
+
+# PATH additions
+export PATH="$HOME/.local/bin:$HOME/bin:$HOME/.go/bin:$HOME/go/bin:$PATH"
+
+# Cargo environment (adds ~/.cargo/bin to PATH)
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

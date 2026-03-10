@@ -23,6 +23,9 @@ mako-notifier
 policykit-1-gnome
 pamixer
 
+# Session manager
+uwsm
+
 # Utilities
 nautilus
 network-manager-gnome

@@ -2,5 +2,8 @@
 # ~/.bash_profile
 #
 
+# Source profile for PATH and environment
+[[ -f ~/.profile ]] && . ~/.profile
+
+# Source bashrc for interactive settings
 [[ -f ~/.bashrc ]] && . ~/.bashrc
-. "$HOME/.cargo/env"

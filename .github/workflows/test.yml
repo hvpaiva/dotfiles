@@ -74,7 +74,8 @@ jobs:
           echo "--- Hyprland default configs ---"
           for f in autostart.conf envs.conf input.conf looknfeel.conf windows.conf \
                    bindings-media.conf bindings-clipboard.conf bindings-tiling.conf bindings-utilities.conf; do
-            test -f "dot_config/hypr/defaults/$f" || { echo "FAIL: defaults/$f missing"; exit 1; }
+            test -f "dot_config/hypr/defaults/$f" -o -f "dot_config/hypr/defaults/${f}.tmpl" \
+              || { echo "FAIL: defaults/$f missing"; exit 1; }
           done
           echo "--- Helper scripts ---"
           for f in launch-or-focus launch-browser launch-tui launch-webapp terminal-cwd; do

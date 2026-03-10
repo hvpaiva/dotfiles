@@ -122,9 +122,13 @@ if command -v rustup &>/dev/null; then
 else
   try_install "rust" bash -c '
     curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    # shellcheck source=/dev/null
-    source "$HOME/.cargo/env"
   '
+fi
+
+# Ensure cargo is in PATH for later steps (Rust install runs in subshell)
+if [[ -f "$HOME/.cargo/env" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.cargo/env"
 fi
 
 # ─── Nerd Fonts ───────────────────────────────────────────────────────
@@ -187,6 +191,43 @@ else
     tar xf /tmp/walker.tar.gz -C /tmp
     sudo install /tmp/walker /usr/local/bin/
     rm -f /tmp/walker /tmp/walker.tar.gz
+  '
+fi
+
+# ─── xdg-terminal-exec (freedesktop terminal launcher) ───────────────
+if command -v xdg-terminal-exec &>/dev/null; then
+  SKIPPED+=("xdg-terminal-exec")
+else
+  try_install "xdg-terminal-exec" bash -c '
+    tmpdir=$(mktemp -d)
+    git clone https://github.com/Vladimir-csp/xdg-terminal-exec.git "$tmpdir/xdg-terminal-exec"
+    sudo install "$tmpdir/xdg-terminal-exec/xdg-terminal-exec" /usr/local/bin/
+    rm -rf "$tmpdir"
+  '
+fi
+
+# ─── cliphist (clipboard history for Wayland) ────────────────────────
+if command -v cliphist &>/dev/null; then
+  SKIPPED+=("cliphist")
+else
+  try_install "cliphist" bash -c '
+    V=$(curl -s "https://api.github.com/repos/sentriz/cliphist/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/cliphist.tar.gz "https://github.com/sentriz/cliphist/releases/download/v${V}/cliphist_${V}_linux_amd64.tar.gz"
+    tar xf /tmp/cliphist.tar.gz -C /tmp cliphist
+    sudo install /tmp/cliphist /usr/local/bin/
+    rm -f /tmp/cliphist /tmp/cliphist.tar.gz
+  '
+fi
+
+# ─── hyprpicker (color picker for Hyprland) ──────────────────────────
+if command -v hyprpicker &>/dev/null; then
+  SKIPPED+=("hyprpicker")
+else
+  try_install "hyprpicker" bash -c '
+    V=$(curl -s "https://api.github.com/repos/hyprwm/hyprpicker/releases/latest" | grep -Po "\"tag_name\": *\"v\K[^\"]*")
+    curl -Lo /tmp/hyprpicker "https://github.com/hyprwm/hyprpicker/releases/download/v${V}/hyprpicker"
+    sudo install /tmp/hyprpicker /usr/local/bin/
+    rm -f /tmp/hyprpicker
   '
 fi
 

@@ -43,7 +43,7 @@
   has_hyprland = {{ $has_hyprland }}
   has_1password = {{ $has_1password }}
 
-{{ if $has_1password -}}
+{{ if ne (lookPath "op") "" -}}
 [onepassword]
   command = "op"
   prompt = true

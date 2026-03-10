@@ -259,6 +259,10 @@ jobs:
           ! $CHEZMOI cat ~/.config/git/config 2>/dev/null | grep -q 'gpgsign'
           echo "  OK: git signing disabled without 1Password"
 
+          echo "--- 1Password templates safe without op CLI ---"
+          $CHEZMOI cat ~/.config/cargo-aoc/credentials.toml 2>/dev/null || true
+          echo "  OK: cargo-aoc renders without op (no error)"
+
           echo "--- Hyprland config rendering ---"
           if [ "$DISTRO" = "arch" ]; then
             $CHEZMOI cat ~/.config/hypr/hyprland.conf 2>/dev/null | grep -q 'omarchy'

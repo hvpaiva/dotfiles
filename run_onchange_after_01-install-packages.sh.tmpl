@@ -1,7 +1,37 @@
 #!/bin/bash
-# chezmoi run_once_after: Install all packages for this profile.
-# Runs once after chezmoi apply (files are already in place).
+# chezmoi run_onchange_after: Install all packages for this profile.
+# Re-runs automatically when package lists or install scripts change.
 set -uo pipefail
+
+# Package list hashes (changing any list triggers re-run):
+{{ if eq .chezmoi.os "darwin" -}}
+# Brewfile hash: {{ include "dot_config/packages/macos/Brewfile" | sha256sum }}
+{{ if or (eq .purpose "work") (eq .purpose "both") -}}
+# Brewfile.work hash: {{ include "dot_config/packages/macos/Brewfile.work" | sha256sum }}
+{{ end -}}
+{{ else if eq .distro "arch" -}}
+# arch/core hash: {{ include "dot_config/packages/arch/core.txt" | sha256sum }}
+# arch/dev hash: {{ include "dot_config/packages/arch/dev.txt" | sha256sum }}
+# arch/apps hash: {{ include "dot_config/packages/arch/apps.txt" | sha256sum }}
+{{ if eq .profile "desktop" -}}
+# arch/desktop hash: {{ include "dot_config/packages/arch/desktop.txt" | sha256sum }}
+# arch/gaming hash: {{ include "dot_config/packages/arch/gaming.txt" | sha256sum }}
+{{ end -}}
+{{ if or (eq .purpose "work") (eq .purpose "both") -}}
+# arch/work hash: {{ include "dot_config/packages/arch/work.txt" | sha256sum }}
+{{ end -}}
+{{ else if or (eq .distro "ubuntu") (eq .distro_family "debian") -}}
+# ubuntu/core hash: {{ include "dot_config/packages/ubuntu/core.txt" | sha256sum }}
+# ubuntu/dev hash: {{ include "dot_config/packages/ubuntu/dev.txt" | sha256sum }}
+# ubuntu/apps hash: {{ include "dot_config/packages/ubuntu/apps.txt" | sha256sum }}
+{{ if .has_hyprland -}}
+# ubuntu/desktop hash: {{ include "dot_config/packages/ubuntu/desktop.txt" | sha256sum }}
+{{ end -}}
+{{ if or (eq .purpose "work") (eq .purpose "both") -}}
+# ubuntu/work hash: {{ include "dot_config/packages/ubuntu/work.txt" | sha256sum }}
+{{ end -}}
+# install-extras hash: {{ include "dot_config/packages/ubuntu/executable_install-extras.sh" | sha256sum }}
+{{ end -}}
 
 {{ if eq .chezmoi.os "darwin" -}}
 # ─── macOS: Homebrew ─────────────────────────────────────────────────

@@ -60,7 +60,7 @@ The `.chezmoiignore` file conditionally excludes files based on detected platfor
 
 ### Bootstrap Flow
 
-Three `run_once_after_*` scripts execute in order on first apply:
+Three `run_onchange_after_*` scripts execute on apply (re-run when package lists change):
 1. **01-install-packages** — distro-specific package installation (pacman/apt/brew)
 2. **02-setup-pacman-hook** — Arch only: pacman hook for package tracking
 3. **99-finalize** — shell setup, ble.sh, TPM, mise runtimes, cargo/npm/go/pip packages, systemd services, Hyprland session
@@ -76,7 +76,7 @@ Platform-specific lists live under `dot_config/packages/{arch,ubuntu,macos,unive
 ## Conventions
 
 - **Templates**: use chezmoi template functions (`lookPath`, `eq`, `ne`, `output`) and data variables. Check `.chezmoi.toml.tmpl` for available variables.
-- **Script naming**: `run_once_after_NN-description.sh.tmpl` — the `NN` controls ordering, `run_once` means it runs only once per content hash.
+- **Script naming**: `run_onchange_after_NN-description.sh.tmpl` — the `NN` controls ordering, `run_onchange` re-runs when rendered content changes. Package list hashes are embedded as comments so adding/removing packages triggers re-run.
 - **Chezmoi file prefixes**: `dot_` → `.`, `private_` → mode 0600, `executable_` → mode 0755, `exact_` → removes unmanaged files in directory.
 - **Package tracking (Arch)**: a pacman hook auto-appends new packages to `uncategorized.txt`. Move them to the appropriate category file.
 - **1Password integration**: optional SSH agent and commit signing. Credentials template (`cargo-aoc/credentials.toml.tmpl`) uses `op://` URIs.

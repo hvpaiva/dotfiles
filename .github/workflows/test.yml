@@ -53,9 +53,9 @@ jobs:
           echo "--- Required files ---"
           test -f .chezmoi.toml.tmpl
           test -f .chezmoiignore
-          test -f run_once_after_01-install-packages.sh.tmpl
-          test -f run_once_after_02-setup-pacman-hook.sh.tmpl
-          test -f run_once_after_99-finalize.sh.tmpl
+          test -f run_onchange_after_01-install-packages.sh.tmpl
+          test -f run_onchange_after_02-setup-pacman-hook.sh.tmpl
+          test -f run_onchange_after_99-finalize.sh.tmpl
           test -d dot_config/packages/arch
           test -d dot_config/packages/ubuntu
           test -d dot_config/packages/macos
@@ -65,7 +65,7 @@ jobs:
           test -d dot_config/scripts/hypr
           test -d private_dot_ssh
           echo "--- No run_once_before scripts ---"
-          count=$(ls run_once_before_* 2>/dev/null | wc -l)
+          count=$(ls run_once_before_* run_onchange_before_* 2>/dev/null | wc -l)
           test "$count" -eq 0
           echo "PASS: structure"
 
@@ -191,7 +191,7 @@ jobs:
             bash -n "$script" || { echo "FAIL: $script"; exit 1; }
             echo "  OK: $script"
           done
-          for script in run_once_*.sh.tmpl; do
+          for script in run_once_*.sh.tmpl run_onchange_*.sh.tmpl; do
             [ -f "$script" ] || continue
             sed '/{{.*}}/d' "$script" > /tmp/stripped.sh
             bash -n /tmp/stripped.sh || { echo "FAIL: $script (stripped)"; exit 1; }

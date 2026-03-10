@@ -56,9 +56,9 @@ echo "[1/7] Structure"
 
 assert "chezmoi.toml.tmpl exists" test -f "$REPO_ROOT/.chezmoi.toml.tmpl"
 assert ".chezmoiignore exists" test -f "$REPO_ROOT/.chezmoiignore"
-assert "run_once_after_01 exists" test -f "$REPO_ROOT/run_once_after_01-install-packages.sh.tmpl"
-assert "run_once_after_02 exists" test -f "$REPO_ROOT/run_once_after_02-setup-pacman-hook.sh.tmpl"
-assert "run_once_after_99 exists" test -f "$REPO_ROOT/run_once_after_99-finalize.sh.tmpl"
+assert "run_onchange_after_01 exists" test -f "$REPO_ROOT/run_onchange_after_01-install-packages.sh.tmpl"
+assert "run_onchange_after_02 exists" test -f "$REPO_ROOT/run_onchange_after_02-setup-pacman-hook.sh.tmpl"
+assert "run_onchange_after_99 exists" test -f "$REPO_ROOT/run_onchange_after_99-finalize.sh.tmpl"
 assert "packages dir exists" test -d "$PKGDIR"
 assert "scripts dir exists" test -d "$SCRIPTS_DIR"
 assert "private_dot_ssh exists" test -d "$REPO_ROOT/private_dot_ssh"
@@ -164,14 +164,14 @@ echo ""
 # -----------------------------------------------
 echo "[4/7] Script syntax (bash -n)"
 
-for script in "$SCRIPTS_DIR"/executable_*.sh "$REPO_ROOT"/run_once_*.sh; do
+for script in "$SCRIPTS_DIR"/executable_*.sh "$REPO_ROOT"/run_once_*.sh "$REPO_ROOT"/run_onchange_*.sh; do
   [[ -f "$script" ]] || continue
   rel="${script#$REPO_ROOT/}"
   assert "syntax OK: $rel" bash -n "$script"
 done
 
 # Template scripts: strip template directives, then check syntax
-for script in "$REPO_ROOT"/run_once_*.sh.tmpl; do
+for script in "$REPO_ROOT"/run_once_*.sh.tmpl "$REPO_ROOT"/run_onchange_*.sh.tmpl; do
   [[ -f "$script" ]] || continue
   rel="${script#$REPO_ROOT/}"
   tmpfile=$(mktemp)

@@ -1,6 +1,13 @@
 #!/bin/bash
-# chezmoi run_once_after: Final setup — shell, runtimes, tools, services.
+# chezmoi run_onchange_after: Final setup — shell, runtimes, tools, services.
+# Re-runs automatically when universal package lists change.
 set -uo pipefail
+
+# Universal package list hashes (changing any list triggers re-run):
+# cargo hash: {{ include "dot_config/packages/universal/cargo.txt" | sha256sum }}
+# npm hash: {{ include "dot_config/packages/universal/npm.txt" | sha256sum }}
+# go hash: {{ include "dot_config/packages/universal/go.txt" | sha256sum }}
+# pip hash: {{ include "dot_config/packages/universal/pip.txt" | sha256sum }}
 
 PKGDIR="$HOME/.config/packages/universal"
 

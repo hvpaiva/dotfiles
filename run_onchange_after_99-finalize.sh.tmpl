@@ -152,13 +152,22 @@ DesktopNames=Hyprland
 DESKTOP
 fi
 
-# Fix uwsm session: GDM uses VT2 but uwsm defaults to only allowing VT1.
-# Pass "0" to disable VT check so the uwsm-managed session works from GDM.
-if [[ -f "$SESSION_DIR/hyprland-uwsm.desktop" ]]; then
-  if grep -q 'uwsm start' "$SESSION_DIR/hyprland-uwsm.desktop" && \
-     ! grep -q -- '-- 0' "$SESSION_DIR/hyprland-uwsm.desktop"; then
-    echo "Patching uwsm session to allow any VT..."
-    sudo sed -i 's|Exec=uwsm start|Exec=uwsm start -- 0|' "$SESSION_DIR/hyprland-uwsm.desktop"
+# Fix uwsm session: GDM uses VT2 but uwsm check may-start only allows VT1.
+# Rewrite the .desktop to use a login shell wrapper that calls may-start with
+# VT=0 (disables VT check) before starting the compositor.
+UWSM_DESKTOP="$SESSION_DIR/hyprland-uwsm.desktop"
+if [[ -f "$UWSM_DESKTOP" ]]; then
+  if ! grep -q 'may-start' "$UWSM_DESKTOP"; then
+    echo "Patching uwsm session to allow any VT (GDM uses VT2)..."
+    sudo tee "$UWSM_DESKTOP" > /dev/null <<'UWSM'
+[Desktop Entry]
+Name=Hyprland (uwsm-managed)
+Comment=An intelligent dynamic tiling Wayland compositor
+Exec=bash -lc 'uwsm check may-start 0 && exec uwsm start -e -D Hyprland hyprland.desktop'
+TryExec=uwsm
+DesktopNames=Hyprland
+Type=Application
+UWSM
   fi
 fi
 

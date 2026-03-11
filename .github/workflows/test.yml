@@ -282,8 +282,8 @@ jobs:
             $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'custom/omarchy'
             echo "  OK: waybar has omarchy module"
           elif [ "$DISTRO" = "ubuntu" ]; then
-            $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'custom/apps'
-            echo "  OK: waybar has standalone apps module"
+            $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'custom/menu'
+            echo "  OK: waybar has standalone menu module"
             ! $CHEZMOI cat ~/.config/waybar/config.jsonc 2>/dev/null | grep -q 'omarchy'
             echo "  OK: waybar has no omarchy references"
           fi

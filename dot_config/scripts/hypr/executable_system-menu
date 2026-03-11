@@ -1,0 +1,323 @@
+#!/usr/bin/env bash
+# system-menu — hierarchical system menu using walker --dmenu
+# Inspired by omarchy-menu. Provides Apps, Trigger, Setup, Config, Keybindings, System submenus.
+# Usage: system-menu [submenu]
+#   system-menu          → main menu
+#   system-menu system   → power/system submenu directly
+#   system-menu trigger  → trigger submenu directly
+
+set -euo pipefail
+
+MENU_PID_FILE="/tmp/system-menu-$USER.pid"
+RECORDING_PID_FILE="/tmp/wf-recorder-$USER.pid"
+
+# ─── Helpers ──────────────────────────────────────────────────────────
+
+menu() {
+    walker --dmenu --width 295 --minheight 1 --maxheight 630 "$@"
+}
+
+menu_wide() {
+    walker --dmenu --width 800 --minheight 1 --maxheight 630 "$@"
+}
+
+terminal() {
+    if command -v uwsm-app &>/dev/null; then
+        uwsm-app -- xdg-terminal-exec "$@"
+    else
+        xdg-terminal-exec "$@"
+    fi
+}
+
+editor() {
+    local file="$1"
+    if command -v uwsm-app &>/dev/null; then
+        uwsm-app -- xdg-terminal-exec -e "${EDITOR:-nvim}" "$file"
+    else
+        xdg-terminal-exec -e "${EDITOR:-nvim}" "$file"
+    fi
+}
+
+toggle_existing_menu() {
+    if [[ -f "$MENU_PID_FILE" ]]; then
+        local old_pid
+        old_pid=$(cat "$MENU_PID_FILE" 2>/dev/null)
+        if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null; then
+            kill "$old_pid" 2>/dev/null || true
+            rm -f "$MENU_PID_FILE"
+            exit 0
+        fi
+    fi
+    echo $$ > "$MENU_PID_FILE"
+    trap 'rm -f "$MENU_PID_FILE"' EXIT
+}
+
+# ─── Submenus ─────────────────────────────────────────────────────────
+
+submenu_screen_record() {
+    local choice
+    choice=$(printf '%s\n' \
+        "With no audio" \
+        "With desktop audio" \
+        "With desktop + mic audio" \
+        "< Back" \
+        | menu --placeholder "Screen Record")
+
+    case "$choice" in
+        *"no audio"*)
+            wf-recorder -g "$(slurp)" -f "/tmp/recording-$(date +%s).mp4" &
+            echo $! > "$RECORDING_PID_FILE"
+            notify-send "Recording" "Screen recording started (no audio)"
+            ;;
+        *"desktop audio"*)
+            wf-recorder -g "$(slurp)" --audio -f "/tmp/recording-$(date +%s).mp4" &
+            echo $! > "$RECORDING_PID_FILE"
+            notify-send "Recording" "Screen recording started (desktop audio)"
+            ;;
+        *"mic audio"*)
+            wf-recorder -g "$(slurp)" --audio --audio-device="$(pactl get-default-source)" -f "/tmp/recording-$(date +%s).mp4" &
+            echo $! > "$RECORDING_PID_FILE"
+            notify-send "Recording" "Screen recording started (desktop + mic)"
+            ;;
+        *"Back"*) submenu_trigger ;;
+    esac
+}
+
+submenu_trigger() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Screenshot" \
+        "Screen Record" \
+        "Stop Recording" \
+        "Color Picker" \
+        "< Back" \
+        | menu --placeholder "Trigger")
+
+    case "$choice" in
+        *"Screenshot"*)
+            grim -g "$(slurp)" - | wl-copy
+            notify-send "Screenshot" "Copied to clipboard"
+            ;;
+        *"Screen Record"*)  submenu_screen_record ;;
+        *"Stop Recording"*)
+            if [[ -f "$RECORDING_PID_FILE" ]]; then
+                kill "$(cat "$RECORDING_PID_FILE")" 2>/dev/null || true
+                rm -f "$RECORDING_PID_FILE"
+                notify-send "Recording" "Screen recording stopped"
+            else
+                pkill wf-recorder 2>/dev/null && notify-send "Recording" "Screen recording stopped" || notify-send "Recording" "No active recording"
+            fi
+            ;;
+        *"Color Picker"*)
+            pkill hyprpicker 2>/dev/null || true
+            hyprpicker -a
+            ;;
+        *"Back"*) main_menu ;;
+    esac
+}
+
+submenu_power_profile() {
+    if ! command -v powerprofilesctl &>/dev/null; then
+        notify-send "Power Profiles" "powerprofilesctl not found"
+        submenu_setup
+        return
+    fi
+
+    local active
+    active=$(powerprofilesctl get 2>/dev/null || echo "unknown")
+
+    local choices=()
+    for profile in performance balanced power-saver; do
+        if [[ "$profile" == "$active" ]]; then
+            choices+=("● $profile")
+        else
+            choices+=("  $profile")
+        fi
+    done
+    choices+=("← Back")
+
+    local choice
+    choice=$(printf '%s\n' "${choices[@]}" | menu --placeholder "Power Profile")
+
+    case "$choice" in
+        *"performance"*) powerprofilesctl set performance; notify-send "Power Profile" "Set to performance" ;;
+        *"balanced"*)     powerprofilesctl set balanced; notify-send "Power Profile" "Set to balanced" ;;
+        *"power-saver"*)  powerprofilesctl set power-saver; notify-send "Power Profile" "Set to power-saver" ;;
+        *"Back"*)         submenu_setup ;;
+    esac
+}
+
+submenu_system_sleep() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Toggle suspend (systemd)" \
+        "Toggle hibernate (systemd)" \
+        "< Back" \
+        | menu --placeholder "System Sleep")
+
+    case "$choice" in
+        *"suspend"*)
+            if systemctl status sleep.target &>/dev/null; then
+                sudo systemctl mask sleep.target suspend.target
+                notify-send "System Sleep" "Suspend disabled"
+            else
+                sudo systemctl unmask sleep.target suspend.target
+                notify-send "System Sleep" "Suspend enabled"
+            fi
+            ;;
+        *"hibernate"*)
+            if systemctl status hibernate.target &>/dev/null; then
+                sudo systemctl mask hibernate.target
+                notify-send "System Sleep" "Hibernate disabled"
+            else
+                sudo systemctl unmask hibernate.target
+                notify-send "System Sleep" "Hibernate enabled"
+            fi
+            ;;
+        *"Back"*) submenu_setup ;;
+    esac
+}
+
+submenu_setup() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Audio" \
+        "WiFi" \
+        "Bluetooth" \
+        "Power Profile" \
+        "Monitors" \
+        "System Sleep" \
+        "< Back" \
+        | menu --placeholder "Setup")
+
+    case "$choice" in
+        *"Audio"*)          terminal -e pulsemixer ;;
+        *"WiFi"*)           terminal -e nmtui ;;
+        *"Bluetooth"*)      terminal -e bluetuith ;;
+        *"Power Profile"*)  submenu_power_profile ;;
+        *"Monitors"*)       editor "$HOME/.config/hypr/monitors.conf" ;;
+        *"System Sleep"*)   submenu_system_sleep ;;
+        *"Back"*)           main_menu ;;
+    esac
+}
+
+submenu_config() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Hyprland" \
+        "Hypridle" \
+        "Walker" \
+        "Waybar" \
+        "< Back" \
+        | menu --placeholder "Config")
+
+    case "$choice" in
+        *"Hyprland"*)  editor "$HOME/.config/hypr/hyprland.conf" ;;
+        *"Hypridle"*)  editor "$HOME/.config/hypr/hypridle.conf" ;;
+        *"Walker"*)    editor "$HOME/.config/walker/config.toml" ;;
+        *"Waybar"*)    editor "$HOME/.config/waybar/config.jsonc" ;;
+        *"Back"*)      main_menu ;;
+    esac
+}
+
+submenu_toggle() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Top Bar" \
+        "Window Gaps" \
+        "Display Scaling" \
+        "< Back" \
+        | menu --placeholder "Toggle")
+
+    case "$choice" in
+        *"Top Bar"*)
+            pkill -SIGUSR1 waybar
+            ;;
+        *"Window Gaps"*)
+            local current
+            current=$(hyprctl getoption general:gaps_in -j | jq '.custom' 2>/dev/null || echo "")
+            if [[ "$current" == *"5"* ]] || [[ -z "$current" ]]; then
+                hyprctl keyword general:gaps_in 0
+                hyprctl keyword general:gaps_out 0
+                notify-send "Gaps" "Disabled"
+            else
+                hyprctl keyword general:gaps_in 5
+                hyprctl keyword general:gaps_out 10
+                notify-send "Gaps" "Enabled (5/10)"
+            fi
+            ;;
+        *"Display Scaling"*)
+            local monitor current_scale
+            monitor=$(hyprctl monitors -j | jq -r '.[0].name')
+            current_scale=$(hyprctl monitors -j | jq '.[0].scale')
+            local new_scale
+            case "$current_scale" in
+                1|1.0*)   new_scale=1.5 ;;
+                1.5*)     new_scale=2 ;;
+                *)        new_scale=1 ;;
+            esac
+            hyprctl keyword monitor "$monitor,preferred,auto,$new_scale"
+            notify-send "Scaling" "Set to ${new_scale}x"
+            ;;
+        *"Back"*) main_menu ;;
+    esac
+}
+
+submenu_system() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Lock" \
+        "Suspend" \
+        "Hibernate" \
+        "Logout" \
+        "Restart" \
+        "Shutdown" \
+        | menu --placeholder "System")
+
+    case "$choice" in
+        *"Lock"*)       pidof hyprlock || hyprlock ;;
+        *"Suspend"*)    systemctl suspend ;;
+        *"Hibernate"*)  systemctl hibernate ;;
+        *"Logout"*)     loginctl terminate-user "$USER" ;;
+        *"Restart"*)    systemctl reboot ;;
+        *"Shutdown"*)   systemctl poweroff ;;
+    esac
+}
+
+# ─── Main Menu ────────────────────────────────────────────────────────
+
+main_menu() {
+    local choice
+    choice=$(printf '%s\n' \
+        "Apps" \
+        "Trigger" \
+        "Setup" \
+        "Config" \
+        "Toggle" \
+        "Keybindings" \
+        "System" \
+        | menu --placeholder "System Menu")
+
+    case "$choice" in
+        *"Apps"*)         walker ;;
+        *"Trigger"*)      submenu_trigger ;;
+        *"Setup"*)        submenu_setup ;;
+        *"Config"*)       submenu_config ;;
+        *"Toggle"*)       submenu_toggle ;;
+        *"Keybindings"*)  ~/.config/scripts/hypr/show-keybindings ;;
+        *"System"*)       submenu_system ;;
+    esac
+}
+
+# ─── Entry Point ──────────────────────────────────────────────────────
+
+toggle_existing_menu
+
+case "${1:-}" in
+    system)   submenu_system ;;
+    trigger)  submenu_trigger ;;
+    setup)    submenu_setup ;;
+    config)   submenu_config ;;
+    toggle)   submenu_toggle ;;
+    *)        main_menu ;;
+esac

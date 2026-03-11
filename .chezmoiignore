@@ -114,8 +114,12 @@ test/run-tests.sh
 .config/swayosd
 .config/uwsm
 .config/autostart
+.config/elephant
+.config/systemd/user/elephant.service
+.config/systemd/user/graphical-session.target.wants
 .config/xdg-terminals.list
 .config/mimeapps.list
+.config/wlogout
 {{ end }}
 
 # ─── Omarchy: standalone defaults not needed ─────────────────────────
@@ -128,10 +132,8 @@ test/run-tests.sh
 # ─── No Omarchy: ignore Omarchy-dependent configs ───────────────────
 {{ if and (ne .chezmoi.os "darwin") (not .has_omarchy) }}
 .config/omarchy
-.config/elephant
 .config/aether
-.config/systemd/user/elephant.service
-.config/systemd/user/graphical-session.target.wants
+.config/elephant/menus/omarchy_themes.lua
 .config/systemd/user/omarchy-battery-monitor.service
 .config/systemd/user/omarchy-battery-monitor.timer
 # Symlinks that point to Omarchy theme paths

@@ -29,7 +29,12 @@ uwsm
 # Audio / Bluetooth TUI
 pulsemixer
 
+# Screen recording
+wf-recorder
+
 # Utilities
 nautilus
 network-manager-gnome
 bluez
+qt5ct
+libxkbcommon-tools

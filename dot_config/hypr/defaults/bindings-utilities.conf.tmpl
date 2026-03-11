@@ -2,7 +2,7 @@
 # App launcher
 bindd = SUPER, SPACE, Launch apps, exec, walker
 bindd = SUPER CTRL, E, Emoji picker, exec, walker -m symbols
-bindd = SUPER ALT, SPACE, System menu, exec, wlogout
+bindd = SUPER ALT, SPACE, System menu, exec, ~/.config/scripts/hypr/system-menu
 bindd = , XF86Calculator, Calculator, exec, gnome-calculator
 
 # Waybar toggle
@@ -29,6 +29,9 @@ bindd = SUPER CTRL, A, Audio, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-termi
 bindd = SUPER CTRL, B, Bluetooth, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e bluetuith
 bindd = SUPER CTRL, W, Wifi, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e nmtui
 bindd = SUPER CTRL, T, Activity, exec, {{ if $uwsm }}uwsm-app -- {{ end }}xdg-terminal-exec -e btop
+
+# Keybindings viewer
+bindd = SUPER, K, Show keybindings, exec, ~/.config/scripts/hypr/show-keybindings
 
 # Lock
 bindd = SUPER CTRL, L, Lock, exec, pidof hyprlock || hyprlock

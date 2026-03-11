@@ -130,8 +130,8 @@ fi
 if [[ "$(uname)" != "Darwin" ]] && command -v systemctl &>/dev/null; then
   echo "Enabling user services..."
   systemctl --user daemon-reload || true
-{{- if eq .distro "arch" }}
-  if command -v omarchy-version &>/dev/null; then
+{{- if .has_hyprland }}
+  if command -v elephant &>/dev/null; then
     systemctl --user enable --now elephant.service 2>/dev/null || true
   fi
 {{- end }}
@@ -185,17 +185,23 @@ fi
 # This re-evaluates .chezmoi.toml.tmpl (picks up [onepassword] section)
 # and re-renders templates that depend on lookPath.
 # run_once scripts won't re-run — chezmoi tracks them by hash.
+# NOTE: If called from within chezmoi apply, the lock is held — skip to avoid deadlock.
+# The CHEZMOI env var is set to "1" when running inside chezmoi apply.
 if command -v op &>/dev/null; then
-  echo ""
-  echo "======================================"
-  echo " Re-applying chezmoi (1Password now available)"
-  echo "======================================"
-  echo ""
-  CHEZMOI="$(command -v chezmoi 2>/dev/null || which chezmoi 2>/dev/null || echo "$HOME/bin/chezmoi")"
-  if [[ -x "$CHEZMOI" ]]; then
-    "$CHEZMOI" init --apply
+  if [[ "${CHEZMOI:-}" == "1" ]]; then
+    echo "Running inside chezmoi apply — skipping re-apply to avoid deadlock."
+    echo "Run 'chezmoi init --apply' manually after this finishes."
   else
-    echo "WARN: chezmoi binary not found. Run 'chezmoi init --apply' manually."
+    CHEZMOI_BIN="$(command -v chezmoi 2>/dev/null || which chezmoi 2>/dev/null || echo "$HOME/bin/chezmoi")"
+    if [[ -x "$CHEZMOI_BIN" ]]; then
+      if "$CHEZMOI_BIN" init --apply 2>&1; then
+        echo "Re-applied chezmoi with 1Password available."
+      else
+        echo ""
+        echo "NOTE: Could not re-apply chezmoi (likely already running)."
+        echo "      Run 'chezmoi init --apply' manually after this finishes."
+      fi
+    fi
   fi
 fi
 {{ end -}}

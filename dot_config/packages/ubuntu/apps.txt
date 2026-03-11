@@ -9,3 +9,5 @@ obs-studio
 kdenlive
 libreoffice
 xournalpp
+gnome-calculator
+evince

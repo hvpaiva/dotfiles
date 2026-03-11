@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# show-keybindings — display all Hyprland keybindings in walker --dmenu
+# Reads bindings from hyprctl, formats them, and shows in a wide walker menu.
+# Requires: jq, hyprctl
+
+set -euo pipefail
+
+# Map modifier bitmask to readable names
+format_mods() {
+    local mods="$1"
+    local result=""
+    (( mods & 1 )) && result+="SHIFT + "
+    (( mods & 4 )) && result+="CTRL + "
+    (( mods & 8 )) && result+="SUPER + "
+    (( mods & 64 )) && result+="ALT + "
+    echo "${result% + }"
+}
+
+# Map xkb key names to readable labels
+format_key() {
+    local key="$1"
+    case "$key" in
+        space)     echo "Space" ;;
+        Return)    echo "Enter" ;;
+        BackSpace) echo "Backspace" ;;
+        escape)    echo "Escape" ;;
+        Print)     echo "Print" ;;
+        comma)     echo "," ;;
+        period)    echo "." ;;
+        slash)     echo "/" ;;
+        minus)     echo "-" ;;
+        equal)     echo "=" ;;
+        *)         echo "$key" ;;
+    esac
+}
+
+# Build formatted keybindings list — only show bindings with explicit descriptions (bindd)
+bindings=$(hyprctl -j binds | jq -r '.[] | select(.description != null and .description != "") | "\(.modmask)|\(.key)|\(.description)"' | while IFS='|' read -r modmask key desc; do
+    [[ -z "$desc" ]] && continue
+    mods=$(format_mods "$modmask")
+    key_label=$(format_key "$key")
+
+    if [[ -n "$mods" ]]; then
+        shortcut="$mods + $key_label"
+    else
+        shortcut="$key_label"
+    fi
+
+    # Pad shortcut to fixed width for alignment
+    printf "%-30s  %s\n" "$shortcut" "$desc"
+done | sort)
+
+if [[ -z "$bindings" ]]; then
+    notify-send "Keybindings" "No bindings found"
+    exit 0
+fi
+
+echo "$bindings" | walker --dmenu --width 800 --minheight 1 --maxheight 630 --placeholder "Keybindings" > /dev/null 2>&1 || true

@@ -3,16 +3,25 @@ max-visible=5
 sort=-time
 layer=overlay
 anchor=top-right
+width=500
+outer-margin=20
+max-icon-size=32
 
 text-color=#cdd6f4
 border-color=#89b4fa
 background-color=#1e1e2e
-padding=20,16
-border-size=1
-border-radius=4
+padding=12,20
+border-size=2
 default-timeout=5000
-font=monospace 12
+font=monospace 13
 
 [urgency=high]
 border-color=#fab387
 default-timeout=10000
+
+[urgency=critical]
+default-timeout=0
+layer=overlay
+
+[mode=do-not-disturb]
+invisible=true

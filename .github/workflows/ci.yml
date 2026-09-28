@@ -1,0 +1,55 @@
+# Lints every shell file, then runs the README one-liner in a clean Arch and a clean Ubuntu
+# container (test/container.sh). Pushes and pull requests run the quick variant; the weekly
+# run and a manual dispatch with "full" also install rustup, augur and every mise tool.
+name: ci
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: also install rustup, augur and every mise tool
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          shellcheck bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*
+          shellcheck -s bash .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots
+          shellcheck -s sh .profile
+      - name: syntax
+        run: |
+          for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/* .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots; do
+            bash -n "$f" || exit 1
+          done
+          sh -n .profile
+      - name: executable bits
+        run: |
+          for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*; do
+            [ -x "$f" ] || { echo "not executable: $f"; exit 1; }
+          done
+
+  container:
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: bootstrap twice, then dots save and dots update
+        env:
+          DOTFILES_SRC: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: .config/dotfiles/test/container.sh ${{ matrix.distro }} ${{ (github.event_name == 'schedule' || inputs.full) && '--full' || '' }}

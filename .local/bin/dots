@@ -1162,11 +1162,16 @@ cmd_root() {
 # ── clean: what was moved aside instead of deleted ───────────────────────────
 # bootstrap.sh (pre-checkout-*), setup (nvim-*) and the Ubuntu port (*.bak-omarchy)
 # keep what they replace; dotfiles-cleanup-* is the same done by hand. Logs stay.
-backups() { # one path per line
-  local p
+backups() { # one path per line; one inside another listed one is left to its parent
+  local p q
+  local -a found=()
   for p in "$STATE_DIR"/pre-checkout-* "$STATE_DIR"/nvim-* "$HOME"/.local/state/dotfiles-cleanup-* \
     "$HOME"/.config/*.bak-omarchy "$HOME"/.config/*/*.bak-omarchy; do
-    [[ -e $p ]] && printf '%s\n' "$p"
+    [[ -e $p ]] && found+=("$p")
+  done
+  for p in "${found[@]}"; do
+    for q in "${found[@]}"; do [[ $p == "$q"/* ]] && continue 2; done
+    printf '%s\n' "$p"
   done
   return 0
 }
@@ -1174,7 +1179,7 @@ backups_text() { # "N, SIZE"; false when there is none
   local -a paths
   mapfile -t paths < <(backups)
   ((${#paths[@]})) || return 1
-  printf '%d, %s' "${#paths[@]}" "$(du -shc "${paths[@]}" 2>/dev/null | tail -1 | cut -f1)"
+  printf '%d, %s' "${#paths[@]}" "$(LC_ALL=C du -shc "${paths[@]}" 2>/dev/null | tail -1 | cut -f1)"
 }
 backup_age() { # PATH — days since it was made
   local days=$(( ($(date +%s) - $(stat -c %Y "$1")) / 86400 ))
@@ -1194,7 +1199,7 @@ cmd_clean() {
   done
   mapfile -t paths < <(backups)
   ((${#paths[@]})) || { line backups none; return 0; }
-  for p in "${paths[@]}"; do listing+="$(row "${p/#"$HOME"/\~}" "$(backup_age "$p")" "$(du -sh "$p" 2>/dev/null | cut -f1)")"$'\n'; done
+  for p in "${paths[@]}"; do listing+="$(row "${p/#"$HOME"/\~}" "$(backup_age "$p")" "$(LC_ALL=C du -sh "$p" 2>/dev/null | cut -f1)")"$'\n'; done
   { row BACKUP AGE SIZE; printf '%s' "$listing"; } | table
   (( all )) || { printf '\n%s\n' "dots clean --all removes them"; return 0; }
   if (( ! yes )); then

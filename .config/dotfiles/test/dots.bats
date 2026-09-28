@@ -292,12 +292,12 @@ PM
 make_backups() {
   mkdir -p "$STATE_DIR/pre-checkout-20260101-000000" "$STATE_DIR/nvim-1700000000" \
     "$HOME/.local/state/dotfiles-cleanup-20260927/bun" "$HOME/.config/hypr.bak-omarchy" "$HOME/.config/hypr"
-  printf 'x\n' >"$HOME/.config/hypr/xdph.conf.bak-omarchy"
+  printf 'x\n' >"$HOME/.config/hypr/xdph.conf.bak-omarchy" >"$HOME/.config/hypr.bak-omarchy/xdph.conf.bak-omarchy"
   printf 'log\n' >"$STATE_DIR/setup.log"
   printf 'live\n' >"$HOME/.config/hypr/xdph.conf"
 }
 
-@test "backups finds the state folders and the port copies, nothing else" {
+@test "backups finds the state folders and the port copies once, nothing else" {
   make_backups
   run backups
   [ "$status" -eq 0 ]

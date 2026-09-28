@@ -163,10 +163,12 @@ H
 Check the machine against the intended state, one row per check: the three
 repos (changes, origin, nvim record), host marker, per-host links, root entries,
 git identity and hooks, Omarchy, build dependencies, mise and its tools, rust,
-augur, ble.sh, tmux plugins, the Chromium extension policy, distro copies of replaced tools, processes still
-running a removed binary, font, themes, kubectl completion, a real login shell,
-GitHub over SSH. Exit status is 1 when any check warns. dots status runs the
-local checks silently and shows how many warn.
+augur, ble.sh, tmux plugins, the Chromium extension policy, distro copies of
+replaced tools, processes still running a removed binary, font, themes, kubectl
+completion, a real login shell, GitHub over SSH, and the logins only a person can
+do (1Password CLI, gh, Tailscale, the git signing key, the Cloudflare token).
+Exit status is 1 when any check warns. dots status runs the local checks
+silently and shows how many warn.
 
 Usage:
   dots doctor
@@ -727,7 +729,7 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
 }
 checks_deep() { # slower: a real login shell, GitHub over SSH
-  local out st detail
+  local out st detail key
   st=ok detail=''
   out=$(LC_ALL=C bash -lic true 2>&1 | grep -vE 'cannot set terminal process group|no job control in this shell')
   if [[ -z $out ]]; then detail="login shell clean"; else st=warn detail="login shell prints: ${out%%$'\n'*}"; fi
@@ -736,6 +738,25 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
   chk shell "$st" "$detail"
   out=$(timeout 20 ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1)
   if [[ $out == *"successfully authenticated"* ]]; then chk github ok "ssh access"; else chk github warn "no ssh access: ${out%%$'\n'*}"; fi
+  # Logins: what only a person can do. Listed so a fresh machine knows what is left.
+  if have op; then
+    if op whoami >/dev/null 2>&1; then chk 1password ok "CLI signed in"; else chk 1password warn "CLI not signed in: unlock the app (CLI integration on) or op signin"; fi
+  fi
+  if have gh; then
+    if gh auth status >/dev/null 2>&1; then chk gh ok "logged in"; else chk gh warn "not logged in: gh auth login"; fi
+  fi
+  if have tailscale; then
+    out=$(tailscale status --json 2>/dev/null | grep -o '"BackendState": *"[A-Za-z]*"' | head -1); out=${out##*\"}; out=${out%\"}; out=${out#*: \"}
+    if [[ $out == Running ]]; then chk tailscale ok "connected"; else chk tailscale warn "${out:-not running}: sudo tailscale up"; fi
+  fi
+  key=$(git config --get user.signingkey 2>/dev/null); key=${key/#\~/$HOME}
+  if [[ -z $key ]]; then chk signing warn "no signing key configured (git/local from the per-host layer)"
+  elif [[ -r $key ]]; then chk signing ok "key present"
+  else chk signing warn "key $key missing: generate it and add it to GitHub as a signing key"
+  fi
+  if grep -qs cloudflare/token "$HOME/.config/bash/private"; then
+    if [[ -r $HOME/.local/state/cloudflare/token ]]; then chk cloudflare ok "token file present"; else chk cloudflare warn "token file missing: op read into ~/.local/state/cloudflare/token"; fi
+  fi
 }
 cmd_doctor() {
   [[ ${1:-} == -h || ${1:-} == --help ]] && { help_for doctor; return 0; }

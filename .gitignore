@@ -10,6 +10,11 @@
 !/.XCompose
 !/.inputrc
 
+# ssh: the shared client config; keys and known hosts stay out, config.local is per host
+!/.ssh/
+/.ssh/*
+!/.ssh/config
+
 # Repo root: docs, the first-run script and CI. Tracked here but kept out of $HOME by a
 # sparse checkout (dots root show|hide)
 !/README.md
@@ -64,6 +69,7 @@
 /.config/hypr/*
 !/.config/hypr/bindings.lua
 !/.config/hypr/monitors.lua
+!/.config/hypr/input.lua
 
 # Session
 !/.config/uwsm/

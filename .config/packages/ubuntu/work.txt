@@ -1,4 +1,4 @@
-# Ubuntu, set "work": RD Station tooling (each from its own repository). DRAFT: prune.
+# Ubuntu, set "work": RD Station tooling, each from its own repository
 falcon-sensor
 forticlient
 freelens

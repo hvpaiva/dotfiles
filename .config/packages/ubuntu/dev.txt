@@ -1,34 +1,20 @@
-# Ubuntu, set "dev": what athena accumulated, minus what mise provides (gh, kubectl, k9s,
-# terraform, shellcheck, gopls) and rustup (rustc). DRAFT from apt-mark showmanual: prune.
-autoconf
-bison
+# Ubuntu, set "dev": what athena uses, minus what mise provides (gh, kubectl, k9s,
+# terraform, shellcheck, gopls) and rustup (rustc).
 clang
 llvm
-luarocks
-valac
-pre-commit
 sqlite3
-redis-tools
 postgresql-client
+redis-tools
 xmlstarlet
-stow
 tree
-tldr
-plocate
-xvfb
-ncat
-whois
-dnsutils
 wget
-inxi
-mainline
-# containers and VMs
-docker-ce            # docker repository
-docker-ce-cli        # docker repository
-docker-buildx-plugin # docker repository
+dnsutils
+whois
+ncat
+pre-commit
+# containers (docker repository)
+docker-ce
+docker-ce-cli
+docker-buildx-plugin
 docker-compose-plugin
-containerd.io        # docker repository
-podman
-qemu-system-x86
-qemu-user-static
-virt-manager
+containerd.io

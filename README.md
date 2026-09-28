@@ -60,6 +60,7 @@ dots save       commit and push every change, every repo
 dots update     bring the machine up to date: repos, per-host links, tools
 dots doctor     check the machine against the intended state, installs included
 dots setup      install or repair the whole layer (what the one-liner runs)
+dots clean      list or remove the backups setup and the port left behind
 ```
 
 `dots help`, `dots help <command>` and `man dots` document every command and flag; the

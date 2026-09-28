@@ -3,7 +3,6 @@
 
 # Version control
 git pacman
-github-cli pacman
 lazygit pacman
 pre-commit pacman
 
@@ -12,10 +11,8 @@ neovim pacman
 omarchy-nvim pacman
 
 # Languages & runtimes
-rust pacman
 clang pacman
 llvm pacman
-gopls pacman
 luarocks pacman
 libyaml pacman
 python-poetry-core pacman

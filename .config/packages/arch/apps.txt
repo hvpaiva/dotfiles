@@ -2,14 +2,15 @@
 # Format: PACKAGE ORIGIN
 
 # Passwords & security
-1password-beta pacman
 1password-cli pacman
 bitwarden pacman
 bitwarden-cli pacman
 
+# Terminals
+alacritty pacman
+
 # Browsers
 zen-browser-bin yay
-alacritty pacman
 
 # Communication
 signal-desktop pacman
@@ -25,7 +26,6 @@ kdenlive pacman
 obsidian pacman
 libreoffice-fresh pacman
 evince pacman
-gnome-calculator pacman
 gnome-disk-utility pacman
 nautilus pacman
 pinta pacman

@@ -22,8 +22,6 @@ fwupd pacman
 # Wayland / Hyprland
 hyprland pacman
 hyprland-guiutils pacman
-hypridle pacman
-hyprlock pacman
 hyprpicker pacman
 hyprsunset pacman
 egl-wayland pacman
@@ -33,36 +31,14 @@ xdg-desktop-portal-gtk pacman
 xdg-desktop-portal-hyprland pacman
 xdg-terminal-exec pacman
 uwsm pacman
-swaybg pacman
-wayfreeze pacman
 grim pacman
 slurp pacman
-satty pacman
 wl-clipboard pacman
 
 # Desktop UI
-waybar pacman
-mako pacman
 walker pacman
-omarchy-walker pacman
-swayosd pacman
-elephant pacman
-elephant-bluetooth pacman
-elephant-calc pacman
-elephant-clipboard pacman
-elephant-desktopapplications pacman
-elephant-files pacman
-elephant-menus pacman
-elephant-providerlist pacman
-elephant-runner pacman
-elephant-symbols pacman
-elephant-todo pacman
-elephant-unicode pacman
-elephant-websearch pacman
-polkit-gnome pacman
 gnome-keyring pacman
 gnome-themes-extra pacman
-kvantum-qt5 pacman
 yaru-icon-theme pacman
 woff2-font-awesome pacman
 
@@ -81,12 +57,9 @@ pipewire-pulse pacman
 gst-plugin-pipewire pacman
 libpulse pacman
 wireplumber pacman
-wiremix pacman
 pamixer pacman
-playerctl pacman
 
 # Network
-iwd pacman
 tailscale pacman
 nss-mdns pacman
 wireless-regdb pacman
@@ -98,9 +71,7 @@ freerdp pacman
 
 # Printing
 cups pacman
-cups-browsed pacman
 cups-filters pacman
-cups-pdf pacman
 system-config-printer pacman
 
 # Core CLI tools
@@ -110,7 +81,6 @@ fd pacman
 fzf pacman
 ripgrep pacman
 sd pacman
-dust pacman
 choose pacman
 jq pacman
 less pacman
@@ -135,7 +105,6 @@ noto-fonts-emoji pacman
 noto-fonts-extra pacman
 ttf-cascadia-mono-nerd pacman
 ttf-ia-writer pacman
-ttf-jetbrains-mono-nerd pacman
 ttf-meslo-nerd pacman
 
 # Filesystem / device
@@ -146,8 +115,6 @@ exfatprogs pacman
 gvfs-mtp pacman
 gvfs-nfs pacman
 gvfs-smb pacman
-impala pacman
-bluetui pacman
 
 # Input methods
 fcitx5 pacman
@@ -165,10 +132,8 @@ gpu-screen-recorder pacman
 aether pacman
 asdcontrol pacman
 omarchy-keyring pacman
-omarchy-chromium pacman
 tzupdate pacman
 python-gobject pacman
-python-terminaltexteffects pacman
 libqalculate pacman
 figlet pacman
 lolcat pacman

@@ -507,7 +507,7 @@ stale_links() { # dangling links into a tree, anywhere the trees reach in $HOME
     target=$(readlink "$dst") || continue
     [[ $target == "$HOSTS_DIR"/* || $target == "$PRIVATE_DIR"/* ]] && printf '%s\n' "$dst"
   done < <(find "$HOME" -maxdepth 5 \( -path "$HOME/.cache" -o -path "$HOME/.local/share" -o -path "$HOME/.local/state" \
-    -o -path "$HOME/dev" -o -path "$HOME/.dotfiles" -o -name node_modules -o -name .git \) -prune -o -xtype l -print 2>/dev/null)
+    -o -path "$HOME/dev" -o -path "$HOME/.dotfiles" -o -name node_modules -o -name .git -o -name '*.bak-omarchy' \) -prune -o -xtype l -print 2>/dev/null)
   return 0
 }
 link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned

@@ -1,0 +1,227 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "WebSearch",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore:*)",
+      "Bash(git tag:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh auth token:*)",
+      "Bash(cargo:*)",
+      "Bash(rustup:*)",
+      "Bash(go:*)",
+      "Bash(gofmt:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(mise:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker images:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker inspect:*)",
+      "Bash(docker stats:*)",
+      "Bash(docker top:*)",
+      "Bash(docker info:*)",
+      "Bash(docker version:*)",
+      "Bash(docker build:*)",
+      "Bash(docker pull:*)",
+      "Bash(docker tag:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker network ls:*)",
+      "Bash(docker network inspect:*)",
+      "Bash(docker volume ls:*)",
+      "Bash(docker volume inspect:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl top:*)",
+      "Bash(kubectl diff:*)",
+      "Bash(kubectl version:*)",
+      "Bash(kubectl cluster-info:*)",
+      "Bash(kubectl config:*)",
+      "Bash(kubectl explain:*)",
+      "Bash(kubectl api-resources:*)",
+      "Bash(kubectl api-versions:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(helm:*)",
+      "Bash(terraform init:*)",
+      "Bash(terraform plan:*)",
+      "Bash(terraform validate:*)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform show:*)",
+      "Bash(terraform output:*)",
+      "Bash(terraform state list:*)",
+      "Bash(terraform state show:*)",
+      "Bash(terraform providers:*)",
+      "Bash(terraform version:*)",
+      "Bash(terraform workspace list:*)",
+      "Bash(terraform workspace show:*)",
+      "Bash(op:*)",
+      "Bash(python3:*)",
+      "Bash(pip:*)",
+      "Bash(uv:*)",
+      "Bash(shellcheck:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(du:*)",
+      "Bash(df:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(which:*)",
+      "Bash(command:*)",
+      "Bash(test:*)",
+      "Bash(printf:*)",
+      "Bash(export:*)",
+      "Bash(systemctl:*)",
+      "Bash(journalctl:*)",
+      "Bash(pacman -Q:*)",
+      "Bash(pacman -Qs:*)",
+      "Bash(pacman -Qi:*)",
+      "Bash(pacman -Qe:*)",
+      "Bash(pacman -Ql:*)",
+      "Bash(pacman -Qm:*)",
+      "Bash(pacman -Qo:*)",
+      "Bash(pacman -Si:*)",
+      "Bash(pacman -Ss:*)",
+      "Bash(pacman -V:*)",
+      "Bash(lsblk:*)",
+      "Bash(findmnt:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:pkg.go.dev)",
+      "WebFetch(domain:doc.rust-lang.org)",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:kubernetes.io)",
+      "WebFetch(domain:developer.1password.com)",
+      "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:cloud.google.com)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "model": "claude-fable-5-1[1m]",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send -a 'Claude Code' -i dialog-information 'Claude terminou' 'Sua tarefa foi concluída.'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/compass-scope-guardian.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/compass-context-monitor.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/compass-preflight.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/compass-commit-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/hvpaiva/.claude/hooks/check-no-gsd-vocab.sh --mode=claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/home/hvpaiva/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/home/hvpaiva/.claude/statusline/statusline.sh",
+    "refreshInterval": 5
+  },
+  "enabledPlugins": {
+    "ruby-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "tui": "fullscreen",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "switchModelsOnFlag": false,
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true,
+  "effortLevel": "medium",
+  "cleanupPeriodDays": 180
+}

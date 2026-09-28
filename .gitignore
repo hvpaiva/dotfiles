@@ -21,6 +21,32 @@
 !/bootstrap.sh
 !/.github/
 
+# Claude Code: the shared instructions, skills, agents, hooks, statusline and theme.
+# settings.json, CLAUDE.local.md, RTK.md and the work skills come per host (hosts/<host>);
+# everything else in ~/.claude is state
+!/.claude/
+/.claude/*
+!/.claude/CLAUDE.md
+!/.claude/agents/
+!/.claude/statusline/
+!/.claude/themes/
+!/.claude/hooks/
+/.claude/hooks/*
+!/.claude/hooks/compass-commit-check.sh
+!/.claude/hooks/compass-context-monitor.sh
+!/.claude/hooks/compass-preflight.sh
+!/.claude/hooks/compass-scope-guardian.sh
+!/.claude/hooks/herdr-agent-state.sh
+!/.claude/hooks/check-no-gsd-vocab.sh
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/compass-*/
+!/.claude/skills/argo-*/
+!/.claude/skills/avoid-ai-writing/
+!/.claude/skills/devsecops/
+!/.claude/skills/infra/
+!/.claude/skills/graphify/
+
 !/.config/
 /.config/*
 

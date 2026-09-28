@@ -1,0 +1,164 @@
+{
+  "cleanupPeriodDays": 180,
+  "env": {
+    "BASH_ENV": "/home/hvpaiva/.claude/shell-env.sh"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__save-buddy__buddy_show",
+      "mcp__save-buddy__buddy_pet",
+      "mcp__save-buddy__buddy_react",
+      "mcp__save-buddy__buddy_mute",
+      "mcp__save-buddy__buddy_stats"
+    ],
+    "deny": [
+      "mcp__claude_ai_Slack__slack_send_message",
+      "mcp__claude_ai_Slack__slack_schedule_message"
+    ]
+  },
+  "model": "claude-fable-5-1",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__.*[Ss]lack.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/hvpaiva/.claude/hooks/slack-write-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/rtk-rewrite.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.local/bin/agent-hook-python-editor",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/home/hvpaiva/.save-buddy/hooks/buddy-session.js\""
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/home/hvpaiva/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.local/bin/cred-doctor --hook claude",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/home/hvpaiva/.save-buddy/hooks/buddy-stop.js\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.local/bin/agent-hook-prose-gate-claude",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/home/hvpaiva/.save-buddy/hooks/buddy-prompt.js\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/home/hvpaiva/.claude/statusline/statusline.sh",
+    "refreshInterval": 5
+  },
+  "enabledPlugins": {
+    "atlassian@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "document-skills@anthropic-agent-skills": true,
+    "frontend-design@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "cloudflare@cloudflare": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "claude-code-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-code"
+      }
+    },
+    "cloudflare": {
+      "source": {
+        "source": "github",
+        "repo": "cloudflare/skills"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "switchModelsOnFlag": false,
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true
+}

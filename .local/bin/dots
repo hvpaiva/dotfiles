@@ -830,7 +830,10 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
   if grep -qs cloudflare/token "$HOME/.config/bash/private"; then
     if [[ ! -r $HOME/.local/state/cloudflare/token ]]; then chk cloudflare warn "token file missing: dots setup writes it from $OP_ITEM/cloudflare-token"
     else
-      out=$(curl -sS -m 10 -w '\n%{http_code}' -H "Authorization: Bearer $(tr -d '[:space:]' <"$HOME/.local/state/cloudflare/token")" https://api.cloudflare.com/client/v4/user/tokens/verify 2>/dev/null)
+      # an account-owned token (wrangler's kind) verifies on the account's endpoint, a user token on /user
+      key=$(sed -n 's/^export CLOUDFLARE_ACCOUNT_ID="\{0,1\}\([0-9a-f]*\)"\{0,1\}.*/\1/p' "$HOME/.config/bash/private" | head -1)
+      if [[ -n $key ]]; then key="accounts/$key/"; else key="user/"; fi
+      out=$(curl -sS -m 10 -w '\n%{http_code}' -H "Authorization: Bearer $(tr -d '[:space:]' <"$HOME/.local/state/cloudflare/token")" "https://api.cloudflare.com/client/v4/${key}tokens/verify" 2>/dev/null)
       case ${out##*$'\n'} in
         200) st=$(grep -o '"status":"[a-z]*"' <<<"$out"); st=${st#*:\"}; st=${st%\"}
              if [[ $st == active ]]; then chk cloudflare ok "token active"; else chk cloudflare warn "token $st: a new one into $OP_ITEM/cloudflare-token, then dots setup"; fi ;;

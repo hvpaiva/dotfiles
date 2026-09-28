@@ -938,19 +938,25 @@ step_nvim() {
   fi
   repo_git nvim remote set-url --push origin "$NVIM_PUSH_URL"
 }
+drop_pkgs() { # PKG… — one removal transaction
+  case $os in
+    arch)   run_root pacman -Rns --noconfirm "$@" >/dev/null 2>&1 ;;
+    ubuntu) run_root apt-get remove -y "$@" >/dev/null 2>&1 ;;
+  esac
+}
 step_drop_packages() {
-  local -a dup; local p failed=''
+  local -a dup left; local p
   mapfile -t dup < <(installed_pkgs "${DROP[@]}")
   ((${#dup[@]})) || { line packages "no distro copies"; return 0; }
   line packages "removing ${dup[*]}"
-  # one at a time: a package another one depends on must not block the rest
-  for p in "${dup[@]}"; do
-    case $os in
-      arch)   run_root pacman -Rns --noconfirm "$p" >/dev/null 2>&1 || failed+="$p " ;;
-      ubuntu) run_root apt-get remove -y "$p" >/dev/null 2>&1 || failed+="$p " ;;
-    esac
-  done
-  if [[ -z $failed ]]; then line packages removed; else warn packages "still installed: ${failed% }"; fi
+  # all at once first, so packages that depend on each other (rust-src, rust-analyzer
+  # on rust) go in one transaction; then one by one, so an outside dependency blocks
+  # only its own package
+  if ! drop_pkgs "${dup[@]}"; then
+    for p in "${dup[@]}"; do drop_pkgs "$p" || true; done
+  fi
+  mapfile -t left < <(installed_pkgs "${dup[@]}")
+  if ((${#left[@]})); then warn packages "still installed: ${left[*]}"; else line packages removed; fi
   hash -r
 }
 step_pacman_hook() { # Arch: the pacman hook that records explicit installs in packages/arch

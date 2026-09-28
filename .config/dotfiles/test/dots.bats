@@ -224,6 +224,44 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ -f "$HOME/README.md" ]
 }
 
+# a pacman that knows dependencies: rust-src and rust-analyzer need rust, keep needs rust too
+fake_pacman() { # INSTALLED…
+  mkdir -p "$BATS_TEST_TMPDIR/bin"; printf '%s\n' "$@" >"$BATS_TEST_TMPDIR/installed"
+  cat >"$BATS_TEST_TMPDIR/bin/pacman" <<'PM'
+#!/usr/bin/env bash
+db=${BATS_TEST_TMPDIR:?}/installed
+case $1 in
+  -Qq) shift; for p; do grep -qx "$p" "$db" && echo "$p"; done; exit 0 ;;
+  -Rns) shift; [[ $1 == --noconfirm ]] && shift
+    for p; do
+      for d in rust-src rust-analyzer keep; do
+        [[ $p == rust ]] && grep -qx "$d" "$db" && ! printf '%s\n' "$@" | grep -qx "$d" && { echo "removing rust breaks $d" >&2; exit 1; }
+      done
+    done
+    for p; do grep -vx "$p" "$db" >"$db.tmp"; mv "$db.tmp" "$db"; done ;;
+esac
+PM
+  chmod +x "$BATS_TEST_TMPDIR/bin/pacman"; PATH=$BATS_TEST_TMPDIR/bin:$PATH
+  sudo() { [[ $1 == -n ]] && shift; "$@"; }
+  os=arch
+}
+
+@test "step_drop_packages removes dependent packages in one transaction" {
+  fake_pacman glow rust-src rust rust-analyzer other
+  DROP=(glow rust-src rust rust-analyzer)
+  run step_drop_packages
+  [[ $output == *removed* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/installed")" = other ]
+}
+
+@test "step_drop_packages falls back to one by one and reports what an outside package blocks" {
+  fake_pacman glow rust keep
+  DROP=(glow rust)
+  run step_drop_packages
+  [[ $output == *"still installed: rust"* ]]
+  [ "$(tr '\n' ' ' <"$BATS_TEST_TMPDIR/installed")" = "rust keep " ]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

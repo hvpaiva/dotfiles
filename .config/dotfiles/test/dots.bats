@@ -229,6 +229,15 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ -z "$(repo_git public status --porcelain)" ]
   cmd_root show >/dev/null
   [ -f "$HOME/README.md" ]
+  printf 'edited\n' >>"$HOME/README.md"
+  run root_hide 1
+  [ "$status" -eq 1 ]
+  [[ $output == *"README.md changed: dots save first"* ]]
+  [ -f "$HOME/README.md" ] && [ -f "$HOME/bootstrap.sh" ]
+  [ "$(repo_git public ls-files -t README.md)" = "H README.md" ]
+  repo_git public commit -q -am "edit README"
+  root_hide 1
+  root_hidden
 }
 
 # a pacman that knows dependencies: rust-src and rust-analyzer need rust, keep needs rust too

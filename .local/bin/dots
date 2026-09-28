@@ -202,7 +202,7 @@ H
     root) cat <<'H'
 README.md, bootstrap.sh and .github/ are tracked at the repo root and kept out
 of $HOME by a sparse checkout. show puts them in $HOME to edit; hide takes them
-out again (a modified file is left in place until it is saved).
+out again; a modified one has to be saved first.
 
 Usage:
   dots root show|hide
@@ -531,8 +531,12 @@ links_text() { # after link_state: "in place/expected", then what is off
 }
 
 # ── root entries: README.md, bootstrap.sh, .github live in the repo, not in $HOME ──
+# A modified root entry is not hidden: git would leave the file but mark it skip-worktree,
+# and the next save would skip it too. Saving first is the only way out.
 root_hide() { # QUIET
-  local out
+  local out dirty
+  dirty=$(repo_git public status --porcelain --ignore-submodules=all -- "${ROOT_ENTRIES[@]}" 2>/dev/null | awk '{ print $NF }' | paste -sd' ')
+  [[ -n $dirty ]] && { warn root "$dirty changed: dots save first"; return 1; }
   out=$(repo_git public sparse-checkout set --no-cone "${ROOT_PATTERNS[@]}" 2>&1) || { warn root "sparse-checkout failed: $out"; return 1; }
   [[ -n $out ]] && warn root "${out//$'\n'/ }"
   (( $1 )) || line root "${ROOT_ENTRIES[*]} out of \$HOME"

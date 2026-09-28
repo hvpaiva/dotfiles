@@ -17,6 +17,5 @@ if command -v kubecolor &> /dev/null; then
   alias k=kubectl
 fi
 
-# Dotfiles: bare repo at ~/.dotfiles, $HOME as worktree, ~/.gitignore as the manifest
-alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
-alias dotp='git -C "$HOME/.local/share/dotfiles-private"'
+# dots (~/.local/bin/dots) fronts the dotfiles, private and nvim repos; dotp is git in the private one
+alias dotp='dots private'

@@ -1,0 +1,34 @@
+# shellcheck shell=bash
+# Completion for dots (~/.local/bin/dots): its own sub-commands, git's for everything else.
+# bash-completion loads this file the first time <Tab> is pressed after `dots`.
+_dots() {
+  local cur=${COMP_WORDS[COMP_CWORD]} sub=${COMP_WORDS[1]:-}
+  local own="status diff save update push doctor setup root private nvim git help"
+  if ! declare -F __git_main >/dev/null 2>&1; then
+    if declare -F _comp_load >/dev/null 2>&1; then _comp_load git
+    elif declare -F _completion_loader >/dev/null 2>&1; then _completion_loader git
+    fi
+  fi
+  if (( COMP_CWORD == 1 )); then
+    declare -F __git_wrap__git_main >/dev/null 2>&1 && __git_wrap__git_main
+    mapfile -t -O "${#COMPREPLY[@]}" COMPREPLY < <(compgen -S ' ' -W "$own" -- "$cur")
+    return 0
+  fi
+  case $sub in
+    status) mapfile -t COMPREPLY < <(compgen -S ' ' -W "-f --fetch -o --offline" -- "$cur"); return 0 ;;
+    save)   mapfile -t COMPREPLY < <(compgen -S ' ' -W "-m --message -n --no-push" -- "$cur"); return 0 ;;
+    update) mapfile -t COMPREPLY < <(compgen -S ' ' -W "--quick" -- "$cur"); return 0 ;;
+    setup)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--host --reset --skip-omarchy --skip-private --skip-mise --skip-rust" -- "$cur"); return 0 ;;
+    root)   mapfile -t COMPREPLY < <(compgen -S ' ' -W "show hide" -- "$cur"); return 0 ;;
+    push | doctor | help) return 0 ;;
+    private | nvim | git)
+      # drop the sub-command so git's completion sees `dots <git args>`
+      COMP_WORDS=("${COMP_WORDS[0]}" "${COMP_WORDS[@]:2}")
+      COMP_CWORD=$((COMP_CWORD - 1))
+      COMP_LINE=${COMP_LINE/ $sub / }
+      COMP_POINT=$((COMP_POINT - ${#sub} - 1)) ;;
+  esac
+  declare -F __git_wrap__git_main >/dev/null 2>&1 && __git_wrap__git_main
+  return 0
+}
+complete -o bashdefault -o default -o nospace -F _dots dots

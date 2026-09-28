@@ -10,6 +10,12 @@
 !/.XCompose
 !/.inputrc
 
+# Repo root: docs, the first-run script and CI. Tracked here but kept out of $HOME by a
+# sparse checkout (dots root show|hide)
+!/README.md
+!/bootstrap.sh
+!/.github/
+
 !/.config/
 /.config/*
 
@@ -80,8 +86,22 @@
 /.config/aether/*
 !/.config/aether/theme.override.css
 
-# This repo's own docs and bootstrap
+# This repo's own support files: per-host trees and the container test
 !/.config/dotfiles/
 
-# Per-host marker written by the bootstrap (zeus, athena), used to pick the private layer
+# Per-host marker written by dots setup (zeus, athena), used to pick the per-host layers
 /.config/dotfiles/host
+
+# The dots CLI and its completion; nothing else under ~/.local
+!/.local/
+/.local/*
+!/.local/bin/
+/.local/bin/*
+!/.local/bin/dots
+!/.local/share/
+/.local/share/*
+!/.local/share/bash-completion/
+/.local/share/bash-completion/*
+!/.local/share/bash-completion/completions/
+/.local/share/bash-completion/completions/*
+!/.local/share/bash-completion/completions/dots

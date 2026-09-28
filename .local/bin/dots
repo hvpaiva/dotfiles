@@ -1,0 +1,1006 @@
+#!/usr/bin/env bash
+# dots — the personal layer of this machine, kept in sync with hvpaiva/dotfiles.
+#
+# Three repositories behind one command:
+#   dotfiles  ~/.dotfiles, bare, $HOME is the work tree           github.com/hvpaiva/dotfiles
+#   private   ~/.local/share/dotfiles-private                      github.com/hvpaiva/dotfiles-private
+#   nvim      ~/.config/nvim, recorded in dotfiles as a submodule  github.com/hvpaiva/nvim
+#
+#   dots [status] [-f|-o]     what changed here, what is waiting on origin, what the machine lacks
+#   dots diff                 the changes themselves, every repo
+#   dots save [-m MSG] [-n]   commit and push every change, in every repo
+#   dots update [--quick]     bring the machine up to date: repos, per-host links, tools
+#   dots push                 push the commits that are not on origin yet
+#   dots doctor               check the machine against the intended state, installs included
+#   dots setup [options]      install or repair the whole layer; what bootstrap.sh runs
+#   dots root show|hide       put README.md, bootstrap.sh and .github/ in $HOME to edit them, or take them out
+#   dots private <git args>   git in the private repo
+#   dots nvim <git args>      git in the nvim repo
+#   dots git <git args>       git in the dotfiles repo; any other word is passed to it as well
+#
+# Environment overrides, for tests: DOTFILES_REPO, DOTFILES_PUSH_URL, DOTFILES_BRANCH,
+# DOTFILES_PRIVATE_REPO.
+
+set -u
+
+PUBLIC_GIT_DIR=$HOME/.dotfiles
+PUBLIC_PUSH_URL=${DOTFILES_PUSH_URL:-git@github.com:hvpaiva/dotfiles.git}
+PUBLIC_BRANCH=${DOTFILES_BRANCH:-master}
+PRIVATE_DIR=$HOME/.local/share/dotfiles-private
+PRIVATE_REPO=${DOTFILES_PRIVATE_REPO:-git@github.com:hvpaiva/dotfiles-private.git}
+NVIM_DIR=$HOME/.config/nvim
+NVIM_PATH=.config/nvim
+NVIM_REPO=https://github.com/hvpaiva/nvim.git
+NVIM_PUSH_URL=git@github.com:hvpaiva/nvim.git
+NVIM_BRANCH=main
+AUGUR_DIR=$HOME/dev/personal/augur
+AUGUR_REPO=https://github.com/hvpaiva/augur.git
+AUGUR_PUSH_URL=git@github.com:hvpaiva/augur.git
+PORT_DIR=$HOME/.local/share/omarchy-ubuntu
+PORT_REPO=https://github.com/hvpaiva/omarchy-ubuntu.git
+BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/master/bootstrap.sh
+FONT="MesloLGLDZ Nerd Font Mono"
+STATE_DIR=$HOME/.local/state/dotfiles
+HOST_FILE=$HOME/.config/dotfiles/host
+HOSTS_DIR=$HOME/.config/dotfiles/hosts
+TPM_DIR=$HOME/.local/share/tmux/plugins
+FETCH_TTL=600
+# Tracked at the repo root, kept out of $HOME by a sparse checkout (bootstrap.sh writes the
+# same patterns before the first checkout)
+ROOT_ENTRIES=(README.md bootstrap.sh .github)
+ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
+# System packages the layer needs and mise cannot provide: compilers and headers for the
+# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig
+ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion)
+UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion)
+# Distro packages the layer replaces with mise's copy, or does not want at all (starship,
+# zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise through mise.run
+# and nothing else from this list, so on Ubuntu they come from an earlier life of the machine.
+ARCH_DROP=(herdr sesh-bin zoxide zsh tree-sitter-cli mise-bin cliamp tobi-try starship)
+UBUNTU_DROP=(mise zoxide zsh starship)
+STALE_NAMES=(herdr sesh zoxide starship cliamp tree-sitter mise try)
+
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH:$HOME/.local/share/mise/shims"
+
+usage() {
+  cat <<'USAGE'
+dots — the personal layer of this machine (github.com/hvpaiva/dotfiles)
+
+  dots [status] [-f|-o]     what changed here, what is waiting on origin, what the machine lacks
+                            -f fetches now, -o stays offline (default: fetch at most every 10 min)
+  dots diff                 the changes themselves, every repo
+  dots save [-m MSG] [-n]   commit and push every change, in every repo (-n: do not push)
+  dots update [--quick]     bring the machine up to date: repos, per-host links, tools
+                            --quick skips the tool upgrades (mise, augur, tmux plugins)
+  dots push                 push the commits that are not on origin yet
+  dots doctor               check the machine against the intended state, installs included
+  dots setup [options]      install or repair the whole layer; what bootstrap.sh runs
+                            --host NAME --reset --skip-omarchy --skip-private --skip-mise --skip-rust
+                            (--reset drops local edits to tracked dotfiles and private files)
+  dots root show|hide       put README.md, bootstrap.sh and .github/ in $HOME to edit them, or take them out
+  dots private <git args>   git in the private repo
+  dots nvim <git args>      git in the nvim repo
+  dots git <git args>       git in the dotfiles repo; any other word is passed to it as well
+USAGE
+}
+
+if [[ -t 1 ]]; then
+  c_b=$'\e[1m' c_d=$'\e[2m' c_r=$'\e[31m' c_g=$'\e[32m' c_y=$'\e[33m' c_c=$'\e[36m' c_0=$'\e[0m'
+else
+  c_b='' c_d='' c_r='' c_g='' c_y='' c_c='' c_0=''
+fi
+WARNINGS=()
+step() { printf '\n%s==> %s%s\n' "$c_c$c_b" "$*" "$c_0"; }
+note() { printf '    %s\n' "$*"; }
+warn() { WARNINGS+=("$*"); printf '    %s%s%s\n' "$c_y" "$*" "$c_0"; }
+die()  { printf '%serror:%s %s\n' "$c_r" "$c_0" "$*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+indent() { local l; while IFS= read -r l; do printf '%s%s\n' "$1" "$l"; done; }
+cell() { # WIDTH COLOUR TEXT: TEXT padded to WIDTH, colour codes not counted
+  local w=$1 c=$2 t=$3 pad=0
+  (( w > ${#t} )) && pad=$((w - ${#t}))
+  printf '%s%s%s%*s' "$c" "$t" "$c_0" "$pad" ''
+}
+run_root() { # CMD… — through sudo; says what to run by hand when no password can be asked
+  if sudo -n true 2>/dev/null || { : </dev/tty; } 2>/dev/null; then
+    sudo "$@"
+  else
+    warn "needs sudo and there is no terminal to ask for the password; by hand: sudo $*"
+    return 1
+  fi
+}
+
+os=other
+DROP=()
+detect_os() {
+  local ID='' ID_LIKE=''
+  [[ -r /etc/os-release ]] || return 0
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  case $ID in
+    arch | omarchy) os=arch ;;
+    ubuntu) os=ubuntu ;;
+    *) case $ID_LIKE in *arch*) os=arch ;; *ubuntu*) os=ubuntu ;; esac ;;
+  esac
+  case $os in arch) DROP=("${ARCH_DROP[@]}") ;; ubuntu) DROP=("${UBUNTU_DROP[@]}") ;; esac
+}
+
+# ── repositories ─────────────────────────────────────────────────────────────
+repo_gitargs() {
+  case $1 in
+    public)  printf '%s\n' "--git-dir=$PUBLIC_GIT_DIR" "--work-tree=$HOME" ;;
+    private) printf '%s\n' -C "$PRIVATE_DIR" ;;
+    nvim)    printf '%s\n' -C "$NVIM_DIR" ;;
+  esac
+}
+repo_git() { # NAME git-args…
+  local r=$1; shift
+  local -a a; mapfile -t a < <(repo_gitargs "$r")
+  git "${a[@]}" "$@"
+}
+repo_present() {
+  case $1 in
+    public)  [[ -d $PUBLIC_GIT_DIR ]] ;;
+    private) [[ -d $PRIVATE_DIR/.git ]] ;;
+    nvim)    [[ -d $NVIM_DIR/.git ]] ;;
+  esac
+}
+repo_label() { case $1 in public) printf dotfiles ;; private) printf private ;; nvim) printf nvim ;; esac; }
+repo_cli()   { case $1 in public) printf dots ;; private) printf 'dots private' ;; nvim) printf 'dots nvim' ;; esac; }
+need_public() { [[ -d $PUBLIC_GIT_DIR ]] || die "no ~/.dotfiles on this machine; start with: bash <(curl -fsSL $BOOTSTRAP_URL)"; }
+need_repo() { repo_present "$1" || die "the $(repo_label "$1") repo is not set up here: dots setup"; }
+
+repo_fetch() { # NAME FORCE — fetch origin, at most once every FETCH_TTL seconds unless forced
+  local r=$1 force=$2 gd head
+  gd=$(repo_git "$r" rev-parse --absolute-git-dir 2>/dev/null) || return 1
+  head=$gd/FETCH_HEAD
+  if (( ! force )) && [[ -f $head ]] && (( $(date +%s) - $(stat -c %Y "$head") < FETCH_TTL )); then
+    return 0
+  fi
+  local -a a; mapfile -t a < <(repo_gitargs "$r")
+  GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" timeout 60 git "${a[@]}" fetch -q origin 2>/dev/null
+}
+
+repo_state() { # NAME — sets st_branch st_changes st_n st_upstream st_ahead st_behind
+  local r=$1 counts
+  st_branch=$(repo_git "$r" symbolic-ref --short -q HEAD 2>/dev/null) || st_branch=detached
+  # ignore-submodules=all: the nvim work tree gets its own line; a recorded pointer that
+  # moved is detected by nvim_pointer_state
+  st_changes=$(repo_git "$r" status --porcelain --ignore-submodules=all 2>/dev/null)
+  st_n=0; [[ -n $st_changes ]] && st_n=$(wc -l <<<"$st_changes")
+  st_upstream='' st_ahead=0 st_behind=0
+  if st_upstream=$(repo_git "$r" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null); then
+    counts=$(repo_git "$r" rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null) \
+      && read -r st_behind st_ahead <<<"$counts"
+  fi
+}
+
+repo_update() { # NAME RESET — fast-forward to the upstream (fetched already), or reset to it
+  local r=$1 reset=$2 label up before after err n
+  label=$(repo_label "$r")
+  up=$(repo_git "$r" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null) || { warn "$label: no upstream branch"; return 1; }
+  before=$(repo_git "$r" rev-parse HEAD)
+  if (( reset )); then
+    repo_git "$r" reset -q --hard "$up" || { warn "$label: reset failed"; return 1; }
+  elif ! err=$(repo_git "$r" merge -q --ff-only --autostash "$up" 2>&1); then
+    warn "$label: cannot fast-forward to $up (local commits diverge, or a local edit collides)"
+    [[ -n $err ]] && indent '      ' <<<"$err"
+    warn "reconcile by hand: $(repo_cli "$r") log --oneline HEAD...$up"
+    return 1
+  fi
+  after=$(repo_git "$r" rev-parse HEAD)
+  if [[ $before == "$after" ]]; then
+    note "$label: up to date ($(repo_git "$r" log --oneline -1))"
+  else
+    n=$(repo_git "$r" rev-list --count "$before..$after")
+    note "$label: $n new commit(s), now at $(repo_git "$r" log --oneline -1)"
+  fi
+}
+
+push_repo() { # NAME — push when there is something to push
+  local r=$1 label; label=$(repo_label "$r")
+  repo_fetch "$r" 0 || true
+  repo_state "$r"
+  [[ -n $st_upstream ]] || { warn "$label: no upstream branch, nothing pushed"; return 1; }
+  (( st_ahead )) || return 0
+  if (( st_behind )); then
+    warn "$label: origin has $st_behind new commit(s); dots update first, then push again"
+    return 1
+  fi
+  if repo_git "$r" push -q origin HEAD 2>/dev/null; then
+    note "$label: pushed $st_ahead commit(s)"
+  else
+    warn "$label: push failed (no SSH key on this machine?); by hand: $(repo_cli "$r") push"
+    return 1
+  fi
+}
+
+# ── nvim: its own repo, recorded in dotfiles as a submodule pointer ──────────
+nvim_pointer_state() { # prints same|ahead|behind|diverged|unknown|none
+  local rec live
+  rec=$(repo_git public ls-files -s -- "$NVIM_PATH" 2>/dev/null | awk '$1 == "160000" { print $2 }')
+  [[ -n $rec ]] || { printf none; return; }
+  live=$(repo_git nvim rev-parse HEAD 2>/dev/null) || { printf unknown; return; }
+  if [[ $rec == "$live" ]]; then printf same
+  elif ! repo_git nvim cat-file -e "$rec^{commit}" 2>/dev/null; then printf unknown
+  elif repo_git nvim merge-base --is-ancestor "$rec" "$live" 2>/dev/null; then printf ahead
+  elif repo_git nvim merge-base --is-ancestor "$live" "$rec" 2>/dev/null; then printf behind
+  else printf diverged
+  fi
+}
+record_nvim() { # stage the live nvim commit in dotfiles when it moved forward
+  repo_present nvim || return 0
+  case $(nvim_pointer_state) in
+    ahead | none)
+      local live; live=$(repo_git nvim rev-parse HEAD) || return 0
+      repo_git public update-index --add --cacheinfo "160000,$live,$NVIM_PATH" \
+        && note "nvim: recorded ${live:0:7} in dotfiles" ;;
+    behind)   warn "nvim: older than the commit recorded in dotfiles; dots update first" ;;
+    unknown)  warn "nvim: the commit recorded in dotfiles is not here; dots update first" ;;
+    diverged) warn "nvim: diverged from the commit recorded in dotfiles; record left alone" ;;
+  esac
+}
+
+# ── per-host layers: files symlinked into $HOME ──────────────────────────────
+host_name() { if [[ -r $HOST_FILE ]]; then host=$(<"$HOST_FILE"); else host=$(hostname); fi; }
+link_trees() { # "root|label" per tree that applies to this host
+  printf '%s|%s\n' "$HOSTS_DIR/$host" "hosts/$host"
+  if [[ -d $PRIVATE_DIR ]]; then
+    printf '%s|%s\n' "$PRIVATE_DIR/hosts/$host" "private/hosts/$host" "$PRIVATE_DIR/common" "private/common"
+  fi
+}
+# If a program replaced a link with a regular file (omarchy-shell rewrites shell.json, the
+# monitor panel rewrites monitors.lua), the live file is the truth: it is copied back into
+# its tree and re-linked, and shows up as a change to save.
+link_tree() { # ROOT LABEL QUIET
+  local root=$1 label=$2 quiet=$3 linked=0 adopted=0 kept=0 src rel dst
+  [[ -d $root ]] || { (( quiet )) || note "$label: nothing to link"; return 0; }
+  while IFS= read -r src; do
+    rel=${src#"$root"/}; dst=$HOME/$rel
+    if [[ -L $dst ]]; then
+      [[ $(readlink "$dst") == "$src" ]] && { kept=$((kept + 1)); continue; }
+      rm -f "$dst"
+    elif [[ -e $dst ]]; then
+      if ! cmp -s "$dst" "$src"; then
+        cp -p "$dst" "$src" && adopted=$((adopted + 1)) && note "$label: adopted the live $rel (review it, then dots save)"
+      fi
+      rm -f "$dst"
+    fi
+    mkdir -p "$(dirname "$dst")" && ln -s "$src" "$dst" && linked=$((linked + 1))
+  done < <(find "$root" -type f 2>/dev/null)
+  (( quiet )) || note "$label: $kept already linked, $linked linked now, $adopted adopted"
+}
+link_all() { # QUIET
+  local root label
+  while IFS='|' read -r root label; do link_tree "$root" "$label" "$1"; done < <(link_trees)
+}
+link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_detail
+  local root label src rel dst
+  lk_ok=0 lk_replaced=0 lk_missing=0 lk_other=0 lk_detail=''
+  while IFS='|' read -r root label; do
+    [[ -d $root ]] || continue
+    while IFS= read -r src; do
+      rel=${src#"$root"/}; dst=$HOME/$rel
+      if [[ -L $dst ]]; then
+        if [[ $(readlink "$dst") == "$src" ]]; then lk_ok=$((lk_ok + 1))
+        else lk_other=$((lk_other + 1)); lk_detail+="$rel: link points elsewhere ($label)"$'\n'
+        fi
+      elif [[ -e $dst ]]; then lk_replaced=$((lk_replaced + 1)); lk_detail+="$rel: a regular file replaced the link ($label)"$'\n'
+      else lk_missing=$((lk_missing + 1)); lk_detail+="$rel: not linked ($label)"$'\n'
+      fi
+    done < <(find "$root" -type f 2>/dev/null)
+  done < <(link_trees)
+}
+
+# ── root entries: README.md, bootstrap.sh, .github live in the repo, not in $HOME ──
+root_hide() { # QUIET
+  local out
+  out=$(repo_git public sparse-checkout set --no-cone "${ROOT_PATTERNS[@]}" 2>&1) || { warn "sparse-checkout failed: $out"; return 1; }
+  [[ -n $out ]] && warn "$out"
+  (( $1 )) || note "${ROOT_ENTRIES[*]} are out of \$HOME again"
+}
+root_hidden() {
+  local f
+  [[ $(repo_git public config --bool core.sparseCheckout 2>/dev/null) == true ]] || return 1
+  for f in "${ROOT_ENTRIES[@]}"; do [[ -e $HOME/$f ]] && return 1; done
+  return 0
+}
+
+# ── tools and packages ───────────────────────────────────────────────────────
+mise_missing() { mise ls --missing --no-header 2>/dev/null | awk 'NF { print $1 }'; }
+installed_pkgs() { # PKG… — those installed here
+  local p
+  case $os in
+    arch) pacman -Qq "$@" 2>/dev/null ;;
+    ubuntu)
+      for p in "$@"; do
+        [[ $(dpkg-query -W -f='${db:Status-Status}' "$p" 2>/dev/null) == installed ]] && printf '%s\n' "$p"
+      done ;;
+  esac
+  return 0
+}
+missing_pkgs() { # PKG… — those not installed here
+  local p
+  case $os in
+    arch) pacman -T "$@" 2>/dev/null ;;
+    ubuntu)
+      for p in "$@"; do
+        [[ $(dpkg-query -W -f='${db:Status-Status}' "$p" 2>/dev/null) == installed ]] || printf '%s\n' "$p"
+      done ;;
+  esac
+  return 0
+}
+drop_command() { # PKG… — the removal command for this distro
+  case $os in
+    arch)   printf 'sudo pacman -Rns --noconfirm %s' "$*" ;;
+    ubuntu) printf 'sudo apt-get remove -y %s' "$*" ;;
+  esac
+}
+stale_processes() { # "NAME PID" for replaced tools still running a removed binary
+  local p exe name
+  for p in /proc/[0-9]*; do
+    exe=$(readlink "$p/exe" 2>/dev/null) || continue
+    [[ $exe == *' (deleted)' ]] || continue
+    name=${exe##*/}; name=${name% (deleted)}
+    case " ${STALE_NAMES[*]} " in *" $name "*) printf '%s %s\n' "$name" "${p##*/}" ;; esac
+  done
+}
+theme_name() { local n=${1##*/}; n=${n%.git}; n=${n#omarchy-}; printf '%s' "${n%-theme}"; }
+themes_missing() { # urls from omarchy/themes.txt whose theme is not installed
+  local url
+  [[ -r $HOME/.config/omarchy/themes.txt ]] || return 0
+  while read -r url; do
+    [[ -z $url || $url == \#* ]] && continue
+    [[ -d $HOME/.config/omarchy/themes/$(theme_name "$url") ]] || printf '%s\n' "$url"
+  done <"$HOME/.config/omarchy/themes.txt"
+}
+tmux_plugins_missing() { # plugins declared in tmux/extras.conf without a clone under TPM_DIR
+  local p
+  [[ -r $HOME/.config/tmux/extras.conf ]] || return 0
+  while read -r p; do
+    [[ -d $TPM_DIR/${p##*/} ]] || printf '%s\n' "$p"
+  done < <(sed -n 's/^set -g @plugin "\([^"]*\)".*/\1/p' "$HOME/.config/tmux/extras.conf")
+}
+
+# ── checks: what doctor prints and status counts ─────────────────────────────
+chk_print=1 chk_fails=0
+chk() { # ok|warn MESSAGE [FIX]
+  if [[ $1 == ok ]]; then
+    (( chk_print )) && printf '  %sok%s    %s\n' "$c_g" "$c_0" "$2"
+  else
+    chk_fails=$((chk_fails + 1))
+    if (( chk_print )); then
+      printf '  %swarn%s  %s\n' "$c_y" "$c_0" "$2"
+      [[ -n ${3:-} ]] && printf '        → %s\n' "$3"
+    fi
+  fi
+  return 0
+}
+checks_repos() { # needs the network: fetches, then compares with origin
+  local r label
+  for r in public private nvim; do
+    label=$(repo_label "$r")
+    repo_present "$r" || { chk warn "$label: not set up" "dots setup"; continue; }
+    repo_fetch "$r" 0 || true
+    repo_state "$r"
+    [[ $st_branch == detached ]] && { chk warn "$label: detached HEAD" "$(repo_cli "$r") checkout <branch>"; continue; }
+    if (( st_n )); then chk warn "$label: $st_n changed file(s)" "dots save"; else chk ok "$label: clean"; fi
+    if [[ -z $st_upstream ]]; then chk warn "$label: no upstream branch" "dots setup"
+    elif (( st_ahead && st_behind )); then chk warn "$label: diverged from $st_upstream ($st_ahead here, $st_behind there)" "$(repo_cli "$r") log --oneline HEAD...$st_upstream"
+    elif (( st_ahead )); then chk warn "$label: $st_ahead commit(s) not pushed" "dots push"
+    elif (( st_behind )); then chk warn "$label: $st_behind commit(s) behind $st_upstream" "dots update"
+    else chk ok "$label: in sync with $st_upstream"
+    fi
+  done
+  if repo_present nvim; then
+    case $(nvim_pointer_state) in
+      same)     chk ok "nvim: the recorded commit is the live one" ;;
+      ahead)    chk warn "nvim: newer than the commit recorded in dotfiles" "dots save" ;;
+      behind)   chk warn "nvim: older than the commit recorded in dotfiles" "dots update" ;;
+      unknown)  chk warn "nvim: the recorded commit is not here" "dots update" ;;
+      diverged) chk warn "nvim: diverged from the recorded commit" "dots nvim log --oneline; then dots save" ;;
+      none)     chk warn "nvim: not recorded in dotfiles" "dots save" ;;
+    esac
+  fi
+}
+checks_machine() { # fast, local: what is installed and wired, against what the layer intends
+  local missing n cur line
+  local -a dup
+  detect_os
+  if [[ -r $HOST_FILE ]]; then chk ok "host: $host"; else chk warn "host: no marker, assuming '$host'" "dots setup --host NAME"; fi
+  link_state
+  if (( lk_replaced + lk_missing + lk_other )); then
+    chk warn "links: $lk_ok in place, $lk_replaced replaced, $lk_missing missing, $lk_other elsewhere" "dots update (adopts live files, re-links)"
+    (( chk_print )) && indent '          ' <<<"${lk_detail%$'\n'}"
+  else
+    chk ok "links: $lk_ok per-host file(s) in place"
+  fi
+  if root_hidden; then chk ok "root entries: ${ROOT_ENTRIES[*]} kept out of \$HOME"; else chk warn "root entries: ${ROOT_ENTRIES[*]} in \$HOME, or sparse checkout off" "dots root hide"; fi
+  if [[ -e $HOME/.config/git/local ]]; then chk ok "git: per-host identity present"; else chk warn "git: no ~/.config/git/local (email, signing key)" "add hosts/$host/.config/git/local"; fi
+  missing=$(find "$HOME/.config/git/hooks" -maxdepth 1 -type f ! -name '*.sh' ! -perm -u+x 2>/dev/null)
+  if [[ -z $missing ]]; then chk ok "git: hooks executable"; else chk warn "git: hooks not executable: $(tr '\n' ' ' <<<"${missing//$HOME\//}")" "chmod +x the files named"; fi
+  case $os in
+    arch)
+      if [[ -r /usr/share/omarchy/version ]]; then chk ok "omarchy: $(</usr/share/omarchy/version)"; else chk warn "omarchy: not installed" "install Omarchy (ISO) first"; fi ;;
+    ubuntu)
+      if [[ -d $PORT_DIR/.git && -e /usr/share/omarchy ]]; then chk ok "omarchy: port at $PORT_DIR ($(git -C "$PORT_DIR" log -1 --format=%h 2>/dev/null))"; else chk warn "omarchy: port not installed" "dots setup"; fi ;;
+  esac
+  case $os in arch) missing=$(missing_pkgs "${ARCH_DEPS[@]}") ;; ubuntu) missing=$(missing_pkgs "${UBUNTU_DEPS[@]}") ;; *) missing='' ;; esac
+  [[ $os == other ]] || { if [[ -z $missing ]]; then chk ok "packages: build dependencies present"; else chk warn "packages: missing $(tr '\n' ' ' <<<"$missing")" "dots setup"; fi; }
+  if have mise; then
+    if [[ $(command -v mise) == "$HOME/.local/bin/mise" ]]; then chk ok "mise: $HOME/.local/bin/mise $(mise --version 2>/dev/null | awk '{ print $1 }')"; else chk warn "mise: $(command -v mise) is not the official build in ~/.local/bin" "dots setup"; fi
+    missing=$(mise_missing)
+    if [[ -z $missing ]]; then chk ok "mise: every tool installed"; else chk warn "mise: missing $(tr '\n' ' ' <<<"$missing")" "dots update"; fi
+  else
+    chk warn "mise: not installed" "dots setup"
+  fi
+  if [[ -x $HOME/.cargo/bin/cargo ]]; then chk ok "rust: $("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else chk warn "rust: rustup not installed" "dots setup"; fi
+  if have augur; then chk ok "augur: $(augur --version 2>/dev/null)"; else chk warn "augur: not installed" "dots setup"; fi
+  if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then chk ok "ble.sh: present"; else chk warn "ble.sh: not installed" "dots setup"; fi
+  if [[ -d $TPM_DIR/tpm ]]; then
+    missing=$(tmux_plugins_missing)
+    if [[ -z $missing ]]; then chk ok "tmux: tpm and every plugin present"; else chk warn "tmux: plugins missing: $(tr '\n' ' ' <<<"$missing")" "dots update"; fi
+  else
+    chk warn "tmux: tpm not installed" "dots setup"
+  fi
+  mapfile -t dup < <(installed_pkgs "${DROP[@]}")
+  if ((${#dup[@]})); then chk warn "packages: distro copies the layer replaces: ${dup[*]}" "dots setup, or: $(drop_command "${dup[@]}")"; else chk ok "packages: no distro copies of mise tools, no starship"; fi
+  have starship && chk warn "starship: $(command -v starship) is on PATH and Omarchy's rc would start it" "remove it"
+  while read -r line; do
+    [[ -n $line ]] && chk warn "process: ${line% *} (pid ${line#* }) still runs a removed binary" "restart it (herdr: herdr server stop, then open it again)"
+  done <<<"$(stale_processes)"
+  if have fc-list; then
+    if fc-list : family 2>/dev/null | grep -qF "$FONT"; then chk ok "font: $FONT installed"; else chk warn "font: $FONT not installed" "Arch: omarchy menu > Style > Font; Ubuntu: a Nerd Fonts release into ~/.local/share/fonts"; fi
+  fi
+  if have omarchy-font-current; then
+    cur=$(omarchy-font-current 2>/dev/null)
+    if [[ $cur == "$FONT" ]]; then chk ok "font: set as the terminal font"; else chk warn "font: Omarchy has '$cur' set" "dots setup"; fi
+  fi
+  if [[ -r $HOME/.config/omarchy/themes.txt ]] && have omarchy-theme-install; then
+    missing=$(themes_missing); n=0; [[ -n $missing ]] && n=$(wc -l <<<"$missing")
+    if (( n )); then chk warn "themes: $n from themes.txt not installed" "dots setup"; else chk ok "themes: every theme in themes.txt installed"; fi
+  fi
+  if have kubectl; then
+    if [[ -s $HOME/.local/share/bash-completion/completions/kubectl ]]; then chk ok "kubectl: completion generated"; else chk warn "kubectl: completion not generated" "dots setup"; fi
+  fi
+}
+checks_deep() { # slower: a real login shell, GitHub over SSH
+  local out
+  out=$(bash -lic true 2>&1 | grep -vE 'cannot set terminal process group|no job control in this shell')
+  if [[ -z $out ]]; then chk ok "shell: a login shell starts without errors"; else chk warn "shell: a login shell prints: ${out%%$'\n'*}" "fix the file it names"; fi
+  out=$(bash -lic 'printf "%s|%s" "${PAGER-}" "$(command -v dots)"' 2>/dev/null)
+  if [[ $out == "less|$HOME/.local/bin/dots" ]]; then chk ok "shell: PAGER=less and dots on PATH"; else chk warn "shell: got PAGER='${out%%|*}', dots='${out#*|}'" "the personal bash layer is not being sourced"; fi
+  out=$(timeout 20 ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1)
+  if [[ $out == *"successfully authenticated"* ]]; then chk ok "github: SSH access works (private layer, pushes)"; else chk warn "github: no SSH access (${out%%$'\n'*})" "set up the SSH key (1Password agent) for the private layer and pushes"; fi
+}
+cmd_doctor() {
+  need_public; host_name
+  chk_print=1 chk_fails=0
+  checks_repos
+  checks_machine
+  checks_deep
+  printf '\n'
+  if (( chk_fails )); then printf '  %s%d thing(s) to look at%s\n' "$c_y" "$chk_fails" "$c_0"; return 1; fi
+  printf '  %sall good%s\n' "$c_g" "$c_0"
+}
+
+# ── status ───────────────────────────────────────────────────────────────────
+overview() { # MODE auto|force|off
+  local mode=$1 r label fetched st_text st_col rm_text rm_col ptr_text ptr_col
+  local hint_save=0 hint_update=0 hint_manual=0 hint_root=0 hint_doctor=0 changes=''
+  host_name
+  for r in public private nvim; do
+    label=$(repo_label "$r")
+    if ! repo_present "$r"; then
+      printf '  '; cell 10 '' "$label"; cell 9 '' ''; cell 0 "$c_y" "not set up → dots setup"; printf '\n'
+      continue
+    fi
+    fetched=1
+    case $mode in
+      force) repo_fetch "$r" 1 || fetched=0 ;;
+      auto)  repo_fetch "$r" 0 || fetched=0 ;;
+    esac
+    repo_state "$r"
+    if (( st_n )); then st_text="$st_n changed" st_col=$c_y; hint_save=1; else st_text=clean st_col=$c_g; fi
+    if [[ $st_branch == detached ]]; then rm_text="detached HEAD" rm_col=$c_r; hint_manual=1
+    elif [[ -z $st_upstream ]]; then rm_text="no upstream" rm_col=$c_d
+    elif (( st_ahead && st_behind )); then rm_text="diverged: $st_ahead here, $st_behind on origin" rm_col=$c_r; hint_manual=1
+    elif (( st_ahead )); then rm_text="$st_ahead to push" rm_col=$c_y; hint_save=1
+    elif (( st_behind )); then rm_text="$st_behind behind origin" rm_col=$c_y; hint_update=1
+    else rm_text="in sync" rm_col=$c_g
+    fi
+    (( fetched )) || rm_text+=" (offline)"
+    ptr_text='' ptr_col=''
+    if [[ $r == nvim ]]; then
+      case $(nvim_pointer_state) in
+        same)     ptr_text="recorded in dotfiles" ptr_col=$c_d ;;
+        ahead)    ptr_text="newer than recorded in dotfiles" ptr_col=$c_y; hint_save=1 ;;
+        behind)   ptr_text="older than recorded in dotfiles" ptr_col=$c_y; hint_update=1 ;;
+        unknown)  ptr_text="recorded commit not here" ptr_col=$c_y; hint_update=1 ;;
+        diverged) ptr_text="diverged from the recorded commit" ptr_col=$c_r; hint_manual=1 ;;
+        none)     ptr_text="not recorded in dotfiles" ptr_col=$c_y; hint_save=1 ;;
+      esac
+    fi
+    printf '  '; cell 10 '' "$label"; cell 9 '' "$st_branch"; cell 18 "$st_col" "$st_text"; cell 0 "$rm_col" "$rm_text"
+    [[ -n $ptr_text ]] && { printf '   '; cell 0 "$ptr_col" "$ptr_text"; }
+    printf '\n'
+    [[ -n $st_changes ]] && changes+="$label"$'\n'"$(indent '   ' <<<"$st_changes")"$'\n'
+  done
+  chk_print=0 chk_fails=0
+  checks_machine
+  if (( lk_replaced + lk_missing + lk_other )); then
+    st_text="$lk_ok in place, $lk_replaced replaced, $lk_missing missing, $lk_other elsewhere" st_col=$c_y; hint_update=1
+  else
+    st_text="$lk_ok in place" st_col=$c_g
+  fi
+  printf '  '; cell 10 '' "$host"; cell 9 '' links; cell 0 "$st_col" "$st_text"; printf '\n'
+  if (( chk_fails )); then st_text="$chk_fails issue(s)" st_col=$c_y; hint_doctor=1; else st_text="everything installed and wired" st_col=$c_g; fi
+  printf '  '; cell 10 '' machine; cell 9 '' checks; cell 0 "$st_col" "$st_text"; printf '\n'
+  root_hidden || hint_root=1
+  [[ -n $changes ]] && { printf '\n'; indent '  ' <<<"${changes%$'\n'}"; }
+  printf '\n'
+  (( hint_save ))   && printf '  → %sdots save%s       commit and push what changed here\n' "$c_b" "$c_0"
+  (( hint_update )) && printf '  → %sdots update%s     take what is waiting: origin, links, tools\n' "$c_b" "$c_0"
+  (( hint_doctor )) && printf '  → %sdots doctor%s     what the machine lacks, and how to fix it\n' "$c_b" "$c_0"
+  (( hint_root ))   && printf '  → %sdots root hide%s  once the root entries are saved\n' "$c_b" "$c_0"
+  (( hint_manual )) && printf '  → something needs a hand; %sdots doctor%s says what\n' "$c_b" "$c_0"
+  (( hint_save + hint_update + hint_doctor + hint_root + hint_manual )) || printf '  %severything in sync%s\n' "$c_g" "$c_0"
+}
+cmd_status() {
+  local mode=auto
+  while (($#)); do
+    case $1 in
+      -f | --fetch) mode=force ;;
+      -o | --offline) mode=off ;;
+      -h | --help) usage; return 0 ;;
+      *) die "status: unknown option $1" ;;
+    esac
+    shift
+  done
+  need_public
+  overview "$mode"
+}
+cmd_diff() {
+  local r untracked
+  need_public
+  for r in public private nvim; do
+    repo_present "$r" || continue
+    repo_state "$r"
+    (( st_n )) || continue
+    printf '%s%s%s\n' "$c_b" "$(repo_label "$r")" "$c_0"
+    repo_git "$r" diff --ignore-submodules=all "$@"
+    untracked=$(repo_git "$r" ls-files --others --exclude-standard)
+    [[ -n $untracked ]] && { printf '%snew files, not yet in the repo:%s\n' "$c_d" "$c_0"; indent '  ' <<<"$untracked"; }
+  done
+  return 0
+}
+
+# ── save: commit and push everything ─────────────────────────────────────────
+default_message() { # PORCELAIN — "chore: update a, b, c"
+  local line path names='' n=0
+  while IFS= read -r line; do
+    [[ -n $line ]] || continue
+    path=${line:3}; path=${path##* -> }
+    n=$((n + 1)); (( n <= 3 )) && names+="${names:+, }${path##*/}"
+  done <<<"$1"
+  (( n > 3 )) && names+=" and $((n - 3)) more"
+  printf 'chore: update %s' "$names"
+}
+ask_message() { # PORCELAIN — asks on a terminal, otherwise the default
+  local default m; default=$(default_message "$1")
+  if [[ -t 0 ]]; then
+    read -rep "  message [$default]: " m || return 1
+    printf '%s' "${m:-$default}"
+  else
+    printf '%s' "$default"
+  fi
+}
+cmd_save() {
+  local msg='' push=1 r label m any=0
+  while (($#)); do
+    case $1 in
+      -m | --message) msg=${2:?-m needs a message}; shift ;;
+      -n | --no-push) push=0 ;;
+      -h | --help) usage; return 0 ;;
+      *) die "save: unknown option $1" ;;
+    esac
+    shift
+  done
+  need_public; host_name
+  link_all 1
+  for r in nvim private public; do
+    repo_present "$r" || continue
+    label=$(repo_label "$r")
+    [[ $r == public ]] && record_nvim
+    repo_state "$r"
+    if (( st_n )); then
+      any=1
+      printf '%s%s%s\n' "$c_b" "$label" "$c_0"; indent '  ' <<<"$st_changes"
+      m=$msg
+      [[ -n $m ]] || m=$(ask_message "$st_changes") || { warn "$label: skipped"; continue; }
+      if repo_git "$r" add -A && repo_git "$r" commit -q -m "$m"; then
+        note "committed $(repo_git "$r" log --oneline -1)"
+      else
+        warn "$label: commit failed"; continue
+      fi
+    fi
+    (( push )) && push_repo "$r"
+  done
+  (( any )) || note "nothing to commit"
+  return 0
+}
+cmd_push() {
+  local r
+  need_public
+  for r in nvim private public; do repo_present "$r" && push_repo "$r"; done
+  return 0
+}
+
+# ── update: bring the machine up to date ─────────────────────────────────────
+cmd_update() {
+  local quick=0 r rs missing
+  while (($#)); do
+    case $1 in
+      --quick) quick=1 ;;
+      -h | --help) usage; return 0 ;;
+      *) die "update: unknown option $1" ;;
+    esac
+    shift
+  done
+  need_public; host_name; detect_os; mkdir -p "$STATE_DIR"
+  step "repositories"
+  for r in public private nvim; do
+    repo_present "$r" || continue
+    rs=0
+    if repo_fetch "$r" 1; then repo_update "$r" "$rs"; else warn "$(repo_label "$r"): cannot reach origin, left as is"; fi
+  done
+  step "per-host links"
+  link_all 0
+  if have mise; then
+    step "mise tools"
+    missing=$(mise_missing)
+    if [[ -n $missing ]]; then
+      note "installing: $(tr '\n' ' ' <<<"$missing")"
+      if mise install -y >"$STATE_DIR/mise-install.log" 2>&1; then note "installed"; else warn "some tools failed to install; see $STATE_DIR/mise-install.log"; fi
+    else
+      note "nothing missing"
+    fi
+    if (( ! quick )); then
+      note "upgrading to the newest versions the config allows (log: $STATE_DIR/mise-upgrade.log)"
+      if mise upgrade >"$STATE_DIR/mise-upgrade.log" 2>&1; then note "upgraded"; else warn "mise upgrade had errors; see $STATE_DIR/mise-upgrade.log"; fi
+    fi
+    mise reshim >/dev/null 2>&1 || true
+  fi
+  if (( ! quick )); then
+    skip_rust=0; [[ -x $HOME/.cargo/bin/cargo ]] || skip_rust=1
+    step_augur
+    step "tmux plugins"
+    if [[ -x $TPM_DIR/tpm/bin/update_plugins ]]; then
+      if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/update_plugins" all >/dev/null 2>&1; then note "updated"; else warn "tpm could not update the plugins now; prefix+U inside tmux"; fi
+    else
+      note "tpm not installed (dots setup)"
+    fi
+  fi
+  step "state"
+  overview off
+}
+
+# ── setup: install or repair the whole layer ─────────────────────────────────
+step_deps() {
+  step "system packages"
+  local -a want missing
+  case $os in
+    arch)   want=("${ARCH_DEPS[@]}") ;;
+    ubuntu) want=("${UBUNTU_DEPS[@]}") ;;
+    *) note "unknown distro; not touching packages"; return 0 ;;
+  esac
+  mapfile -t missing < <(missing_pkgs "${want[@]}")
+  ((${#missing[@]})) || { note "all present"; return 0; }
+  note "installing ${missing[*]} (sudo may ask for your password)"
+  local ok=0
+  case $os in
+    arch)   run_root pacman -S --needed --noconfirm "${missing[@]}" >/dev/null && ok=1 ;;
+    ubuntu) run_root apt-get update -qq >/dev/null 2>&1; run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}" >/dev/null && ok=1 ;;
+  esac
+  if (( ok )); then note "installed"; else warn "package install failed; by hand: sudo $( [[ $os == arch ]] && printf 'pacman -S --needed' || printf 'apt-get install' ) ${missing[*]}"; fi
+  hash -r
+}
+step_omarchy() {
+  step "Omarchy"
+  if (( skip_omarchy )); then note "skipped (--skip-omarchy)"; return 0; fi
+  case $os in
+    arch)
+      if [[ -r /usr/share/omarchy/version ]]; then
+        note "present: $(</usr/share/omarchy/version)"
+      else
+        warn "Omarchy is not installed. This script does not install it on Arch (use the Omarchy ISO);"
+        warn "the rest of the layer is set up anyway."
+      fi ;;
+    ubuntu)
+      if [[ ! -d $PORT_DIR/.git ]]; then
+        git clone -q "$PORT_REPO" "$PORT_DIR" || die "cannot clone $PORT_REPO"
+        note "cloned omarchy-ubuntu"
+      else
+        git -C "$PORT_DIR" pull -q --ff-only 2>/dev/null || warn "omarchy-ubuntu: pull skipped (local changes?)"
+      fi
+      note "running omarchy-ubuntu/bootstrap.sh — idempotent, asks for your password; the first run takes 20–40 min"
+      # the port pins herdr and cliamp with `mise use --global`, which rewrites the shared
+      # mise config; whatever this machine had before the run is what it keeps
+      local cfg=$HOME/.config/mise/config.toml before after
+      before=$(cat "$cfg" 2>/dev/null || true)
+      "$PORT_DIR/bootstrap.sh" || die "omarchy-ubuntu bootstrap failed; fix it and run dots setup again"
+      after=$(cat "$cfg" 2>/dev/null || true)
+      if [[ -n $before && $before != "$after" ]]; then
+        printf '%s\n' "$before" >"$cfg"; note "restored mise/config.toml after the port's run"
+      fi ;;
+    *) warn "unsupported distro; only the dotfiles layer is set up" ;;
+  esac
+}
+step_repo() {
+  step "dotfiles"
+  repo_git public config status.showUntrackedFiles normal
+  repo_git public config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  repo_git public config remote.origin.pushurl "$PUBLIC_PUSH_URL"
+  repo_git public config core.sparseCheckout true
+  repo_git public config core.sparseCheckoutCone false
+  if repo_fetch public 1; then
+    repo_git public branch -q --set-upstream-to="origin/$PUBLIC_BRANCH" "$PUBLIC_BRANCH" 2>/dev/null
+    repo_update public "$reset"
+  else
+    warn "cannot reach origin (offline?); using the local checkout as is"
+  fi
+  root_hide 1
+}
+step_host() {
+  step "host"
+  local h=''
+  if [[ -n $host_opt ]]; then
+    printf '%s\n' "$host_opt" >"$HOST_FILE"
+  elif [[ ! -r $HOST_FILE ]]; then
+    [[ -t 0 ]] && read -rp "    per-host layer name for this machine [$(hostname)]: " h
+    printf '%s\n' "${h:-$(hostname)}" >"$HOST_FILE"
+  fi
+  host_name
+  note "$host (from $HOST_FILE)"
+}
+step_private() {
+  step "private layer"
+  if (( skip_private )); then note "skipped (--skip-private)"; return 0; fi
+  if ! GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" git ls-remote -q "$PRIVATE_REPO" HEAD >/dev/null 2>&1; then
+    warn "no access to $PRIVATE_REPO (GitHub SSH key not set up yet?)."
+    warn "Sensitive per-host files stay as they are; run dots setup again once the key works."
+    return 0
+  fi
+  if [[ ! -d $PRIVATE_DIR/.git ]]; then
+    git clone -q "$PRIVATE_REPO" "$PRIVATE_DIR" || die "cannot clone $PRIVATE_REPO"
+    note "cloned"
+  elif repo_fetch private 1; then
+    repo_update private "$reset"
+  else
+    warn "private: cannot reach origin, left as is"
+  fi
+}
+step_nvim() {
+  step "neovim config"
+  if [[ -d $NVIM_DIR && ! -d $NVIM_DIR/.git ]]; then
+    if [[ -z $(ls -A "$NVIM_DIR") ]]; then rmdir "$NVIM_DIR"; else mv "$NVIM_DIR" "$STATE_DIR/nvim-$(date +%s)"; note "moved a non-git ~/.config/nvim aside"; fi
+  fi
+  if [[ ! -d $NVIM_DIR/.git ]]; then
+    git clone -q -b "$NVIM_BRANCH" "$NVIM_REPO" "$NVIM_DIR" || die "cannot clone $NVIM_REPO"
+    note "cloned"
+  elif repo_fetch nvim 1; then
+    repo_update nvim 0
+  else
+    warn "nvim: cannot reach origin, left as is"
+  fi
+  repo_git nvim remote set-url --push origin "$NVIM_PUSH_URL"
+}
+step_drop_packages() {
+  step "distro packages the layer replaces"
+  local -a dup cmd
+  mapfile -t dup < <(installed_pkgs "${DROP[@]}")
+  ((${#dup[@]})) || { note "none installed"; return 0; }
+  case $os in
+    arch)   cmd=(pacman -Rns --noconfirm "${dup[@]}") ;;
+    ubuntu) cmd=(apt-get remove -y "${dup[@]}") ;;
+  esac
+  note "removing ${dup[*]} (sudo may ask for your password)"
+  if run_root "${cmd[@]}" >/dev/null; then note "removed"; else warn "removal failed; by hand: $(drop_command "${dup[@]}")"; fi
+  hash -r
+}
+step_rust() {
+  step "rustup"
+  if (( skip_rust )); then note "skipped (--skip-rust)"; return 0; fi
+  if [[ -x $HOME/.cargo/bin/cargo ]]; then
+    note "present: $("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"
+  else
+    have curl || die "curl is required to install rustup"
+    if curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y -q --no-modify-path >/dev/null; then note "installed"; else die "rustup install failed"; fi
+  fi
+}
+step_augur() {
+  step "augur"
+  if (( skip_rust )); then note "skipped (no rust toolchain)"; return 0; fi
+  local build=0 before
+  if [[ ! -d $AUGUR_DIR/.git ]]; then
+    git clone -q "$AUGUR_REPO" "$AUGUR_DIR" || die "cannot clone $AUGUR_REPO"
+    git -C "$AUGUR_DIR" remote set-url --push origin "$AUGUR_PUSH_URL"
+    build=1
+  else
+    before=$(git -C "$AUGUR_DIR" rev-parse HEAD)
+    git -C "$AUGUR_DIR" pull -q --ff-only 2>/dev/null || true
+    [[ $(git -C "$AUGUR_DIR" rev-parse HEAD) != "$before" ]] && build=1
+  fi
+  have augur || build=1
+  if (( build )); then
+    have cc || warn "no C compiler (Arch: pacman -S base-devel — Ubuntu: apt install build-essential); the build may fail"
+    if "$HOME/.cargo/bin/cargo" install -q --path "$AUGUR_DIR"; then note "built and installed $(augur --version 2>/dev/null)"; else warn "augur build failed; the shell works without it"; fi
+  else
+    note "present: $(augur --version 2>/dev/null)"
+  fi
+}
+step_blesh() {
+  step "ble.sh"
+  local tmp
+  if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then
+    note "present"
+  elif ! have make || ! have gawk; then
+    warn "ble.sh needs make and gawk (Arch: pacman -S make gawk — Ubuntu: apt install make gawk); skipped"
+  else
+    tmp=$(mktemp -d)
+    if git clone -q --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git "$tmp/ble.sh" \
+      && make -s -C "$tmp/ble.sh" install PREFIX="$HOME/.local" >/dev/null; then note "installed"; else warn "ble.sh install failed"; fi
+    rm -rf "$tmp"
+  fi
+}
+step_tpm() {
+  step "tmux plugins"
+  [[ -d $TPM_DIR/tpm ]] || git clone -q https://github.com/tmux-plugins/tpm "$TPM_DIR/tpm"
+  if have tmux; then
+    if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/install_plugins" >/dev/null 2>&1; then note "installed/verified"; else warn "tpm could not install plugins now; press prefix+I inside tmux"; fi
+  else
+    warn "tmux not installed; plugins install on first use (prefix+I)"
+  fi
+}
+step_mise() {
+  step "mise"
+  if (( skip_mise )); then note "skipped (--skip-mise)"; return 0; fi
+  if ! have mise; then
+    have curl || die "curl is required to install mise"
+    if curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh >/dev/null 2>&1; then note "installed ~/.local/bin/mise"; else die "mise install failed"; fi
+  fi
+  note "$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }')"
+  if mise install -y >"$STATE_DIR/mise-install.log" 2>&1; then note "tools installed (log: $STATE_DIR/mise-install.log)"; else warn "some tools failed to install; see $STATE_DIR/mise-install.log"; fi
+  mise reshim >/dev/null 2>&1 || true
+}
+step_font() {
+  (( skip_omarchy )) && return 0
+  have omarchy-font-set || return 0
+  step "font: $FONT"
+  if ! fc-list : family 2>/dev/null | grep -qF "$FONT"; then
+    warn "font not installed (Arch: omarchy menu > Style > Font; Ubuntu: a Nerd Fonts release archive into ~/.local/share/fonts)"
+  elif omarchy-font-current 2>/dev/null | grep -qF "$FONT"; then
+    note "present"
+  else
+    omarchy-font-set "$FONT" >/dev/null 2>&1
+    # font-set rewrites the terminal configs (and pins foot to size 9); fontconfig is what
+    # we wanted from it, the terminal files come back from the repo
+    repo_git public checkout -q -- .config/foot/foot.ini .config/alacritty/alacritty.toml .config/ghostty/config .config/kitty/kitty.conf
+    note "applied ($(omarchy-font-current 2>/dev/null))"
+  fi
+}
+step_themes() {
+  (( skip_omarchy )) && return 0
+  have omarchy-theme-install || return 0
+  [[ -r $HOME/.config/omarchy/themes.txt ]] || return 0
+  step "themes"
+  local url n=0
+  while read -r url; do
+    [[ -n $url ]] || continue
+    if omarchy-theme-install "$url" >/dev/null 2>&1; then n=$((n + 1)); else warn "theme install failed: $url"; fi
+  done < <(themes_missing)
+  note "$n installed, $(find "$HOME/.config/omarchy/themes" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l) present"
+}
+step_completions() {
+  step "shell completions"
+  local comp=$HOME/.local/share/bash-completion/completions a
+  mkdir -p "$comp"
+  if have kubectl; then
+    kubectl completion bash >"$comp/kubectl" 2>/dev/null
+    for a in kubecolor k; do
+      # shellcheck disable=SC2016
+      printf 'source "$HOME/.local/share/bash-completion/completions/kubectl"\ncomplete -o default -F __start_kubectl %s\n' "$a" >"$comp/$a"
+    done
+    note "kubectl, kubecolor, k"
+  else
+    note "kubectl not present, nothing to generate"
+  fi
+}
+setup_steps() {
+  local w
+  step_deps
+  step_omarchy
+  step_repo
+  step_host
+  step_private
+  step "per-host links"
+  link_all 0
+  step_nvim
+  step_drop_packages
+  step_rust
+  step_augur
+  step_blesh
+  step_tpm
+  step_mise
+  step_font
+  step_themes
+  step_completions
+  step "doctor"
+  cmd_doctor || true
+  step "summary"
+  if ((${#WARNINGS[@]})); then
+    printf '    %s%d thing(s) did not go as planned:%s\n' "$c_y" "${#WARNINGS[@]}" "$c_0"
+    for w in "${WARNINGS[@]}"; do printf '      - %s\n' "$w"; done
+  else
+    note "every step completed"
+  fi
+  (( chk_fails )) && note "doctor: $chk_fails thing(s) to look at, listed above"
+  note "log: $STATE_DIR/setup.log"
+  note "open a new terminal (or log out and in) for the shell to pick everything up"
+  return 0
+}
+cmd_setup() {
+  local args="$*" log
+  host_opt='' reset=0 skip_omarchy=0 skip_private=0 skip_mise=0 skip_rust=0
+  while (($#)); do
+    case $1 in
+      --host) host_opt=${2:?--host needs a name}; shift ;;
+      --reset) reset=1 ;;
+      --skip-omarchy) skip_omarchy=1 ;;
+      --skip-private) skip_private=1 ;;
+      --skip-mise) skip_mise=1 ;;
+      --skip-rust) skip_rust=1 ;;
+      -h | --help) usage; return 0 ;;
+      *) die "setup: unknown option $1" ;;
+    esac
+    shift
+  done
+  need_public; detect_os
+  mkdir -p "$STATE_DIR" "$HOME/.local/bin" "$HOME/.config/dotfiles"
+  log=$STATE_DIR/setup.log
+  printf '\n===== %s  dots setup %s\n' "$(date '+%F %T')" "$args" >>"$log"
+  setup_steps 2>&1 | tee -a "$log"
+  return "${PIPESTATUS[0]}"
+}
+
+# ── root entries ─────────────────────────────────────────────────────────────
+cmd_root() {
+  need_public
+  case ${1:-} in
+    show)
+      repo_git public sparse-checkout disable && note "${ROOT_ENTRIES[*]} are in \$HOME now: edit, dots save, then dots root hide" ;;
+    hide) root_hide 0 ;;
+    *) die "usage: dots root show|hide" ;;
+  esac
+}
+
+main() {
+  local sub=${1:-status}
+  (($#)) && shift
+  case $sub in
+    status)  cmd_status "$@" ;;
+    diff)    cmd_diff "$@" ;;
+    save)    cmd_save "$@" ;;
+    update)  cmd_update "$@" ;;
+    push)    cmd_push "$@" ;;
+    doctor)  cmd_doctor "$@" ;;
+    setup)   cmd_setup "$@" ;;
+    root)    cmd_root "$@" ;;
+    private) need_repo private; repo_git private "$@" ;;
+    nvim)    need_repo nvim; repo_git nvim "$@" ;;
+    git)     need_public; repo_git public "$@" ;;
+    help | -h | --help) usage ;;
+    *)       need_public; repo_git public "$sub" "$@" ;;
+  esac
+}
+main "$@"

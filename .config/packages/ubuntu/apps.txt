@@ -1,0 +1,41 @@
+# Ubuntu, set "apps". Packages marked with a repository need it added first; setup reports
+# them as "not in apt" instead of failing. DRAFT: prune.
+chromium
+chromium-sandbox
+google-chrome-stable   # google repository
+code                   # microsoft repository
+cursor                 # cursor repository
+claude-desktop         # anthropic repository
+chatgpt
+grok-bot
+slack-desktop          # slack repository
+spotify-client         # spotify repository
+zoom                   # zoom .deb
+obsidian
+typora                 # typora repository
+zennotes
+libreoffice
+kdenlive
+obs-studio
+vlc
+xournalpp
+mupdf
+mupdf-tools
+flameshot
+flatpak
+gnome-software-plugin-flatpak
+wf-recorder
+v4l-utils
+pamixer
+pulsemixer
+pipewire-jack
+qt5ct
+ffmpegthumbnailer
+gnuplot
+qalc
+taskwarrior
+asciinema
+hunspell-pt-br
+wbrazilian
+wportuguese
+system-config-printer

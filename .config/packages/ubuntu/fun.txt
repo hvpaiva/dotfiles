@@ -1,0 +1,8 @@
+# Ubuntu, set "fun"
+cbonsai
+cmatrix
+cowsay
+hollywood
+lolcat
+pipes-sh
+tty-clock

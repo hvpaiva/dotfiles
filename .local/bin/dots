@@ -190,6 +190,9 @@ fast-forward); host marker; secrets (below); private layer (needs GitHub over
 SSH); per-host links; identity (git/local when no layer provides one, this
 host's key among the allowed signers, the Cloudflare token file); neovim config;
 distro packages the layer replaces (sudo); the pacman hook that records installs
+(Arch, sudo); the host's package sets (hosts/<host>/.config/packages/sets names
+them, packages/<distro>/<set>.txt lists them; a set is a wish list, what the
+distro cannot provide is reported); the pacman hook that records installs
 (Arch, sudo); rustup; augur; ble.sh; tmux plugins; mise and every tool in
 mise/config.toml; terminal font; themes; kubectl completion; the Chromium
 extension policy (sudo). Then dots doctor and a summary. The output is also
@@ -744,6 +747,10 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
   mapfile -t dup < <(installed_pkgs "${DROP[@]}")
   if ((${#dup[@]})); then chk packages warn "distro copies: ${dup[*]}"; else chk packages ok "no distro copies"; fi
+  if [[ -r $SETS_FILE ]]; then
+    missing=$(sets_missing); n=0; [[ -n $missing ]] && n=$(wc -l <<<"$missing")
+    if (( n )); then chk sets warn "$n missing: $(words "$missing")"; else chk sets ok "$(set_names | paste -sd' ') installed"; fi
+  fi
   have starship && chk starship warn "$(command -v starship) on PATH"
   missing=$(stale_processes)
   if [[ -n $missing ]]; then chk process warn "removed binary still running: $(awk '{ printf "%s(%s) ", $1, $2 }' <<<"$missing" | sed 's/ $//')"; fi
@@ -1190,6 +1197,51 @@ step_nvim() {
   fi
   repo_git nvim remote set-url --push origin "$NVIM_PUSH_URL"
 }
+# ── package sets: what this host installs beyond the layer's own dependencies ────
+# hosts/<host>/.config/packages/sets names the sets; packages/<distro>/<set>.txt lists
+# them (one per line, "# repo" comments allowed). What a set asks for and the distro
+# cannot provide (an AUR package without yay, an apt package whose repository is not
+# added) is reported, never fatal: a set is a wish list, not a contract.
+SETS_FILE=$HOME/.config/packages/sets
+set_names() { [[ -r $SETS_FILE ]] && sed 's/#.*//' "$SETS_FILE" | awk 'NF { print $1 }'; return 0; }
+set_pkgs() { # every package the host's sets ask for, minus what the layer drops
+  local n f
+  while IFS= read -r n; do
+    f=$HOME/.config/packages/$os/$n.txt
+    [[ -r $f ]] && sed 's/#.*//' "$f" | awk 'NF { print $1 }'
+  done < <(set_names) | sort -u | grep -vxF -f <(printf '%s\n' "${DROP[@]}" x-none) || true
+}
+sets_missing() { local -a want; mapfile -t want < <(set_pkgs); ((${#want[@]})) && missing_pkgs "${want[@]}"; return 0; }
+pkg_available() { # PKG — the distro can install it right now
+  case $os in
+    arch) pacman -Si "$1" >/dev/null 2>&1 ;;
+    ubuntu) local c; c=$(apt-cache policy "$1" 2>/dev/null | awk '/Candidate:/ { print $2 }'); [[ -n $c && $c != "(none)" ]] ;;
+  esac
+}
+step_packages() { # the host's sets
+  local -a missing avail aur; local p ok=0
+  [[ -r $SETS_FILE ]] || { line packages "no sets for this host (hosts/$host/.config/packages/sets)"; return 0; }
+  mapfile -t missing < <(sets_missing)
+  ((${#missing[@]})) || { line packages "sets $(set_names | paste -sd' '): all installed"; return 0; }
+  avail=(); aur=()
+  for p in "${missing[@]}"; do if pkg_available "$p"; then avail+=("$p"); else aur+=("$p"); fi; done
+  if ((${#avail[@]})); then
+    line packages "installing ${#avail[@]}: ${avail[*]}"
+    case $os in
+      arch) run_root pacman -S --needed --noconfirm "${avail[@]}" >/dev/null && ok=1 ;;
+      ubuntu) run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${avail[@]}" >/dev/null && ok=1 ;;
+    esac
+    if (( ok )); then line packages "installed"; else warn packages "install failed: ${avail[*]}"; fi
+  fi
+  if ((${#aur[@]})); then
+    if [[ $os == arch ]] && have yay; then
+      line packages "AUR, through yay: ${aur[*]}"
+      if yay -S --needed --noconfirm "${aur[@]}" >/dev/null 2>&1; then line packages "AUR installed"; else warn packages "yay failed for: ${aur[*]}"; fi
+    else
+      warn packages "not in the repositories here: ${aur[*]} (add their repository, or drop them from the set)"
+    fi
+  fi
+}
 drop_pkgs() { # PKG… — one removal transaction
   case $os in
     arch)   run_root pacman -Rns --noconfirm "$@" >/dev/null 2>&1 ;;
@@ -1335,6 +1387,7 @@ setup_steps() {
   step_identity
   step_nvim
   step_drop_packages
+  step_packages
   step_pacman_hook
   step_rust
   step_augur

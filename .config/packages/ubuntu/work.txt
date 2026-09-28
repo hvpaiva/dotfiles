@@ -1,0 +1,7 @@
+# Ubuntu, set "work": RD Station tooling (each from its own repository). DRAFT: prune.
+falcon-sensor
+forticlient
+freelens
+google-cloud-cli
+google-cloud-cli-gke-gcloud-auth-plugin
+vault

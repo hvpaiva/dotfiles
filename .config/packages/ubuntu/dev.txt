@@ -1,0 +1,34 @@
+# Ubuntu, set "dev": what athena accumulated, minus what mise provides (gh, kubectl, k9s,
+# terraform, shellcheck, gopls) and rustup (rustc). DRAFT from apt-mark showmanual: prune.
+autoconf
+bison
+clang
+llvm
+luarocks
+valac
+pre-commit
+sqlite3
+redis-tools
+postgresql-client
+xmlstarlet
+stow
+tree
+tldr
+plocate
+xvfb
+ncat
+whois
+dnsutils
+wget
+inxi
+mainline
+# containers and VMs
+docker-ce            # docker repository
+docker-ce-cli        # docker repository
+docker-buildx-plugin # docker repository
+docker-compose-plugin
+containerd.io        # docker repository
+podman
+qemu-system-x86
+qemu-user-static
+virt-manager

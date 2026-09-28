@@ -1,0 +1,8 @@
+# zeus: the package sets dots setup installs from packages/arch/<set>.txt
+core
+desktop
+dev
+apps
+gaming
+work
+uncategorized

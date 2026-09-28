@@ -90,6 +90,7 @@
 !/.config/mise/config.toml
 !/.config/packages/
 /.config/packages/universal/chromium-extensions.local.txt
+/.config/packages/sets
 !/.config/scripts/
 !/.config/fontconfig/
 /.config/fontconfig/*

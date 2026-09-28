@@ -483,3 +483,14 @@ GH
   run step_identity
   [[ $output != *"added to allowed_signers"* ]] && [ "$(grep -c "$pub" "$PRIVATE_DIR/common/.config/git/allowed_signers")" -eq 1 ]
 }
+
+@test "set_pkgs merges the host's sets, drops comments, duplicates and what the layer removes" {
+  detect_os   # DOTS_OS_RELEASE unset: os=other, DROP empty; the lists do not depend on it
+  os=arch; DROP=(zoxide)
+  mkdir -p "$HOME/.config/packages/arch"
+  printf '# zeus\ncore\napps  # gui\n\n' >"$SETS_FILE"
+  printf 'git\nzoxide\ntmux # multiplexer\n' >"$HOME/.config/packages/arch/core.txt"
+  printf 'tmux\nsignal-desktop\n' >"$HOME/.config/packages/arch/apps.txt"
+  [ "$(set_names | paste -sd,)" = core,apps ]
+  [ "$(set_pkgs | paste -sd,)" = git,signal-desktop,tmux ]
+}

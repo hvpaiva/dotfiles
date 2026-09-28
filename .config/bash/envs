@@ -32,3 +32,8 @@ if [ -r "$_cf_token_file" ]; then
   export CLOUDFLARE_API_TOKEN
 fi
 unset _cf_token_file
+
+# Ruby ri: render docs as Markdown through glow, which pages with $PAGER. TAB completion
+# keeps working through the _ri_md wrapper in bash/functions.
+export RI='-f markdown'
+export RI_PAGER='glow -p -'

@@ -41,6 +41,9 @@ if command -v omarchy-font-set >/dev/null; then
     echo "font not installed: get the Meslo Nerd Font first (omarchy menu > Style > Font on Arch; a Nerd Fonts release archive on Ubuntu)" >&2
   elif ! omarchy-font-current 2>/dev/null | grep -qF 'MesloLGLDZ Nerd Font Mono'; then
     omarchy-font-set "MesloLGLDZ Nerd Font Mono"
+    # font-set rewrites the terminal configs (and pins foot to size 9); fontconfig is what
+    # we wanted from it, the terminal files come back from the repo
+    dots checkout -- .config/foot/foot.ini .config/alacritty/alacritty.toml .config/ghostty/config .config/kitty/kitty.conf
   fi
 fi
 
@@ -58,6 +61,10 @@ step "kubectl completion, lazy-loaded by bash-completion"
 if command -v kubectl >/dev/null; then
   mkdir -p "$HOME/.local/share/bash-completion/completions"
   kubectl completion bash > "$HOME/.local/share/bash-completion/completions/kubectl"
+  for alias in kubecolor k; do
+    printf 'source "$HOME/.local/share/bash-completion/completions/kubectl"\ncomplete -o default -F __start_kubectl %s\n' "$alias" \
+      > "$HOME/.local/share/bash-completion/completions/$alias"
+  done
 fi
 
 step "per-host files"

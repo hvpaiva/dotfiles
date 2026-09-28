@@ -26,3 +26,19 @@ img2png() {
     -define png:exclude-chunk=all \
     "${1%.*}.png"
 }
+
+# Ruby docs in a throwaway nvim buffer (tree-sitter highlighting only)
+riv() {
+  command ri -f markdown "$@" 2>/dev/null \
+    | nvim -R -c 'setlocal filetype=markdown buftype=nofile bufhidden=wipe' -
+}
+
+# ri renders Markdown (RI='-f markdown' in bash/envs), but its bash completion parses ri
+# output expecting ansi. This wrapper forces ansi only while the TAB list is generated.
+# (extglob is needed to parse the completion script's !(...) patterns)
+if [[ -r /usr/share/bash-completion/completions/ri ]]; then
+  shopt -s extglob
+  source /usr/share/bash-completion/completions/ri
+  _ri_md() { local -x RI='-f ansi'; _ri "$@"; }
+  complete -F _ri_md ri riv
+fi

@@ -17,7 +17,6 @@ clang pacman
 llvm pacman
 gopls pacman
 luarocks pacman
-tree-sitter-cli pacman
 libyaml pacman
 python-poetry-core pacman
 
@@ -30,7 +29,6 @@ lazydocker pacman
 
 # Runtime management
 mise pacman
-sesh-bin yay
 
 # Task runner
 task pacman

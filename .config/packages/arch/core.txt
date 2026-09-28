@@ -68,10 +68,8 @@ woff2-font-awesome pacman
 
 # Shell & terminal
 bash-completion pacman
-zsh pacman
 ghostty pacman
 tmux pacman
-zoxide pacman
 btop pacman
 fastfetch pacman
 

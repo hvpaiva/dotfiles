@@ -27,7 +27,6 @@ ddcutil pacman
 dosfstools pacman
 dua-cli pacman
 foot pacman
-herdr pacman
 mise-bin pacman
 moonlight-qt pacman
 mpv-mpris pacman

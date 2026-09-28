@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # hvpaiva/dotfiles — first-time setup of a machine. Everything after this is `dots`.
 #
-#   bash <(curl -fsSL https://raw.githubusercontent.com/hvpaiva/dotfiles/master/bootstrap.sh) [options]
+#   bash <(curl -fsSL https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh) [options]
 #
 # Installs git if the machine lacks it, clones the repo bare into ~/.dotfiles with $HOME as
 # the work tree, keeps this file, README.md and .github/ out of $HOME (sparse checkout), then
@@ -16,7 +16,7 @@
 
 set -u
 REPO=${DOTFILES_REPO:-https://github.com/hvpaiva/dotfiles.git}
-BRANCH=${DOTFILES_BRANCH:-master}
+BRANCH=${DOTFILES_BRANCH:-main}
 GITDIR=$HOME/.dotfiles
 dots() { git --git-dir="$GITDIR" --work-tree="$HOME" "$@"; }
 die()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }

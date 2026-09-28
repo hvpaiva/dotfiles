@@ -17,7 +17,7 @@ install into the same machine, and `dots`, the command that keeps it that way.
 On a fresh Arch + Omarchy install, or a fresh Ubuntu 24.04:
 
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/hvpaiva/dotfiles/master/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh)
 ```
 
 That is the whole install. The script installs `git` if the machine lacks it, clones this
@@ -69,7 +69,7 @@ output follows kubectl's shape (tables, one object per row, states coloured by m
 ```
 $ dots
 REPO       BRANCH   CHANGES     ORIGIN      NVIM
-dotfiles   master   2 changed   in sync
+dotfiles   main   2 changed   in sync
 private    main     clean       in sync
 nvim       main     clean       in sync     recorded
 

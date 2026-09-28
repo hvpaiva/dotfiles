@@ -25,14 +25,14 @@ make_public() {
   # like the real whitelist: the git dir and the nvim clone are not the dotfiles repo's business
   mkdir -p "$src"; printf '/.dotfiles/\n/.config/nvim/\n' >"$src/.gitignore"
   commit "$src" .bashrc "initial"
-  git -C "$src" branch -m master
+  git -C "$src" branch -m main
   git clone -q --bare "$src" "$BATS_TEST_TMPDIR/origin.git"
   git -C "$src" remote add origin "$BATS_TEST_TMPDIR/origin.git"
   git clone -q --bare "$BATS_TEST_TMPDIR/origin.git" "$PUBLIC_GIT_DIR"
   repo_git public config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
   repo_git public reset -q --hard HEAD
   repo_git public fetch -q origin
-  repo_git public branch -q --set-upstream-to=origin/master master
+  repo_git public branch -q --set-upstream-to=origin/main main
 }
 make_nvim() {
   commit "$NVIM_DIR" init.lua "nvim initial"
@@ -62,7 +62,7 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 }
 
 @test "origin_text phrases the ahead/behind counts" {
-  st_branch=master st_upstream=origin/master st_ahead=0 st_behind=0
+  st_branch=main st_upstream=origin/main st_ahead=0 st_behind=0
   [ "$(origin_text)" = "in sync" ]
   st_ahead=2; [ "$(origin_text)" = "2 to push" ]
   st_ahead=0 st_behind=3; [ "$(origin_text)" = "3 behind" ]
@@ -165,14 +165,14 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 @test "repo_state and origin_text on a real repo: clean, ahead, behind" {
   make_public
   repo_state public
-  [ "$st_branch" = master ] && [ "$st_n" -eq 0 ] && [ "$(origin_text)" = "in sync" ]
+  [ "$st_branch" = main ] && [ "$st_n" -eq 0 ] && [ "$(origin_text)" = "in sync" ]
   printf 'x\n' >"$HOME/.bashrc"; printf 'new\n' >"$HOME/.new"
   repo_state public
   [ "$st_n" -eq 2 ] && [[ $st_changes == *"?? .new"* ]]
   repo_git public add -A && repo_git public commit -q -m "local"
   repo_state public; [ "$(origin_text)" = "1 to push" ]
   commit "$BATS_TEST_TMPDIR/src" other "upstream moved"
-  git -C "$BATS_TEST_TMPDIR/src" push -q origin master
+  git -C "$BATS_TEST_TMPDIR/src" push -q origin main
   repo_git public fetch -q origin
   repo_state public; [ "$(origin_text)" = "diverged 1/1" ]
 }
@@ -180,7 +180,7 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 @test "repo_update fast-forwards, keeps a local edit, refuses to diverge" {
   make_public
   commit "$BATS_TEST_TMPDIR/src" other "upstream moved"
-  git -C "$BATS_TEST_TMPDIR/src" push -q origin master
+  git -C "$BATS_TEST_TMPDIR/src" push -q origin main
   printf 'edited\n' >"$HOME/.bashrc"
   repo_git public fetch -q origin
   run repo_update public 0
@@ -188,7 +188,7 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ -f "$HOME/other" ] && [ "$(cat "$HOME/.bashrc")" = edited ]
   repo_git public add -A && repo_git public commit -q -m "local"
   commit "$BATS_TEST_TMPDIR/src" more "upstream moved again"
-  git -C "$BATS_TEST_TMPDIR/src" push -q origin master
+  git -C "$BATS_TEST_TMPDIR/src" push -q origin main
   repo_git public fetch -q origin
   run repo_update public 0
   [ "$status" -eq 1 ] && [[ $output == *"cannot fast-forward"* ]]
@@ -236,8 +236,8 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 @test "root_hide keeps the root entries out of the work tree, root show brings them back" {
   make_public
   for f in README.md bootstrap.sh; do commit "$BATS_TEST_TMPDIR/src" "$f" "add $f"; done
-  git -C "$BATS_TEST_TMPDIR/src" push -q origin master
-  repo_git public fetch -q origin; repo_git public merge -q --ff-only origin/master
+  git -C "$BATS_TEST_TMPDIR/src" push -q origin main
+  repo_git public fetch -q origin; repo_git public merge -q --ff-only origin/main
   [ -f "$HOME/README.md" ]
   ! root_hidden
   root_hide 1

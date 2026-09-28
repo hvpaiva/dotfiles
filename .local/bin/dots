@@ -10,7 +10,7 @@
 
 PUBLIC_GIT_DIR=$HOME/.dotfiles
 PUBLIC_PUSH_URL=${DOTFILES_PUSH_URL:-git@github.com:hvpaiva/dotfiles.git}
-PUBLIC_BRANCH=${DOTFILES_BRANCH:-master}
+PUBLIC_BRANCH=${DOTFILES_BRANCH:-main}
 PRIVATE_DIR=$HOME/.local/share/dotfiles-private
 PRIVATE_REPO=${DOTFILES_PRIVATE_REPO:-git@github.com:hvpaiva/dotfiles-private.git}
 NVIM_DIR=$HOME/.config/nvim
@@ -23,7 +23,7 @@ AUGUR_REPO=https://github.com/hvpaiva/augur.git
 AUGUR_PUSH_URL=git@github.com:hvpaiva/augur.git
 PORT_DIR=$HOME/.local/share/omarchy-ubuntu
 PORT_REPO=https://github.com/hvpaiva/omarchy-ubuntu.git
-BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/master/bootstrap.sh
+BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh
 FONT="MesloLGLDZ Nerd Font Mono"
 STATE_DIR=$HOME/.local/state/dotfiles
 HOST_FILE=$HOME/.config/dotfiles/host

@@ -33,9 +33,9 @@ case $distro in
 esac
 work=$(mktemp -d)
 git clone -q --bare "$src" "$work/dotfiles.git" || exit 1
-# a detached HEAD in the source (CI checkouts) would leave the clone without a master branch
+# a detached HEAD in the source (CI checkouts) would leave the clone without a main branch
 if ! git --git-dir="$work/dotfiles.git" symbolic-ref -q HEAD >/dev/null; then
-  git --git-dir="$work/dotfiles.git" branch -f master HEAD && git --git-dir="$work/dotfiles.git" symbolic-ref HEAD refs/heads/master
+  git --git-dir="$work/dotfiles.git" branch -f main HEAD && git --git-dir="$work/dotfiles.git" symbolic-ref HEAD refs/heads/main
 fi
 git --git-dir="$work/dotfiles.git" show HEAD:bootstrap.sh >"$work/bootstrap.sh"
 flags="--host test --skip-omarchy --skip-private"; (( full )) || flags+=" --skip-mise --skip-rust"

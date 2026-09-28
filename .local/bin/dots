@@ -339,6 +339,10 @@ repo_state() { # NAME — sets st_branch st_changes st_n st_upstream st_ahead st
   # ignore-submodules=all: the nvim work tree gets its own row; a recorded pointer that
   # moved is detected by nvim_pointer_state
   st_changes=$(repo_git "$r" status --porcelain --ignore-submodules=all 2>/dev/null)
+  # a recorded nvim commit waiting in the index is a change to save; =all hides it
+  if [[ $r == public ]] && ! repo_git public diff --cached --quiet --ignore-submodules=dirty -- "$NVIM_PATH" 2>/dev/null; then
+    st_changes+="${st_changes:+$'\n'}M  $NVIM_PATH"
+  fi
   st_n=0; [[ -n $st_changes ]] && st_n=$(wc -l <<<"$st_changes")
   st_upstream='' st_ahead=0 st_behind=0
   if st_upstream=$(repo_git "$r" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null); then

@@ -198,6 +198,16 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ "$(repo_git public ls-files -s "$NVIM_PATH" | awk '{print $2}')" != "$(git -C "$NVIM_DIR" rev-parse HEAD)" ]
 }
 
+@test "a recorded nvim commit counts as a dotfiles change until it is committed" {
+  make_public; make_nvim
+  repo_state public; [ "$st_n" -eq 0 ]
+  record_nvim >/dev/null
+  repo_state public
+  [ "$st_n" -eq 1 ] && [[ $st_changes == "M  .config/nvim" ]]
+  repo_git public commit -q -m "record nvim"
+  repo_state public; [ "$st_n" -eq 0 ]
+}
+
 @test "root_hide keeps the root entries out of the work tree, root show brings them back" {
   make_public
   for f in README.md bootstrap.sh; do commit "$BATS_TEST_TMPDIR/src" "$f" "add $f"; done

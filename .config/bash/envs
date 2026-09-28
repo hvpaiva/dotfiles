@@ -23,3 +23,8 @@ export LESS_TERMCAP_se=$'\e[0m'
 # bun. Not redundant with the mise-managed bun: wrangler and cf-wrangler live only here.
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Ruby ri: render docs as Markdown through glow, which pages with $PAGER. TAB completion
+# keeps working through the _ri_md wrapper in bash/functions.
+export RI='-f markdown'
+export RI_PAGER='glow -p -'

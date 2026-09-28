@@ -1,2 +1,0 @@
-# athena
-export SUDO_ASKPASS="$HOME/.local/bin/askpass"

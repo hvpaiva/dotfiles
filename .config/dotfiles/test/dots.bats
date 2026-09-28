@@ -237,12 +237,13 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 }
 
 @test "next_text names one command, in order, and what needs a hand" {
-  nx_update=0 nx_save=0 nx_hand=''
+  nx_update=0 nx_save=0 nx_doctor=0 nx_hand=''
   [ "$(next_text)" = "nothing to do" ]
+  nx_doctor=1; [ "$(next_text)" = "dots doctor" ]; nx_doctor=0
   next_note "in sync" 2 dotfiles; [ "$(next_text)" = "dots save" ]
   next_note "3 behind" 0 private; [ "$(next_text)" = "dots update, then dots save" ]
   next_note "diverged 1/2" 0 nvim; [ "$(next_text)" = "dots update, then dots save; by hand: nvim diverged 1/2" ]
-  nx_update=0 nx_save=0 nx_hand=''
+  nx_update=0 nx_save=0 nx_doctor=0 nx_hand=''
   next_note "2 to push" 0 nvim; [ "$(next_text)" = "dots save" ]
 }
 

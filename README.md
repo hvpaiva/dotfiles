@@ -117,16 +117,17 @@ PATH                        STATE       REPO
 .config/scripts/new-thing   untracked   dotfiles
 .config/nvim                modified    dotfiles
 
-next: dots save
-
 HOST   LINKS   CHECKS
-zeus   5/5     ok
+zeus   5/5     1 warn
+
+next: dots save, then dots doctor
 ```
 
-The `next` line is the verdict: `dots update` when origin or the nvim record has
-something this machine lacks, `dots save` when this machine has something to record,
-commit and push, both in that order when both apply, and what git cannot settle alone
-(a diverged branch, a detached HEAD) named for you to handle. The commit dotfiles
+The last line is the verdict, in the order to run: `dots update` when origin or the nvim
+record has something this machine lacks, `dots save` when this machine has something to
+record, commit and push, `dots doctor` when a machine check warns, and what git cannot
+settle alone (a diverged branch, a detached HEAD) named after a semicolon for you to
+handle. The commit dotfiles
 records for nvim is a dotfiles file, so a newer nvim commit shows up as `.config/nvim
 modified dotfiles`, not as a state of its own.
 

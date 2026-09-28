@@ -881,16 +881,17 @@ next_note() { # ORIGIN-PHRASE CHANGES — accumulates nx_update nx_save nx_hand
   (( $2 )) && nx_save=1
   return 0
 }
-next_text() {
+next_text() { # nx_update, nx_save, nx_doctor in the order they should run; nx_hand after
   local next=''
   (( nx_update )) && next='dots update'
   (( nx_save )) && next+="${next:+, then }dots save"
+  (( nx_doctor )) && next+="${next:+, then }dots doctor"
   [[ -n $nx_hand ]] && next+="${next:+; }by hand: $nx_hand"
   printf '%s' "${next:-nothing to do}"
 }
 overview() { # MODE auto|force|off
   local mode=$1 r label origin changes='' repos='' checks l
-  nx_update=0 nx_save=0 nx_hand=''
+  nx_update=0 nx_save=0 nx_doctor=0 nx_hand=''
   host_name
   for r in public private nvim; do
     label=$(repo_label "$r")
@@ -913,16 +914,16 @@ overview() { # MODE auto|force|off
     printf '\n'
     { row PATH STATE REPO; printf '%s' "$changes"; } | table
   fi
-  printf '\nnext: %s\n' "$(next_text)"
   chk_rows='' chk_warns=0
   checks_machine
-  if (( chk_warns )); then checks="$chk_warns warn"; else checks=ok; fi
+  if (( chk_warns )); then checks="$chk_warns warn"; nx_doctor=1; else checks=ok; fi
   printf '\n'
   if backups_text >/dev/null; then
     { row HOST LINKS CHECKS BACKUPS; row "$host" "$(links_text)" "$checks" "$(backups_text)"; } | table
   else
     { row HOST LINKS CHECKS; row "$host" "$(links_text)" "$checks"; } | table
   fi
+  printf '\nnext: %s\n' "$(next_text)"
 }
 cmd_status() {
   local mode=auto

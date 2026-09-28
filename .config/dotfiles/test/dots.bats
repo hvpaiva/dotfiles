@@ -22,7 +22,8 @@ commit() { # DIR FILE MESSAGE
 # origin (bare) + the bare dotfiles clone with $HOME as work tree, like the bootstrap
 make_public() {
   local src=$BATS_TEST_TMPDIR/src
-  mkdir -p "$src"; printf '/.dotfiles/\n' >"$src/.gitignore"
+  # like the real whitelist: the git dir and the nvim clone are not the dotfiles repo's business
+  mkdir -p "$src"; printf '/.dotfiles/\n/.config/nvim/\n' >"$src/.gitignore"
   commit "$src" .bashrc "initial"
   git -C "$src" branch -m master
   git clone -q --bare "$src" "$BATS_TEST_TMPDIR/origin.git"

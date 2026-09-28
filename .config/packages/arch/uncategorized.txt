@@ -21,13 +21,11 @@ pacman-contrib pacman
 alsa-utils pacman
 bluez-tools pacman
 bluez-utils pacman
-cliamp pacman
 cups-pk-helper pacman
 ddcutil pacman
 dosfstools pacman
 dua-cli pacman
 foot pacman
-mise-bin pacman
 moonlight-qt pacman
 mpv-mpris pacman
 networkmanager pacman

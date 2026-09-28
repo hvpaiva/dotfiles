@@ -172,7 +172,6 @@ python-terminaltexteffects pacman
 libqalculate pacman
 figlet pacman
 lolcat pacman
-tobi-try pacman
 usage pacman
 stow pacman
 webkit2gtk-4.1 pacman

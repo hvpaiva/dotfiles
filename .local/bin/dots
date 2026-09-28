@@ -816,7 +816,7 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
   if [[ $out == *"successfully authenticated"* ]]; then chk github ok "ssh access"; else chk github warn "no ssh access: ${out%%$'\n'*}"; fi
   # Logins: what only a person can do. Listed so a fresh machine knows what is left.
   if have op; then
-    if op whoami >/dev/null 2>&1; then chk 1password ok "CLI signed in"; else chk 1password warn "CLI not signed in: unlock the app (CLI integration on) or op signin"; fi
+    if op whoami >/dev/null 2>&1; then chk 1password ok "CLI authorized in this terminal"; else chk 1password warn "CLI not authorized in this terminal: op signin (the app authorizes one pty at a time, so every herdr pane asks once)"; fi
   fi
   if have gh; then
     if ! gh auth status >/dev/null 2>&1; then chk gh warn "not logged in or token expired/revoked: dots setup (token from 1Password) or gh auth login"

@@ -20,12 +20,15 @@ case $distro in
   arch)
     image=archlinux:latest
     setup='pacman -Sy --noconfirm --needed git curl sudo zoxide starship >/dev/null'
-    left='pacman -Qq zoxide starship 2>/dev/null | wc -l' ;;
+    left='pacman -Qq zoxide starship 2>/dev/null | wc -l'
+    # shellcheck disable=SC2016
+    pacman_check='check "pacman install hook installed" "$(test -r /etc/pacman.d/hooks/pkg-snapshot-append.hook && echo yes)" yes' ;;
   ubuntu)
     image=ubuntu:24.04
     setup='apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl sudo ca-certificates zoxide >/dev/null'
     # shellcheck disable=SC2016
-    left='dpkg-query -W -f="\${db:Status-Status}\n" zoxide 2>/dev/null | grep -cx installed' ;;
+    left='dpkg-query -W -f="\${db:Status-Status}\n" zoxide 2>/dev/null | grep -cx installed'
+    pacman_check='' ;;
   *) echo "unknown distro: $distro" >&2; exit 2 ;;
 esac
 work=$(mktemp -d)
@@ -94,14 +97,14 @@ fail=0
 check() { if [ "\$2" = "\$3" ]; then echo "  ok   \$1"; else echo "  FAIL \$1 (got '\$2', want '\$3')"; fail=1; fi; }
 check "first run exit 0"                 "\$rc1" 0
 check "second run exit 0"                "\$rc2" 0
-check "second run: dotfiles clean"       "\$(grep -c '^  ok    dotfiles: clean' <<<"\$out")" 1
-check "second run: in sync with origin"  "\$(grep -c '^  ok    dotfiles: in sync with origin/master' <<<"\$out")" 1
-check "second run: no distro copies"     "\$(grep -c '^  ok    packages: no distro copies' <<<"\$out")" 1
-check "second run: build deps present"   "\$(grep -c '^  ok    packages: build dependencies present' <<<"\$out")" 1
-check "second run: links in place"       "\$(grep -c '^  ok    links:' <<<"\$out")" 1
-check "second run: root entries hidden"  "\$(grep -c '^  ok    root entries:' <<<"\$out")" 1
-check "second run: every step completed" "\$(grep -c 'every step completed' <<<"\$out")" 1
-check "git identity warning shown"       "\$(grep -c 'no ~/.config/git/local' <<<"\$out")" 1
+check "second run: dotfiles clean"       "\$(grep -cE '^dotfiles +ok +clean, in sync' <<<"\$out")" 1
+check "second run: no distro copies"     "\$(grep -cE '^packages +ok +no distro copies' <<<"\$out")" 1
+check "second run: build deps present"   "\$(grep -cE '^deps +ok +all present' <<<"\$out")" 1
+check "second run: links in place"       "\$(grep -cE '^links +ok ' <<<"\$out")" 1
+check "second run: root entries hidden"  "\$(grep -cE '^root +ok ' <<<"\$out")" 1
+check "second run: setup done"           "\$(grep -cE '^setup +done' <<<"\$out")" 1
+check "git identity warning shown"       "\$(grep -cE '^git +warn +no identity' <<<"\$out")" 1
+$pacman_check
 check "distro copies removed"            "\$($left)" 0
 check "build deps installed"             "\$(get deps)" "git make gawk tmux cc "
 check "bashrc tracked"                   "\$(get tracked_bashrc)" .bashrc

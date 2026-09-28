@@ -1,9 +1,0 @@
-# Chaves de assinatura confiaveis. Verificacao usa a publica; nao precisa do 1Password.
-# zeus - aposentada em 2026-09-22 (assinou de 2026-03-03 a 2026-09-21)
-contact@hvpaiva.dev,highlander.paiva@rdstation.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHE6IncXCflx65GMKmgFRGQsU7ppugjMwlPZByktQ8fS
-# zeus - atual (~/.ssh/id_ed25519_gitsign)
-contact@hvpaiva.dev,highlander.paiva@rdstation.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHvd8Ms34bBUa8m8yEZvO1HewgXsUw0jXVcFoRbu1eYE
-# athena - atual (~/.ssh/id_ed25519_github)
-contact@hvpaiva.dev,highlander.paiva@rdstation.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINGxvOIJRmJ8DPw/7PVNu5LNDvq59LESg9Fbd1Fyv3bM
-# apollo - atual (~/.ssh/id_ed25519_github)
-contact@hvpaiva.dev,highlander.paiva@rdstation.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPZM8sek8XtkmjcDFGMcoyrqx/UFbp3UMR+Db+6Ps/WC

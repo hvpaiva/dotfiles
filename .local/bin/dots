@@ -361,7 +361,8 @@ detect_os() {
 # ── repositories ─────────────────────────────────────────────────────────────
 repo_gitargs() {
   case $1 in
-    public)  printf '%s\n' "--git-dir=$PUBLIC_GIT_DIR" "--work-tree=$HOME" ;;
+    # -C: pathspecs are relative to the cwd, and dots runs from anywhere
+    public)  printf '%s\n' -C "$HOME" "--git-dir=$PUBLIC_GIT_DIR" "--work-tree=$HOME" ;;
     private) printf '%s\n' -C "$PRIVATE_DIR" ;;
     nvim)    printf '%s\n' -C "$NVIM_DIR" ;;
   esac

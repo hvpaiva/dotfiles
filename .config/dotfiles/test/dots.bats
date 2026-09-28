@@ -494,3 +494,10 @@ GH
   [ "$(set_names | paste -sd,)" = core,apps ]
   [ "$(set_pkgs | paste -sd,)" = git,signal-desktop,tmux ]
 }
+
+@test "the nvim record is found from any working directory" {
+  make_public; make_nvim; record
+  mkdir -p "$HOME/dev/elsewhere"; cd "$HOME/dev/elsewhere"
+  [ "$(nvim_pointer_state)" = same ]
+  [ -z "$(repo_git public status --porcelain --ignore-submodules=all)" ]
+}

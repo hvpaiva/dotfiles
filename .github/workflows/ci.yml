@@ -1,4 +1,4 @@
-# Lints every shell file, then runs the README one-liner in a clean Arch and a clean Ubuntu
+# Lints every shell file, runs the unit tests, then runs the README one-liner in a clean Arch and a clean Ubuntu
 # container (test/container.sh). Pushes and pull requests run the quick variant; the weekly
 # run and a manual dispatch with "full" also install rustup, augur and every mise tool.
 name: ci
@@ -37,8 +37,17 @@ jobs:
             [ -x "$f" ] || { echo "not executable: $f"; exit 1; }
           done
 
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bats
+        run: sudo apt-get install -y -qq bats >/dev/null
+      - name: unit tests
+        run: bats .config/dotfiles/test
+
   container:
-    needs: lint
+    needs: [lint, unit]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

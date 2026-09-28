@@ -455,10 +455,11 @@ GH
   mv "$HOME/.ssh/id_ed25519.pub" "$HOME/.ssh/away.pub"
   run step_identity
   [ "$status" -eq 0 ] && [ ! -e "$HOME/.config/git/local" ]   # no key to sign with: no identity written
+  [[ $output == *"token written"* ]]
   mv "$HOME/.ssh/away.pub" "$HOME/.ssh/id_ed25519.pub"
   run step_identity
   [ "$status" -eq 0 ]
-  [[ $output == *"identity written"* ]] && [[ $output == *"added to allowed_signers"* ]] && [[ $output == *"token written"* ]]
+  [[ $output == *"identity written"* ]] && [[ $output == *"added to allowed_signers"* ]]
   grep -q "email = contact@hvpaiva.dev" "$HOME/.config/git/local"
   grep -q "signingkey = ~/.ssh/id_ed25519.pub" "$HOME/.config/git/local"
   pub=$(cut -d' ' -f1,2 <"$HOME/.ssh/id_ed25519.pub")

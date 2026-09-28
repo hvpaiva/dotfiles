@@ -287,3 +287,55 @@ PM
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]
 }
+
+# the backups setup, bootstrap.sh and the port leave behind, in a throwaway $HOME
+make_backups() {
+  mkdir -p "$STATE_DIR/pre-checkout-20260101-000000" "$STATE_DIR/nvim-1700000000" \
+    "$HOME/.local/state/dotfiles-cleanup-20260927/bun" "$HOME/.config/hypr.bak-omarchy" "$HOME/.config/hypr"
+  printf 'x\n' >"$HOME/.config/hypr/xdph.conf.bak-omarchy"
+  printf 'log\n' >"$STATE_DIR/setup.log"
+  printf 'live\n' >"$HOME/.config/hypr/xdph.conf"
+}
+
+@test "backups finds the state folders and the port copies, nothing else" {
+  make_backups
+  run backups
+  [ "$status" -eq 0 ]
+  [ "$output" = "$STATE_DIR/pre-checkout-20260101-000000
+$STATE_DIR/nvim-1700000000
+$HOME/.local/state/dotfiles-cleanup-20260927
+$HOME/.config/hypr.bak-omarchy
+$HOME/.config/hypr/xdph.conf.bak-omarchy" ]
+}
+
+@test "backups_text counts them and fails when there is none" {
+  ! backups_text
+  make_backups
+  [[ $(backups_text) == "5, "* ]]
+}
+
+@test "clean lists and keeps without --all, removes with --all -y, leaves logs and live files" {
+  make_backups
+  run cmd_clean
+  [ "$status" -eq 0 ]
+  [[ $output == *"~/.config/hypr/xdph.conf.bak-omarchy"* ]]
+  [[ $output == *"dots clean --all removes them"* ]]
+  [ -d "$STATE_DIR/nvim-1700000000" ]
+  run cmd_clean --all </dev/null
+  [ "$status" -eq 1 ]
+  [[ $output == *"no terminal"* ]]
+  [ -d "$STATE_DIR/nvim-1700000000" ]
+  run cmd_clean --all -y
+  [ "$status" -eq 0 ]
+  [ -z "$(backups)" ]
+  [ -f "$STATE_DIR/setup.log" ] && [ -f "$HOME/.config/hypr/xdph.conf" ]
+  run cmd_clean
+  [ "$output" = "$(line backups none)" ]
+}
+
+@test "backup_age reports today or whole days" {
+  mkdir -p "$STATE_DIR/nvim-1"
+  [ "$(backup_age "$STATE_DIR/nvim-1")" = today ]
+  touch -d '3 days ago' "$STATE_DIR/nvim-1"
+  [ "$(backup_age "$STATE_DIR/nvim-1")" = 3d ]
+}

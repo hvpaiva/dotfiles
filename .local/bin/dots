@@ -67,6 +67,7 @@ Commands:
   doctor    Check the machine against the intended state
   setup     Install or repair the whole layer
   root      Show or hide the root entries in $HOME
+  clean     List or remove the backups setup left behind
   private   git in the private repo
   nvim      git in the nvim repo
   git       git in the dotfiles repo (so is any other command)
@@ -81,8 +82,9 @@ Show what changed here, what is waiting on origin and what the machine lacks.
 
 Three tables. REPO: branch, local changes, origin state and, for nvim, whether
 the live commit is the one recorded in dotfiles. PATH: every changed or new file
-inside the tracked boundary and the repo it belongs to. HOST: the per-host links
-and the number of local checks that warn (dots doctor lists them). Origin is
+inside the tracked boundary and the repo it belongs to. HOST: the per-host links,
+the number of local checks that warn (dots doctor lists them) and, only while
+some exist, the backups setup left behind (dots clean lists them). Origin is
 fetched at most once every 10 minutes.
 
 Usage:
@@ -209,6 +211,26 @@ Examples:
   dots root show && $EDITOR ~/README.md && dots save && dots root hide
 H
     ;;
+    clean) cat <<'H'
+List the backups setup, bootstrap.sh and the Ubuntu port move aside instead of
+deleting, and remove them on request. They are the files the first checkout
+would have overwritten (~/.local/state/dotfiles/pre-checkout-*), a ~/.config/nvim
+that was not a git clone (nvim-*), the copies the port keeps next to a config it
+replaces (~/.config/**.bak-omarchy) and the folders of a migration by hand
+(~/.local/state/dotfiles-cleanup-*). Logs are never touched.
+
+Usage:
+  dots clean [--all] [-y|--yes]
+
+Flags:
+  --all       remove every backup listed, after a confirmation
+  -y, --yes   do not ask (for scripts; --all without a terminal needs it)
+
+Examples:
+  dots clean            list them, with age and size
+  dots clean --all      remove them, asking once
+H
+    ;;
     private | nvim | git) cat <<'H'
 Run git in one of the repos: private (~/.local/share/dotfiles-private), nvim
 (~/.config/nvim) or the dotfiles repo (bare ~/.dotfiles with $HOME as work
@@ -252,7 +274,8 @@ cell_colour() { # TEXT COLUMN — kubecolor-like: state words by meaning, other 
   case $1 in
     ok | clean | 'in sync' | recorded | present | installed | 'up to date' | done) printf '%s' "$c_g" ;;
     warn | modified | untracked | added | deleted | renamed | new | skipped | missing* | *' to push' | *' behind'* \
-      | *replaced* | 'not set up' | 'no upstream' | offline* | newer* | older* | unknown* | 'not '* | conflict) printf '%s' "$c_y" ;;
+      | *replaced* | 'not set up' | 'no upstream' | offline* | newer* | older* | unknown* | 'not '* | conflict \
+      | [0-9]*', '[0-9]*[KMGT]) printf '%s' "$c_y" ;;
     error | failed | diverged* | detached*) printf '%s' "$c_r" ;;
     *) (( $2 % 2 )) && printf '%s' "$c_c" ;;
   esac
@@ -711,7 +734,11 @@ overview() { # MODE auto|force|off
   checks_machine
   if (( chk_warns )); then checks="$chk_warns warn"; else checks=ok; fi
   printf '\n'
-  { row HOST LINKS CHECKS; row "$host" "$(links_text)" "$checks"; } | table
+  if backups_text >/dev/null; then
+    { row HOST LINKS CHECKS BACKUPS; row "$host" "$(links_text)" "$checks" "$(backups_text)"; } | table
+  else
+    { row HOST LINKS CHECKS; row "$host" "$(links_text)" "$checks"; } | table
+  fi
 }
 cmd_status() {
   local mode=auto
@@ -1132,6 +1159,54 @@ cmd_root() {
   esac
 }
 
+# ── clean: what was moved aside instead of deleted ───────────────────────────
+# bootstrap.sh (pre-checkout-*), setup (nvim-*) and the Ubuntu port (*.bak-omarchy)
+# keep what they replace; dotfiles-cleanup-* is the same done by hand. Logs stay.
+backups() { # one path per line
+  local p
+  for p in "$STATE_DIR"/pre-checkout-* "$STATE_DIR"/nvim-* "$HOME"/.local/state/dotfiles-cleanup-* \
+    "$HOME"/.config/*.bak-omarchy "$HOME"/.config/*/*.bak-omarchy; do
+    [[ -e $p ]] && printf '%s\n' "$p"
+  done
+  return 0
+}
+backups_text() { # "N, SIZE"; false when there is none
+  local -a paths
+  mapfile -t paths < <(backups)
+  ((${#paths[@]})) || return 1
+  printf '%d, %s' "${#paths[@]}" "$(du -shc "${paths[@]}" 2>/dev/null | tail -1 | cut -f1)"
+}
+backup_age() { # PATH — days since it was made
+  local days=$(( ($(date +%s) - $(stat -c %Y "$1")) / 86400 ))
+  (( days )) && printf '%dd' "$days" || printf today
+}
+cmd_clean() {
+  local all=0 yes=0 p listing='' answer
+  local -a paths
+  while (($#)); do
+    case $1 in
+      --all) all=1 ;;
+      -y | --yes) yes=1 ;;
+      -h | --help) help_for clean; return 0 ;;
+      *) die "clean: unknown flag $1" ;;
+    esac
+    shift
+  done
+  mapfile -t paths < <(backups)
+  ((${#paths[@]})) || { line backups none; return 0; }
+  for p in "${paths[@]}"; do listing+="$(row "${p/#"$HOME"/\~}" "$(backup_age "$p")" "$(du -sh "$p" 2>/dev/null | cut -f1)")"$'\n'; done
+  { row BACKUP AGE SIZE; printf '%s' "$listing"; } | table
+  (( all )) || { printf '\n%s\n' "dots clean --all removes them"; return 0; }
+  if (( ! yes )); then
+    [[ -t 0 ]] || die "clean: no terminal to confirm on; use --all -y"
+    read -rp "remove ${#paths[@]} backup(s), $(backups_text | cut -d, -f2 | tr -d ' ')? [y/N] " answer
+    [[ $answer == [yY]* ]] || { line clean "kept"; return 0; }
+  fi
+  for p in "${paths[@]}"; do
+    if rm -rf -- "$p"; then line clean "removed ${p/#"$HOME"/\~}"; else warn clean "could not remove ${p/#"$HOME"/\~}"; fi
+  done
+}
+
 main() {
   local sub=${1:-status}
   (($#)) && shift
@@ -1144,6 +1219,7 @@ main() {
     doctor)  cmd_doctor "$@" ;;
     setup)   cmd_setup "$@" ;;
     root)    cmd_root "$@" ;;
+    clean)   cmd_clean "$@" ;;
     private) need_repo private; repo_git private "$@" ;;
     nvim)    need_repo nvim; repo_git nvim "$@" ;;
     git)     need_public; repo_git public "$@" ;;

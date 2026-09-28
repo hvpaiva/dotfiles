@@ -151,6 +151,21 @@ to edit them;
 .B hide
 takes them out again (a modified file is left in place until it is saved).
 .TP
+.BR clean " [\-\-all] [\-y]"
+List the backups
+.BR setup ", bootstrap.sh and the Ubuntu port move aside instead of deleting:"
+the files the
+first checkout would have overwritten, a ~/.config/nvim that was not a git
+clone, the *.bak-omarchy copies the port keeps and the folders of a migration by
+hand. With
+.B \-\-all
+remove them after one confirmation;
+.B \-y
+skips the question (required without a terminal). Logs are never touched.
+While some exist,
+.B status
+shows them in a BACKUPS column.
+.TP
 .BR private " \fIgit arguments\fR"
 Run git in the private repo.
 .TP
@@ -189,8 +204,9 @@ Public per-host files, symlinked into $HOME.
 Private per-host and shared files, symlinked into $HOME.
 .TP
 .I ~/.local/state/dotfiles/
-Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log) and files
-moved aside by the first checkout.
+Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log) and what
+was moved aside instead of deleted (pre-checkout-*, nvim-*), listed by
+.BR clean .
 .SH ENVIRONMENT
 .TP
 .BR DOTFILES_REPO ", " DOTFILES_PUSH_URL ", " DOTFILES_BRANCH ", " DOTFILES_PRIVATE_REPO

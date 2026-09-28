@@ -51,7 +51,9 @@ else
   dots config core.sparseCheckout true
   dots config core.sparseCheckoutCone false
   printf '/*\n!/README.md\n!/bootstrap.sh\n!/.github/\n' >"$GITDIR/info/sparse-checkout"
-  # files the distro or Omarchy already wrote in $HOME would block the checkout
+  # files the distro or Omarchy already wrote in $HOME (.bashrc, .profile from /etc/skel)
+  # would block the checkout: keep them aside. That failed checkout already filled the
+  # index, so a plain checkout afterwards would write nothing; reset --hard does.
   conflicts=$(dots checkout 2>&1 >/dev/null | sed -n 's/^\t//p')
   if [[ -n $conflicts ]]; then
     bk=$HOME/.local/state/dotfiles/pre-checkout-$(date +%Y%m%d-%H%M%S)
@@ -61,7 +63,7 @@ else
     done <<<"$conflicts"
     note "moved $(wc -l <<<"$conflicts") pre-existing file(s) to $bk"
   fi
-  dots checkout -q || die "checkout failed"
+  dots reset -q --hard HEAD || die "checkout failed"
   note "checked out $(dots log --oneline -1)"
 fi
 [[ -x $HOME/.local/bin/dots ]] || die "the checkout has no ~/.local/bin/dots; is $REPO the right repository?"

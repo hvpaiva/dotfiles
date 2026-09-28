@@ -746,7 +746,7 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
     if gh auth status >/dev/null 2>&1; then chk gh ok "logged in"; else chk gh warn "not logged in: gh auth login"; fi
   fi
   if have tailscale; then
-    out=$(tailscale status --json 2>/dev/null | grep -o '"BackendState": *"[A-Za-z]*"' | head -1); out=${out##*\"}; out=${out%\"}; out=${out#*: \"}
+    out=$(tailscale status --json 2>/dev/null | grep -o '"BackendState": *"[A-Za-z]*"' | head -1); out=${out%\"}; out=${out##*\"}
     if [[ $out == Running ]]; then chk tailscale ok "connected"; else chk tailscale warn "${out:-not running}: sudo tailscale up"; fi
   fi
   key=$(git config --get user.signingkey 2>/dev/null); key=${key/#\~/$HOME}

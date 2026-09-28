@@ -53,5 +53,8 @@ fi
 echo "=================== result: \$([ \$fail -eq 0 ] && echo PASS || echo FAIL)"
 exit \$fail
 INSIDE
-docker run --rm -v "$work:/work:ro" "$image" bash /work/inside.sh
-rc=$?; rm -rf "$work"; exit $rc
+# docker cp instead of a bind mount: a sandboxed /tmp is not visible to the daemon
+name=dots-test-$distro-$$
+docker create --name "$name" "$image" bash /work/inside.sh >/dev/null || exit 1
+docker cp "$work/." "$name:/work" && docker start -a "$name"
+rc=$?; docker rm -f "$name" >/dev/null 2>&1; rm -rf "$work"; exit $rc

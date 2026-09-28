@@ -74,15 +74,16 @@ dots() { git --git-dir="$HOME/.dotfiles" --work-tree="$HOME" "$@"; }
 dotp() { git -C "$PRIVATE_DIR" "$@"; }
 
 # Under `curl | bash` stdin is the pipe; the port's bootstrap and the prompts below
-# need the terminal.
-if [[ ! -t 0 && -r /dev/tty ]]; then exec </dev/tty; fi
+# need the terminal. Only reattach when the terminal can actually be opened.
+if [[ ! -t 0 ]] && { exec 3</dev/tty; } 2>/dev/null; then exec <&3 3<&-; fi
 
 have git || die "git is required. Arch: sudo pacman -S git — Ubuntu: sudo apt install git"
 os=other
 if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   . /etc/os-release
-  case ${ID:-} in arch) os=arch ;; ubuntu) os=ubuntu ;; esac
+  # Omarchy ships its own os-release (ID=omarchy); ID_LIKE keeps the family
+  case "${ID:-} ${ID_LIKE:-}" in *arch*|*omarchy*) os=arch ;; *ubuntu*) os=ubuntu ;; esac
 fi
 mkdir -p "$STATE_DIR" "$HOME/.local/bin" "$HOME/.config/dotfiles"
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
@@ -168,12 +169,12 @@ fi
 # link with a regular file (omarchy-shell rewrites shell.json, the monitor panel rewrites
 # monitors.lua), the live file is the truth: it is copied back into its repo and re-linked.
 link_tree() {
-  local root=$1 label=$2 linked=0 adopted=0 src rel dst
-  [[ -d $root ]] || { note "$label: no hosts/$host directory"; return 0; }
+  local root=$1 label=$2 linked=0 adopted=0 kept=0 src rel dst
+  [[ -d $root ]] || { note "$label: nothing to link"; return 0; }
   while IFS= read -r src; do
     rel=${src#"$root"/}; dst=$HOME/$rel
     if [[ -L $dst ]]; then
-      [[ $(readlink "$dst") == "$src" ]] && continue
+      [[ $(readlink "$dst") == "$src" ]] && { kept=$((kept + 1)); continue; }
       rm -f "$dst"
     elif [[ -e $dst ]]; then
       if ! cmp -s "$dst" "$src"; then
@@ -183,7 +184,7 @@ link_tree() {
     fi
     mkdir -p "$(dirname "$dst")" && ln -s "$src" "$dst" && linked=$((linked + 1))
   done < <(find "$root" -type f 2>/dev/null)
-  note "$label: $linked file(s) linked, $adopted adopted"
+  note "$label: $kept already linked, $linked linked now, $adopted adopted"
 }
 
 step "per-host layer: public (hosts/$host)"

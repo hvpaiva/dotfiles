@@ -2,7 +2,6 @@
 # file, hosts/<host>), which mise loads after this file, so a pin there overrides a value here.
 [tools]
 ripgrep = "latest"
-neovim = "latest"
 fd = "latest"
 eza = "latest"
 bat = "latest"

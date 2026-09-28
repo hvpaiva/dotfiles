@@ -47,7 +47,7 @@ ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, what the
 # tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
 # the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
-ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli ghostty figlet tailscale)
+ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli ghostty figlet tailscale neovim)
 UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
@@ -830,11 +830,12 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
   if grep -qs cloudflare/token "$HOME/.config/bash/private"; then
     if [[ ! -r $HOME/.local/state/cloudflare/token ]]; then chk cloudflare warn "token file missing: dots setup writes it from $OP_ITEM/cloudflare-token"
     else
-      out=$(curl -fsS -m 10 -H "Authorization: Bearer $(tr -d '[:space:]' <"$HOME/.local/state/cloudflare/token")" https://api.cloudflare.com/client/v4/user/tokens/verify 2>/dev/null | grep -o '"status":"[a-z]*"'); out=${out#*:\"}; out=${out%\"}
-      case $out in
-        active) chk cloudflare ok "token active" ;;
-        '') chk cloudflare ok "token file present (Cloudflare not reachable to verify)" ;;
-        *) chk cloudflare warn "token $out: a new one into $OP_ITEM/cloudflare-token, then dots setup" ;;
+      out=$(curl -sS -m 10 -w '\n%{http_code}' -H "Authorization: Bearer $(tr -d '[:space:]' <"$HOME/.local/state/cloudflare/token")" https://api.cloudflare.com/client/v4/user/tokens/verify 2>/dev/null)
+      case ${out##*$'\n'} in
+        200) st=$(grep -o '"status":"[a-z]*"' <<<"$out"); st=${st#*:\"}; st=${st%\"}
+             if [[ $st == active ]]; then chk cloudflare ok "token active"; else chk cloudflare warn "token $st: a new one into $OP_ITEM/cloudflare-token, then dots setup"; fi ;;
+        000 | '') chk cloudflare ok "token file present (Cloudflare not reachable to verify)" ;;
+        *) chk cloudflare warn "token rejected by Cloudflare (HTTP ${out##*$'\n'}): not an API token, or revoked; a new one into $OP_ITEM/cloudflare-token, then dots setup" ;;
       esac
     fi
   fi

@@ -1,5 +1,5 @@
 # Themes installed on top of Omarchy's built-in ones, one git URL per line.
-# ~/.config/dotfiles/bootstrap.sh runs `omarchy-theme-install` for each; the
+# dots setup runs `omarchy-theme-install` for each one that is missing; the
 # clones themselves live in ~/.config/omarchy/themes/ and are not tracked.
 git@github.com:guilhermetk/omarchy-all-hallows-eve-theme.git
 git@github.com:hipsterusername/omarchy-blueridge-dark-theme.git

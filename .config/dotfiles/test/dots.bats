@@ -262,6 +262,20 @@ PM
   [ "$(tr '\n' ' ' <"$BATS_TEST_TMPDIR/installed")" = "rust keep " ]
 }
 
+@test "step_omarchy restores the tracked files the port bootstrap writes into" {
+  make_public
+  printf 'edited\n' >"$HOME/.bashrc"; printf 'new\n' >"$HOME/.newfile"   # dirty before the run: left alone
+  export PORT_DIR=$BATS_TEST_TMPDIR/port; mkdir -p "$PORT_DIR"; git -C "$PORT_DIR" init -q
+  printf '#!/bin/sh\nfor f in .gitignore .bashrc .newfile; do echo "# port block" >>"$HOME/$f"; done\n' >"$PORT_DIR/bootstrap.sh"
+  chmod +x "$PORT_DIR/bootstrap.sh"; git -C "$PORT_DIR" add -A && git -C "$PORT_DIR" commit -q -m init
+  os=ubuntu skip_omarchy=0
+  run step_omarchy
+  [[ $output == *"restored after the port's run: .gitignore"* ]]
+  [ "$(cat "$HOME/.gitignore")" = $'/.dotfiles/\n/.config/nvim/' ]
+  [ "$(cat "$HOME/.bashrc")" = $'edited\n# port block' ]
+  [ "$(cat "$HOME/.newfile")" = $'new\n# port block' ]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

@@ -871,15 +871,18 @@ step_omarchy() {
         git -C "$PORT_DIR" pull -q --ff-only 2>/dev/null || warn omarchy "omarchy-ubuntu pull skipped"
       fi
       line omarchy "running omarchy-ubuntu/bootstrap.sh"
-      # the port pins herdr and cliamp with `mise use --global`, which rewrites the shared
-      # mise config; whatever this machine had before the run is what it keeps
-      local cfg=$HOME/.config/mise/config.toml before after
-      before=$(cat "$cfg" 2>/dev/null || true)
+      # the port writes into tracked files on re-runs (terminal templates, a block in
+      # .bashrc, `mise use --global` in mise/config.toml); those files are ours, so
+      # whatever was clean before the run comes back from the repo afterwards
+      local before after f restored=''
+      before=$(repo_git public status --porcelain --ignore-submodules=all -- . 2>/dev/null | awk '{ print $2 }')
       "$PORT_DIR/bootstrap.sh" || die "omarchy-ubuntu bootstrap failed"
-      after=$(cat "$cfg" 2>/dev/null || true)
-      if [[ -n $before && $before != "$after" ]]; then
-        printf '%s\n' "$before" >"$cfg"; line omarchy "restored mise/config.toml"
-      fi
+      after=$(repo_git public status --porcelain --ignore-submodules=all -- . 2>/dev/null | awk '$1 != "??" { print $2 }')
+      for f in $after; do
+        grep -qx "$f" <<<"$before" && continue
+        repo_git public checkout -q -- "$f" 2>/dev/null && restored+="${restored:+ }$f"
+      done
+      [[ -n $restored ]] && line omarchy "restored after the port's run: $restored"
       line omarchy "port $(git -C "$PORT_DIR" log -1 --format=%h)" ;;
     *) warn omarchy "unsupported distro, skipped" ;;
   esac

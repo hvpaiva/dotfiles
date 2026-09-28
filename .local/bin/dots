@@ -33,8 +33,10 @@ PACMAN_HOOK=/etc/pacman.d/hooks/pkg-snapshot-append.hook
 CHROMIUM_POLICY=/etc/chromium/policies/managed/dotfiles-extensions.json
 CHROMIUM_EXT=$HOME/.config/packages/universal/chromium-extensions.txt
 CHROMIUM_EXT_LOCAL=$HOME/.config/packages/universal/chromium-extensions.local.txt
-# One 1Password item feeds every login setup can do by itself (dots help setup)
+# One 1Password item feeds every login setup can do by itself (dots help setup). The
+# account is fixed so op never asks which one on a machine with several (work and home).
 OP_ITEM=${DOTS_OP_ITEM:-op://Private/dots}
+export OP_ACCOUNT=${DOTS_OP_ACCOUNT:-my.1password.com}
 PERSONAL_EMAIL=contact@hvpaiva.dev
 FETCH_TTL=600
 # Tracked at the repo root, kept out of $HOME by a sparse checkout (bootstrap.sh writes the
@@ -194,8 +196,8 @@ after the clone.
 
 Secrets: authorize the CLI once in the 1Password app (it asks; Settings >
 Developer > CLI integration must be on) and setup does the logins itself from
-the item op://Private/dots (DOTS_OP_ITEM overrides
-it): field github-token logs gh in (a token with repo, read:org,
+the item op://Private/dots in the account my.1password.com (DOTS_OP_ITEM and
+DOTS_OP_ACCOUNT override them): field github-token logs gh in (a token with repo, read:org,
 admin:public_key, admin:ssh_signing_key); this machine's SSH key
 (~/.ssh/id_ed25519, or the one ssh already offers github.com) is generated if
 missing and added to GitHub for authentication and signing, so nothing asks
@@ -1048,9 +1050,12 @@ step_secrets() { # before the private layer: gh, this machine's key on GitHub, t
   if (( skip_secrets )); then line secrets "skipped"; return 0; fi
   if ! have op; then line secrets "1Password CLI (op) not installed; logins by hand (dots doctor lists them)"; return 0; fi
   if ! op_ready; then
-    # with the app integration, op signin is what makes the app ask to authorize the CLI
-    line 1password "signing in: authorize the CLI in the app (or cancel to skip)"
-    timeout 120 op signin >/dev/null 2>&1 || true
+    # with the app integration, op signin is what makes the app ask to authorize the CLI;
+    # it gets the terminal itself, the step's output goes through tee
+    line 1password "signing in to $OP_ACCOUNT: authorize the CLI in the app (or cancel to skip)"
+    if [[ -r /dev/tty && -w /dev/tty ]]; then timeout 120 op signin --account "$OP_ACCOUNT" </dev/tty >/dev/tty 2>&1 || true
+    else timeout 120 op signin --account "$OP_ACCOUNT" >/dev/null 2>&1 || true
+    fi
     op_ready || { warn secrets "1Password not signed in: in the app, Settings > Security (system authentication) and Developer > CLI integration on, then rerun dots setup"; return 0; }
   fi
   line 1password "signed in"

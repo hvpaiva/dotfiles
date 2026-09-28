@@ -3,6 +3,7 @@
 # Omarchy config, port-owned files, app state and per-host `local` files stay out.
 /*
 !/.gitignore
+!/.gitmodules
 !/.bashrc
 !/.bash_profile
 !/.profile
@@ -30,10 +31,10 @@
 /.config/herdr/*
 !/.config/herdr/config.toml
 
-# Omarchy: personal pieces only; hooks the port installs and installed themes stay out
+# Omarchy: personal pieces only. shell.json stays per host (it carries personal widget
+# data), and the hooks the port installs and the installed themes stay out
 !/.config/omarchy/
 /.config/omarchy/*
-!/.config/omarchy/shell.json
 !/.config/omarchy/shell.toml
 !/.config/omarchy/themes.txt
 !/.config/omarchy/extensions/
@@ -78,3 +79,6 @@
 
 # This repo's own docs and bootstrap
 !/.config/dotfiles/
+
+# Per-host marker written by the bootstrap (zeus, athena), used to pick the private layer
+/.config/dotfiles/host

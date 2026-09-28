@@ -45,4 +45,4 @@ if command -v fzf &>/dev/null; then
 fi
 
 # Context-aware inline suggestions (~/dev/personal/augur), after everything that sets up completion.
-source ~/dev/personal/augur/shell/augur.bash
+[[ -f ~/dev/personal/augur/shell/augur.bash ]] && source ~/dev/personal/augur/shell/augur.bash

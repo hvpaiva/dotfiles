@@ -1,4 +1,0 @@
-# Work-specific packages — Ubuntu
-# Installed via apt after repos are configured by ppas-and-repos.sh.
-
-terraform

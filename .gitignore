@@ -40,18 +40,12 @@
 !/.config/herdr/config.toml
 
 # Omarchy: personal pieces only. shell.json stays per host (it carries personal widget
-# data); branding, the menu extension template, the hooks the port installs and the
-# installed themes stay out
+# data); branding, the menu extension template, hooks and the installed themes stay out
 !/.config/omarchy/
 /.config/omarchy/*
 !/.config/omarchy/shell.toml
 !/.config/omarchy/themes.txt
 !/.config/omarchy/defaults/
-!/.config/omarchy/hooks/
-/.config/omarchy/hooks/*
-!/.config/omarchy/hooks/post-update.d/
-/.config/omarchy/hooks/post-update.d/*
-!/.config/omarchy/hooks/post-update.d/setup-agent.hook
 
 # Hyprland: only the personal bindings; hyprland.lua/autostart.lua are upstream (Zeus)
 # or port glue (Athena), monitors.lua is per host
@@ -71,6 +65,7 @@
 !/.config/git/
 /.config/git/local
 /.config/git/private
+/.config/git/allowed_signers
 /.config/git/hooks.local/
 !/.config/mise/
 /.config/mise/*
@@ -79,7 +74,6 @@
 !/.config/scripts/
 !/.config/sesh/
 !/.config/tensaku/
-!/.config/fastfetch/
 
 # This repo's own support files: per-host trees and the container test
 !/.config/dotfiles/

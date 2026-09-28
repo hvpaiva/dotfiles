@@ -76,8 +76,8 @@ PATH                        STATE       REPO
 .config/bash/aliases        modified    dotfiles
 .config/scripts/new-thing   untracked   dotfiles
 
-HOST   LINKS        CHECKS
-zeus   5 in place   ok
+HOST   LINKS   CHECKS
+zeus   5/5     ok
 ```
 
 Edit a file where the program reads it, `dots save` on this machine, `dots update` on the
@@ -134,7 +134,7 @@ README.md  bootstrap.sh  .github/    the repo root; kept out of $HOME by a spars
   bash/ blesh/ tmux/ herdr/ git/ mise/ alacritty/ ghostty/ kitty/ foot/
   omarchy/{defaults,hooks/post-update.d/setup-agent.hook,themes.txt,shell.toml}
   hypr/bindings.lua  uwsm/default  autostart/com.onepassword.OnePassword.desktop
-  sesh/ tensaku/ fastfetch/  packages/ scripts/
+  sesh/ tensaku/  packages/ scripts/
   nvim/                               submodule → hvpaiva/nvim
   dotfiles/
     hosts/<host>/                     per-host, non-sensitive files (symlinked into $HOME)

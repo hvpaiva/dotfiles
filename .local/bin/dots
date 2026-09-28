@@ -250,7 +250,7 @@ cell_colour() { # TEXT COLUMN — kubecolor-like: state words by meaning, other 
     return 0
   fi
   case $1 in
-    ok | clean | 'in sync' | recorded | present | installed | 'up to date' | 'in place'* | done) printf '%s' "$c_g" ;;
+    ok | clean | 'in sync' | recorded | present | installed | 'up to date' | done) printf '%s' "$c_g" ;;
     warn | modified | untracked | added | deleted | renamed | new | skipped | missing* | *' to push' | *' behind'* \
       | *replaced* | 'not set up' | 'no upstream' | offline* | newer* | older* | unknown* | 'not '* | conflict) printf '%s' "$c_y" ;;
     error | failed | diverged* | detached*) printf '%s' "$c_r" ;;

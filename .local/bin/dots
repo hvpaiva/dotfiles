@@ -47,7 +47,10 @@ ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, what the
 # tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
 # the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
-ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli ghostty figlet tailscale neovim)
+ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion ghostty figlet tailscale neovim)
+# Wanted when the repository offers it (the omarchy repo carries the 1Password CLI; a plain
+# Arch does not), skipped with a note otherwise
+ARCH_OPT_DEPS=(1password-cli)
 UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
@@ -1040,8 +1043,13 @@ sudo_keepalive() {
 }
 step_deps() {
   local -a want missing
+  local p
   case $os in
-    arch)   want=("${ARCH_DEPS[@]}") ;;
+    arch)
+      want=("${ARCH_DEPS[@]}")
+      for p in "${ARCH_OPT_DEPS[@]}"; do
+        if pkg_available "$p"; then want+=("$p"); else line deps "$p not in the repositories here, skipped"; fi
+      done ;;
     ubuntu) want=("${UBUNTU_DEPS[@]}") ;;
     *) line deps "unknown distro, untouched"; return 0 ;;
   esac

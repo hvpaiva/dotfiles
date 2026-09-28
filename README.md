@@ -39,16 +39,48 @@ goes:
 5. [hvpaiva/nvim](https://github.com/hvpaiva/nvim) on `main`;
 6. the distro packages this layer replaces with mise's copy (Omarchy ships `mise-bin`,
    `zoxide`, `herdr`, `cliamp`, `tobi-try`, `tree-sitter-cli`, `starship`; they go);
-7. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, tmux plugins, the official
+7. the host's **package sets**: `hosts/<host>/.config/packages/sets` names them,
+   `packages/<distro>/<set>.txt` lists them (zeus: core, desktop, dev, apps, gaming, work;
+   athena: dev, apps, work, fonts, fun). A set is a wish list: what the distro cannot provide
+   right now (a repository not added, an AUR package without yay) is reported, never fatal.
+   What the configs themselves need is not in a set but in setup's own dependencies;
+8. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, tmux plugins, the official
    mise build in `~/.local/bin` and every tool in `mise/config.toml`;
-8. the terminal font and the extra Omarchy themes;
-9. `dots doctor`, then a summary of anything that did not go as planned. The full output is
+9. the terminal font and the extra Omarchy themes;
+10. `dots doctor`, then a summary of anything that did not go as planned. The full output is
    kept in `~/.local/state/dotfiles/setup.log`.
 
 Every step checks before acting, so running it again repairs a machine instead of
 redoing it. Options: `--host NAME` (which per-host layers to use; asked on the first run),
 `--reset` (drop local edits to tracked files), `--skip-omarchy`, `--skip-private`,
 `--skip-mise`, `--skip-rust`, `--skip-secrets`.
+
+## Before the one-liner, and what stays yours
+
+The one-liner assumes:
+
+- a fresh **Omarchy** (its ISO) or **Ubuntu 24.04 Desktop** with a sudo user and network;
+- a **1Password** account. The app comes with Omarchy (and the port); you log in to it and,
+  when setup asks, authorize the CLI. Everything else setup does with secrets comes from one
+  item, `op://Private/dots` in `my.1password.com`, with these fields (the values never leave
+  1Password):
+
+| field | what | how to get it |
+|---|---|---|
+| `github-token` | logs `gh` in and registers this machine's SSH key | a classic PAT with `repo`, `read:org`, `admin:public_key`, `admin:ssh_signing_key`; or the token `gh auth token` already holds |
+| `tailscale-auth-key` | joins the tailnet | admin console → Settings → Keys → *Reusable*; auth keys expire in 90 days at most |
+| `cloudflare-token` | `~/.local/state/cloudflare/token` for wrangler | dash.cloudflare.com → API tokens |
+| `<field>-expires` | optional, `YYYY-MM-DD` | `dots doctor` warns 14 days before and after that date |
+
+What setup cannot do, so someone does once per machine: pick the host name (asked once);
+log out and into the Hyprland session on Ubuntu; sign in to apps that only know OAuth in a
+window (Cursor, Slack, Google in Chromium, Spotify); on a machine that is a returning host
+(`--host zeus` after a reinstall), nothing else: its layer, sets and identity come back.
+
+When a secret lapses, `dots doctor` says which one and what to do: `gh` not logged in or
+without its scopes, Tailscale `NeedsLogin`, a Cloudflare token the API reports as expired,
+a field past its `-expires` date. Fix the value in 1Password and run `dots setup`; it
+replaces what changed and touches nothing else.
 
 ## Day to day: `dots`
 

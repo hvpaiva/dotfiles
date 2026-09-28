@@ -44,10 +44,11 @@ FETCH_TTL=600
 ROOT_ENTRIES=(README.md bootstrap.sh .github)
 ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # System packages the layer needs and mise cannot provide: compilers and headers for the
-# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, and on
-# Arch the 1Password CLI from the omarchy repo (the Ubuntu port installs app and CLI)
-ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli)
-UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion)
+# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, what the
+# tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
+# the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
+ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli ghostty figlet tailscale)
+UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier
@@ -172,7 +173,9 @@ git identity and hooks, Omarchy, build dependencies, mise and its tools, rust,
 augur, ble.sh, tmux plugins, the Chromium extension policy, distro copies of
 replaced tools, processes still running a removed binary, font, themes, kubectl
 completion, a real login shell, GitHub over SSH, and the logins only a person can
-do (1Password CLI, gh, Tailscale, the git signing key, the Cloudflare token).
+do (1Password CLI, gh with its scopes, Tailscale, the git signing key, the
+Cloudflare token verified against the API) and the secrets item itself: empty
+fields, and any <field>-expires date within 14 days or past.
 Exit status is 1 when any check warns. dots status runs the local checks
 silently and shows how many warn.
 
@@ -653,6 +656,22 @@ theme_name() { local n=${1##*/}; n=${n%.git}; n=${n#omarchy-}; printf '%s' "${n%
 # signing: after setup, commits and pushes need nothing else.
 op_ready() { have op && op whoami >/dev/null 2>&1; }
 op_field() { op read "$OP_ITEM/$1" 2>/dev/null; }
+OP_FIELDS=(github-token tailscale-auth-key cloudflare-token)
+# A field <name>-expires (YYYY-MM-DD) next to a secret lets doctor warn before it lapses
+secrets_state() { # sets ss_detail and ss_warn from the item: what is set, what expires
+  local f v e days today
+  ss_detail='' ss_warn=0; today=$(date +%s)
+  for f in "${OP_FIELDS[@]}"; do
+    v=$(op_field "$f"); e=$(op_field "$f-expires")
+    if [[ -z $v ]]; then ss_detail+="${ss_detail:+, }$f empty"; continue; fi
+    [[ -n $e ]] || continue
+    days=$(( ($(date -d "$e" +%s 2>/dev/null || echo 0) - today) / 86400 ))
+    if (( days < 0 )); then ss_detail+="${ss_detail:+, }$f expired on $e"; ss_warn=1
+    elif (( days <= 14 )); then ss_detail+="${ss_detail:+, }$f expires in ${days}d"; ss_warn=1
+    fi
+  done
+  [[ -n $ss_detail ]] || ss_detail="${#OP_FIELDS[@]} fields set"
+}
 ssh_key() { # the key ssh offers GitHub when one exists, else the one setup generates
   local f
   while read -r _ f; do
@@ -790,11 +809,18 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
     if op whoami >/dev/null 2>&1; then chk 1password ok "CLI signed in"; else chk 1password warn "CLI not signed in: unlock the app (CLI integration on) or op signin"; fi
   fi
   if have gh; then
-    if gh auth status >/dev/null 2>&1; then chk gh ok "logged in"; else chk gh warn "not logged in: gh auth login"; fi
+    if ! gh auth status >/dev/null 2>&1; then chk gh warn "not logged in or token expired/revoked: dots setup (token from 1Password) or gh auth login"
+    elif gh_scopes_ok; then chk gh ok "logged in"
+    else chk gh warn "logged in without ${GH_SCOPES[*]}: dots setup replaces the token from 1Password"
+    fi
   fi
   if have tailscale; then
     out=$(tailscale_state)
-    if [[ $out == Running ]]; then chk tailscale ok "connected"; else chk tailscale warn "${out:-not running}: sudo tailscale up"; fi
+    case $out in
+      Running) chk tailscale ok "connected" ;;
+      NeedsLogin) chk tailscale warn "logged out (node key expired or never joined): dots setup with $OP_ITEM/tailscale-auth-key, or sudo tailscale up" ;;
+      *) chk tailscale warn "${out:-not running}: sudo tailscale up" ;;
+    esac
   fi
   key=$(git config --get user.signingkey 2>/dev/null); key=${key/#\~/$HOME}
   if [[ -z $key ]]; then chk signing warn "no signing key configured (git/local from the per-host layer)"
@@ -802,7 +828,19 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
   else chk signing warn "key $key missing: generate it and add it to GitHub as a signing key"
   fi
   if grep -qs cloudflare/token "$HOME/.config/bash/private"; then
-    if [[ -r $HOME/.local/state/cloudflare/token ]]; then chk cloudflare ok "token file present"; else chk cloudflare warn "token file missing: op read into ~/.local/state/cloudflare/token"; fi
+    if [[ ! -r $HOME/.local/state/cloudflare/token ]]; then chk cloudflare warn "token file missing: dots setup writes it from $OP_ITEM/cloudflare-token"
+    else
+      out=$(curl -fsS -m 10 -H "Authorization: Bearer $(tr -d '[:space:]' <"$HOME/.local/state/cloudflare/token")" https://api.cloudflare.com/client/v4/user/tokens/verify 2>/dev/null | grep -o '"status":"[a-z]*"'); out=${out#*:\"}; out=${out%\"}
+      case $out in
+        active) chk cloudflare ok "token active" ;;
+        '') chk cloudflare ok "token file present (Cloudflare not reachable to verify)" ;;
+        *) chk cloudflare warn "token $out: a new one into $OP_ITEM/cloudflare-token, then dots setup" ;;
+      esac
+    fi
+  fi
+  if op_ready; then
+    secrets_state
+    if (( ss_warn )); then chk secrets warn "$ss_detail"; else chk secrets ok "$ss_detail"; fi
   fi
 }
 cmd_doctor() {
@@ -1136,8 +1174,11 @@ secrets_tailscale() {
   [[ $(tailscale_state) == Running ]] && { line tailscale "connected"; return 0; }
   k=$(op_field tailscale-auth-key)
   [[ -n $k ]] || { warn tailscale "not connected and $OP_ITEM/tailscale-auth-key not set: sudo tailscale up"; return 0; }
+  local out
   tmp=$(mktemp) && printf '%s\n' "$k" >"$tmp"
-  if run_root tailscale up --auth-key "file:$tmp" >/dev/null 2>&1; then line tailscale "connected with the auth key from 1Password"; else warn tailscale "tailscale up failed"; fi
+  if out=$(run_root tailscale up --auth-key "file:$tmp" 2>&1); then line tailscale "connected with the auth key from 1Password"
+  else warn tailscale "tailscale up refused the key (${out##*$'\n'}); expired or single-use? a new reusable key into $OP_ITEM/tailscale-auth-key, or sudo tailscale up"
+  fi
   rm -f "$tmp"
 }
 step_identity() { # after the links: git identity, this key among the allowed signers, token files
@@ -1159,11 +1200,11 @@ step_identity() { # after the links: git identity, this key among the allowed si
       line signers "this host's key added to allowed_signers; dots save publishes it"
     fi
   fi
-  if grep -qs cloudflare/token "$HOME/.config/bash/private" && [[ ! -r $HOME/.local/state/cloudflare/token ]] && op_ready; then
-    t=$(op_field cloudflare-token)
-    if [[ -n $t ]]; then
-      mkdir -p "$HOME/.local/state/cloudflare" && (umask 077; printf '%s\n' "$t" >"$HOME/.local/state/cloudflare/token") && line cloudflare "token written from 1Password"
-    else warn cloudflare "token file missing and $OP_ITEM/cloudflare-token not set"
+  if grep -qs cloudflare/token "$HOME/.config/bash/private" && op_ready; then
+    t=$(op_field cloudflare-token); f=$HOME/.local/state/cloudflare/token
+    if [[ -z $t ]]; then [[ -r $f ]] || warn cloudflare "token file missing and $OP_ITEM/cloudflare-token not set"
+    elif [[ ! -r $f || $(<"$f") != "$t" ]]; then
+      mkdir -p "${f%/*}" && (umask 077; printf '%s\n' "$t" >"$f") && line cloudflare "token written from 1Password"
     fi
   fi
   return 0

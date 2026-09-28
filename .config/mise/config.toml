@@ -1,6 +1,11 @@
 # Tools wanted on every machine. Host-specific ones go in conf.d/local.toml (a per-host
 # file, hosts/<host>), which mise loads after this file, so a pin there overrides a value here.
 [tools]
+ripgrep = "latest"
+neovim = "latest"
+fd = "latest"
+eza = "latest"
+bat = "latest"
 "aqua:bats-core/bats-core" = "latest"
 "aqua:modem-dev/hunk" = "latest"
 argocd = "3.5.2"

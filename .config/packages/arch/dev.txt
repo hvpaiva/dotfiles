@@ -28,7 +28,6 @@ podman pacman
 lazydocker pacman
 
 # Runtime management
-mise pacman
 
 # Task runner
 task pacman

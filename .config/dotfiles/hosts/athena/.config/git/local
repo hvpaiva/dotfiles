@@ -1,0 +1,3 @@
+[user]
+	email = highlander.paiva@rdstation.com
+	signingkey = ~/.ssh/id_ed25519_github.pub

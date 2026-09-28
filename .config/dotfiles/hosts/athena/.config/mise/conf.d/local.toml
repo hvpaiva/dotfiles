@@ -1,0 +1,9 @@
+# athena: the only per-host mise entries. Everything else is shared; mise loads conf.d
+# after config.toml, so the pins here override the shared values.
+[tools]
+# work pins (shared file says 25.0.0 / latest)
+bun = "1.3.13"
+node = "24.18.1"
+# build dependencies of the omarchy-ubuntu port's Qt step; they belong to the port
+"pipx:aqtinstall" = "latest"
+"pipx:fonttools" = "latest"

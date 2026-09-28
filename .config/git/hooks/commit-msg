@@ -2,4 +2,5 @@
 # Global commit-msg hook. Strips AI attribution trailers, then chains to the repo's own hook.
 source "$(dirname "$(readlink -f "$0")")/lib.sh"
 strip_ai_trailers "$1" || exit 1
+gsd_vocab_check --mode=git-commit-msg "$1" || exit 1
 chain commit-msg "$@"

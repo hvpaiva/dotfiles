@@ -1,0 +1,18 @@
+# IRB/Reline only. Bash also reads ~/.inputrc, so keep this conditional.
+$if Ruby
+set editing-mode vi
+set show-mode-in-prompt on
+set vi-ins-mode-string "[ins] "
+set vi-cmd-mode-string "[cmd] "
+
+set completion-ignore-case on
+set show-all-if-ambiguous on
+set enable-bracketed-paste on
+set keyseq-timeout 500
+
+set keymap vi-insert
+Control-l: ed-clear-screen
+set keymap vi-command
+Control-l: ed-clear-screen
+set keymap vi-insert
+$endif

@@ -19,11 +19,18 @@ strip_ai_trailers() {
 }
 
 # A global core.hooksPath disables the repository's own hooks, so run them here,
-# then the per-host hook of the same name (~/.config/git/hooks.local, not tracked).
+# then the per-host hook of the same name (~/.config/git/hooks.local), if any.
 chain() {
   local hook=$1 dir; shift
   dir=$(git rev-parse --git-common-dir 2>/dev/null) || dir=$(git rev-parse --git-dir 2>/dev/null)
   if [[ -n $dir && -x $dir/hooks/$hook ]]; then "$dir/hooks/$hook" "$@" || return $?; fi
   if [[ -x $HOME/.config/git/hooks.local/$hook ]]; then "$HOME/.config/git/hooks.local/$hook" "$@" || return $?; fi
   return 0
+}
+
+# Vocabulary check kept in the Claude Code hooks directory; runs wherever it exists.
+gsd_vocab_check() {
+  local check=$HOME/.claude/hooks/check-no-gsd-vocab.sh
+  [[ -x $check ]] || return 0
+  "$check" "$@"
 }

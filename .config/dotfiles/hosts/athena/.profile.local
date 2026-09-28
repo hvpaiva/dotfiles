@@ -1,0 +1,4 @@
+# athena: work tooling paths. POSIX sh — ~/.profile sources this, and the port's
+# ~/.config/uwsm/env sources ~/.profile into the graphical session.
+export QLTY_INSTALL="$HOME/.qlty"
+export PATH="$QLTY_INSTALL/bin:$PATH"

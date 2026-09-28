@@ -19,3 +19,4 @@ fi
 
 # Dotfiles: bare repo at ~/.dotfiles, $HOME as worktree, ~/.gitignore as the manifest
 alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'
+alias dotp='git -C "$HOME/.local/share/dotfiles-private"'

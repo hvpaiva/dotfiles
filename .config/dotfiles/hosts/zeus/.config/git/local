@@ -1,0 +1,3 @@
+[user]
+	email = contact@hvpaiva.dev
+	signingkey = ~/.ssh/id_ed25519_gitsign.pub

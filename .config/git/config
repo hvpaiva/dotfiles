@@ -23,6 +23,8 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !~/.local/share/mise/shims/gh auth git-credential
-# Per host (email, signing key), not tracked
+# Per host: identity in the public per-host layer, anything sensitive in the private one
 [include]
 	path = ~/.config/git/local
+[include]
+	path = ~/.config/git/private

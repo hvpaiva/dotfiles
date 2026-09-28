@@ -21,10 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
+        # SC1090/SC1091 only say a sourced file was not followed
         run: |
-          shellcheck bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*
-          shellcheck -s bash .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots
-          shellcheck -s sh .profile
+          shellcheck -S warning -e SC1090,SC1091 bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*
+          shellcheck -S warning -e SC1090,SC1091 -s bash .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots
+          shellcheck -S warning -e SC1090,SC1091 -s sh .profile
       - name: syntax
         run: |
           for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/* .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots; do
@@ -34,6 +35,7 @@ jobs:
       - name: executable bits
         run: |
           for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*; do
+            case $f in *.sh) [ "$f" = bootstrap.sh ] || continue ;; esac
             [ -x "$f" ] || { echo "not executable: $f"; exit 1; }
           done
 

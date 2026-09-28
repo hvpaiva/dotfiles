@@ -11,6 +11,7 @@ blehook/eval-after-load keymap_vi blerc/vim-mode-hook
 
 # Vi mode in a simple way. Just the colors change.
 function ble/prompt/backslash:my/vim-mode {
+  # shellcheck disable=SC2154  # ble.sh's own variable
   case $_ble_decode_keymap in
   (vi_[on]map) ble/prompt/process-prompt-string '\e[94m\$ ' ;;
   (vi_imap) ble/prompt/process-prompt-string '\e[92m\$ ' ;;

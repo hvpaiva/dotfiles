@@ -80,6 +80,10 @@ next_workspace = ["prefix+shift+n", "alt+down"]
 [ui]
 accent = "blue"
 
+# personal: the sidebar is opt-in (prefix+b) and leaves no strip behind while hidden
+sidebar_start_collapsed = true
+sidebar_collapsed_mode = "hidden"
+
 # tmux drew single-line dividers between adjacent panes and no outer frame
 pane_gaps = false
 pane_outer_borders = false
@@ -96,8 +100,13 @@ prompt_new_tab_name = false
 # set -g mouse on
 mouse_capture = true
 
-# status-right had the zoom flag followed by #h
-tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
+# status-right had the zoom flag followed by #h. The host is the name dots uses
+# (~/.config/dotfiles/host, written by `dots setup`), not the system hostname: on
+# athena that is a corporate asset tag. Falls back to the hostname without the file.
+tab_bar_right = [
+  { type = "zoom" },
+  { type = "command", command = "cat ~/.config/dotfiles/host 2>/dev/null || hostname", interval_seconds = 3600, timeout_seconds = 2 },
+]
 
 # set -g set-titles on / set -g set-titles-string '#h:#W', where tmux's #W was
 # the basename of the pane cwd. This is what Hyprland shows in the group bar,

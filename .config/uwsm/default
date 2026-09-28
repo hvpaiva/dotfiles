@@ -1,8 +1,8 @@
-# Changes require a restart to take effect.
+# Session environment, POSIX sh: Omarchy's uwsm env.d reads it on Arch, the port's
+# ~/.config/uwsm/env on Ubuntu. Changes need a re-login.
 
-export TERMINAL=xdg-terminal-exec
+# nvim directly, instead of Omarchy's omarchy-launch-editor indirection
 export EDITOR=nvim
-# One pager for the whole session, same as ~/.config/bash/envs (this file is POSIX sh)
+# One pager for the whole session, same as ~/.config/bash/envs
 export PAGER=less
 export LESS=-FRi
-# export BROWSER=zen

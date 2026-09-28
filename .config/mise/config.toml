@@ -1,6 +1,7 @@
-# Tools wanted on every machine. Host-specific ones go in conf.d/local.toml (not
-# tracked), which mise loads after this file, so a pin there overrides a value here.
+# Tools wanted on every machine. Host-specific ones go in conf.d/local.toml (a per-host
+# file, hosts/<host>), which mise loads after this file, so a pin there overrides a value here.
 [tools]
+"aqua:bats-core/bats-core" = "latest"
 "aqua:modem-dev/hunk" = "latest"
 argocd = "3.5.2"
 ast-grep = "latest"
@@ -22,6 +23,7 @@ direnv = "2.37.1"
 "gem:ruby-lsp" = "latest"
 "gem:standard" = "latest"
 "gem:try-cli" = "latest"
+glow = "latest"
 gemini = { version = "latest", allow_builds = ["@github/keytar", "node-pty"] }
 gh = "latest"
 git-filter-repo = "latest"
@@ -49,7 +51,6 @@ node = "25.0.0"
 "npm:typescript-language-server" = "latest"
 "npm:vscode-langservers-extracted" = "latest"
 "npm:yaml-language-server" = "latest"
-oh-my-posh = "latest"
 opencode = "latest"
 "pipx:hermes-agent" = { version = "latest", extras = "all" }
 "pipx:jrnl" = "latest"

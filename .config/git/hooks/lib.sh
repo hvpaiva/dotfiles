@@ -29,6 +29,7 @@ chain() {
 }
 
 # Vocabulary check kept in the Claude Code hooks directory; runs wherever it exists.
+# Optional, outside the repo: ~/.claude/hooks/check-no-gsd-vocab.sh, when present, vets the message
 gsd_vocab_check() {
   local check=$HOME/.claude/hooks/check-no-gsd-vocab.sh
   [[ -x $check ]] || return 0

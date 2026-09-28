@@ -3,23 +3,18 @@ function blerc/define-sabbrev-date {
 }
 blehook/eval-after-load complete blerc/define-sabbrev-date
 
-# Prompt:
-# <dir>
-# $
-PS1='\e[33m\n\w\n\e[32m\$ '
-
-# Per-host tweaks (BLESH_HOST_LABEL for the prompt), not tracked
+# Per-host tweaks (BLESH_HOST_LABEL for the prompt), from hosts/<host>
 [[ -f ~/.config/blesh/local.sh ]] && source ~/.config/blesh/local.sh
 
 # enables and configures vi mode
 # this script overrides the PS1
 source ~/.config/blesh/vi.sh
 
-# Transient mode 
+# Transient mode
 bleopt prompt_ps1_transient=always:trim
 
 # Disable EOF marker like "[ble: EOF]"
-bleopt prompt_eol_mark='' 
+bleopt prompt_eol_mark=''
 
 # Disable exit marker like "[ble: exit]"
 bleopt exec_exit_mark=

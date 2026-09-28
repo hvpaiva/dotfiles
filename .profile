@@ -2,7 +2,8 @@
 # (the port's ~/.config/uwsm/env sources this file). Per-host additions live in
 # ~/.profile.local (public per-host layer) and ~/.profile.private (private repo).
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-[ -d "$HOME/go/bin" ] && export PATH="$HOME/go/bin:$PATH"
+# go install targets; after mise, which owns the tools both could provide
+case ":$PATH:" in *":$HOME/go/bin:"*) ;; *) [ -d "$HOME/go/bin" ] && export PATH="$PATH:$HOME/go/bin" ;; esac
 # dots and the mise build live in ~/.local/bin; Omarchy appends it too, this covers hosts without it
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$PATH:$HOME/.local/bin" ;; esac
 [ -f "$HOME/.profile.local" ] && . "$HOME/.profile.local"

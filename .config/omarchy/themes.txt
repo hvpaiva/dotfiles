@@ -1,12 +1,12 @@
 # Themes installed on top of Omarchy's built-in ones, one git URL per line.
 # dots setup runs `omarchy-theme-install` for each one that is missing; the
 # clones themselves live in ~/.config/omarchy/themes/ and are not tracked.
-git@github.com:guilhermetk/omarchy-all-hallows-eve-theme.git
-git@github.com:hipsterusername/omarchy-blueridge-dark-theme.git
-git@github.com:Luquatic/omarchy-catppuccin-dark.git
-git@github.com:noahljungberg/omarchy-darcula-theme.git
-git@github.com:euandeas/omarchy-flexoki-dark-theme.git
-git@github.com:JaxonWright/omarchy-midnight-theme.git
+https://github.com/guilhermetk/omarchy-all-hallows-eve-theme
+https://github.com/hipsterusername/omarchy-blueridge-dark-theme
+https://github.com/Luquatic/omarchy-catppuccin-dark
+https://github.com/noahljungberg/omarchy-darcula-theme
+https://github.com/euandeas/omarchy-flexoki-dark-theme
+https://github.com/JaxonWright/omarchy-midnight-theme
 https://github.com/bjarneo/omarchy-monokai-theme
 https://github.com/sc0ttman/omarchy-one-dark-pro-theme
 https://github.com/guilhermetk/omarchy-rose-pine-dark

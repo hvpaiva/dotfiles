@@ -37,7 +37,8 @@ keybind = super+control+shift+alt+arrow_right=resize_split:right,100
 # General styling
 background-opacity = 1
 
-command = /usr/bin/herdr
+# Every plain Ghostty window is a herdr session (mise provides herdr; PATH lookup)
+command = herdr
 
 # Slowdown mouse scrolling
 mouse-scroll-multiplier = 0.95

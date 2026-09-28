@@ -20,11 +20,13 @@ export LESS_TERMCAP_me=$'\e[0m'
 export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_se=$'\e[0m'
 
-# bun. Not redundant with the mise-managed bun: wrangler and cf-wrangler live only here.
+# bun's own install dir: wrangler and cf-wrangler live there. The bun binary is mise's,
+# so this goes last on PATH.
 export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+case ":$PATH:" in *":$BUN_INSTALL/bin:"*) ;; *) export PATH="$PATH:$BUN_INSTALL/bin" ;; esac
 
-# Ruby ri: render docs as Markdown through glow, which pages with $PAGER. TAB completion
-# keeps working through the _ri_md wrapper in bash/functions.
+# Ruby ri: render docs as Markdown through glow (mise), which pages with $PAGER. Where
+# bash-completion ships an ri completion (Ubuntu), the _ri_md wrapper in bash/functions
+# keeps TAB completion working.
 export RI='-f markdown'
 export RI_PAGER='glow -p -'

@@ -4,7 +4,7 @@ source ~/.config/bash/aliases
 source ~/.config/bash/functions
 source ~/.config/bash/prompt
 source ~/.config/bash/pkg-track
-# Per-host settings, not tracked
+# Per-host settings (hosts/<host>, linked into place)
 [[ -f ~/.config/bash/local ]] && source ~/.config/bash/local
-# Sensitive per-host settings (private repo), not tracked here
+# Sensitive per-host settings (private repo, linked into place)
 [[ -f ~/.config/bash/private ]] && source ~/.config/bash/private

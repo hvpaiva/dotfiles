@@ -1045,7 +1045,7 @@ step_host() {
 step_secrets() { # before the private layer: gh, this machine's key on GitHub, tailscale
   local a
   if (( skip_secrets )); then line secrets "skipped"; return 0; fi
-  if ! have op; then warn secrets "1Password CLI (op) not installed; logins stay by hand"; return 0; fi
+  if ! have op; then line secrets "1Password CLI (op) not installed; logins by hand (dots doctor lists them)"; return 0; fi
   if ! op_ready; then
     if [[ -t 0 ]]; then
       read -rp "unlock 1Password (Settings > Developer > CLI integration) and press Enter, s to skip: " a
@@ -1101,7 +1101,8 @@ secrets_tailscale() {
 step_identity() { # after the links: git identity, this key among the allowed signers, token files
   local f=$HOME/.config/git/local key pub sk signers principals t email=''
   key=$(ssh_key)
-  if [[ ! -e $f ]]; then
+  # only with a key to sign with: commit.gpgsign is on, a missing key would break every commit
+  if [[ ! -e $f && -f $key.pub ]]; then
     [[ -t 0 ]] && read -rp "git email for this host [$PERSONAL_EMAIL]: " email
     printf '[user]\n\temail = %s\n\tsigningkey = %s\n' "${email:-$PERSONAL_EMAIL}" "${key/#$HOME/\~}.pub" >"$f"
     line git "identity written to ~/.config/git/local (this host only)"

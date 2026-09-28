@@ -452,6 +452,10 @@ GH
   printf 'f=$HOME/.local/state/cloudflare/token\n' >"$HOME/.config/bash/private"
   printf 'cf-secret\n' >"$BATS_TEST_TMPDIR/op/cloudflare-token"
   export GIT_CONFIG_GLOBAL=$HOME/.config/git/local
+  mv "$HOME/.ssh/id_ed25519.pub" "$HOME/.ssh/away.pub"
+  run step_identity
+  [ "$status" -eq 0 ] && [ ! -e "$HOME/.config/git/local" ]   # no key to sign with: no identity written
+  mv "$HOME/.ssh/away.pub" "$HOME/.ssh/id_ed25519.pub"
   run step_identity
   [ "$status" -eq 0 ]
   [[ $output == *"identity written"* ]] && [[ $output == *"added to allowed_signers"* ]] && [[ $output == *"token written"* ]]

@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenRig: the daemon, the tmux server and every seat, capped so the machine stays responsive for its owner
+Documentation=file:%h/dev/personal/openrig-capabilities/host/README.md
+Before=slices.target
+
+[Slice]
+CPUWeight=10
+CPUQuota=300%
+CPUQuotaPeriodSec=20ms
+IOWeight=10
+MemoryHigh=12G
+ManagedOOMSwap=kill

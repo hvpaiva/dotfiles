@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenRig: bring the kernel seats and the last running rigs back after a boot
+Documentation=file:%h/dev/personal/openrig-capabilities/host/README.md
+Requires=openrig-daemon.service
+After=openrig-daemon.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Slice=openrig.slice
+Environment=OPENRIG_HOME=%h/.openrig
+Environment=TZ=UTC
+Environment=LC_TIME=C
+ExecStart=-/bin/bash -c 'cd "$HOME" && eval "$(mise env -s bash)" && for i in $(seq 1 90); do rig daemon status >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1'
+ExecStart=-/bin/bash -c 'cd "$HOME" && eval "$(mise env -s bash)" && exec rig up kernel --existing --yes --json'
+ExecStart=/bin/bash -c 'cd "$HOME" && eval "$(mise env -s bash)" && exec rig start --last --json'
+StandardOutput=append:%h/.openrig/logs/restore.log
+StandardError=append:%h/.openrig/logs/restore.log
+
+[Install]
+WantedBy=default.target

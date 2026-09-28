@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenRig daemon
+Documentation=file:%h/dev/personal/openrig-capabilities/host/README.md
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Slice=openrig.slice
+CPUWeight=1000
+Environment=OPENRIG_HOME=%h/.openrig
+Environment=TZ=UTC
+Environment=LC_TIME=C
+ExecStart=/bin/bash -c 'cd "$HOME" && eval "$(mise env -s bash)" && export PATH="$HOME/.local/share/mise/installs/node/24.18.1/bin:$PATH" && exec rig daemon start'
+ExecStop=/bin/bash -c 'cd "$HOME" && eval "$(mise env -s bash)" && export PATH="$HOME/.local/share/mise/installs/node/24.18.1/bin:$PATH" && exec rig daemon stop'
+KillMode=process
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=default.target

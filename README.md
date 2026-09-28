@@ -88,8 +88,8 @@ machine is what the files say": `dots doctor` spells out every check (mise tools
 augur, ble.sh, tmux plugins, per-host links, distro packages that came back, processes
 still on a replaced binary, font, themes, a real login shell, GitHub over SSH).
 
-If a program replaces one of the per-host links with a plain file (omarchy-shell rewrites
-`shell.json`, the monitor panel rewrites `monitors.local.lua`), the live file wins: `dots save`
+If a program replaces one of the per-host links with a plain file (the monitor panel
+rewrites `monitors.local.lua`), the live file wins: `dots save`
 and `dots update` copy it back into its tree, restore the link and show it as a change.
 
 ## What you get
@@ -166,9 +166,9 @@ Two trees, same layout (`<path relative to $HOME>`), both symlinked into place:
 
 | tree | holds | examples |
 |---|---|---|
-| `~/.config/dotfiles/hosts/<host>/` (this repo) | machine-specific but harmless | `hypr/monitors.local.lua` (a laptop panel), `git/local` identity, `mise/conf.d/local.toml` pins, `.profile.local` paths |
+| `~/.config/dotfiles/hosts/<host>/` (this repo) | machine-specific but harmless | `hypr/monitors.local.lua` (a laptop panel), `git/local` identity, `mise/conf.d/local.toml` pins, `.profile.local` paths, `systemd/user/` units, `chromium-extensions.local.txt` |
 | `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/hosts/<host>/` | anything that should not be public | account ids, internal endpoints |
-| `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/common/` | sensitive, same on every host | `omarchy/shell.json`, `git/allowed_signers` |
+| `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/common/` | sensitive, same on every host | `git/allowed_signers`, `bash/private` tokens |
 
 Per-host does not mean private: only sensitive content goes to the private repo. The
 shared files have hooks for both trees: `bash/rc` sources `bash/local` then `bash/private`,

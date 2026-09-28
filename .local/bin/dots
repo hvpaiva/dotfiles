@@ -30,6 +30,9 @@ HOST_FILE=$HOME/.config/dotfiles/host
 HOSTS_DIR=$HOME/.config/dotfiles/hosts
 TPM_DIR=$HOME/.local/share/tmux/plugins
 PACMAN_HOOK=/etc/pacman.d/hooks/pkg-snapshot-append.hook
+CHROMIUM_POLICY=/etc/chromium/policies/managed/dotfiles-extensions.json
+CHROMIUM_EXT=$HOME/.config/packages/universal/chromium-extensions.txt
+CHROMIUM_EXT_LOCAL=$HOME/.config/packages/universal/chromium-extensions.local.txt
 FETCH_TTL=600
 # Tracked at the repo root, kept out of $HOME by a sparse checkout (bootstrap.sh writes the
 # same patterns before the first checkout)
@@ -160,7 +163,7 @@ H
 Check the machine against the intended state, one row per check: the three
 repos (changes, origin, nvim record), host marker, per-host links, root entries,
 git identity and hooks, Omarchy, build dependencies, mise and its tools, rust,
-augur, ble.sh, tmux plugins, distro copies of replaced tools, processes still
+augur, ble.sh, tmux plugins, the Chromium extension policy, distro copies of replaced tools, processes still
 running a removed binary, font, themes, kubectl completion, a real login shell,
 GitHub over SSH. Exit status is 1 when any check warns. dots status runs the
 local checks silently and shows how many warn.
@@ -478,8 +481,8 @@ link_trees() { # "root|label" per tree that applies to this host
     printf '%s|%s\n' "$PRIVATE_DIR/hosts/$host" "private/hosts/$host" "$PRIVATE_DIR/common" "private/common"
   fi
 }
-# If a program replaced a link with a regular file (omarchy-shell rewrites shell.json, the
-# monitor panel rewrites monitors.local.lua), the live file is the truth: it is copied back into
+# If a program replaced a link with a regular file (the monitor panel rewrites
+# monitors.local.lua), the live file is the truth: it is copied back into
 # its tree and re-linked, and shows up as a change to save.
 link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
   local root=$1 label=$2 src rel dst
@@ -597,6 +600,22 @@ stale_processes() { # "NAME PID" for replaced tools still running a removed bina
     case " ${STALE_NAMES[*]} " in *" $name "*) printf '%s %s\n' "$name" "${p##*/}" ;; esac
   done
 }
+# Chromium extensions come from the store through a managed policy, so a fresh machine
+# gets them without a Google account: the shared list plus the host's own, as one
+# ExtensionInstallForcelist under /etc (Chromium reads policies from root-owned files only).
+chromium_ids() { sed 's/#.*//' "$CHROMIUM_EXT" "$CHROMIUM_EXT_LOCAL" 2>/dev/null | awk 'NF { print $1 }' | sort -u; }
+chromium_policy() { # the policy file's content
+  local id list=''
+  while IFS= read -r id; do list+="${list:+,}"$'\n'"    \"$id;https://clients2.google.com/service/update2/crx\""; done < <(chromium_ids)
+  printf '{\n  "ExtensionInstallForcelist": [%s\n  ]\n}\n' "$list"
+}
+chromium_policy_state() { # sets cp_state current|outdated|missing, cp_n
+  cp_n=$(chromium_ids | wc -l)
+  if [[ ! -r $CHROMIUM_POLICY ]]; then cp_state=missing
+  elif [[ $(<"$CHROMIUM_POLICY") == "$(chromium_policy)" ]]; then cp_state=current
+  else cp_state=outdated
+  fi
+}
 theme_name() { local n=${1##*/}; n=${n%.git}; n=${n#omarchy-}; printf '%s' "${n%-theme}"; }
 themes_missing() { # urls from omarchy/themes.txt whose theme is not installed
   local url
@@ -701,6 +720,10 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
   if have kubectl; then
     if [[ -s $HOME/.local/share/bash-completion/completions/kubectl ]]; then chk kubectl ok "completion generated"; else chk kubectl warn "completion not generated"; fi
+  fi
+  if have chromium; then
+    chromium_policy_state
+    if [[ $cp_state == current ]]; then chk chromium ok "$cp_n extensions by policy"; else chk chromium warn "extension policy $cp_state: dots setup"; fi
   fi
 }
 checks_deep() { # slower: a real login shell, GitHub over SSH
@@ -1105,6 +1128,15 @@ step_themes() {
   done < <(themes_missing)
   line themes "$n installed now, $(find "$HOME/.config/omarchy/themes" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l) present"
 }
+step_chromium() { # the extension policy under /etc, from the shared and per-host lists
+  local tmp
+  have chromium || return 0
+  chromium_policy_state
+  if [[ $cp_state == current ]]; then line chromium "$cp_n extensions by policy"; return 0; fi
+  tmp=$(mktemp) && chromium_policy >"$tmp"
+  if run_root install -Dm644 "$tmp" "$CHROMIUM_POLICY"; then line chromium "policy written, $cp_n extensions"; else warn chromium "policy not written; by hand: sudo install -Dm644 $tmp $CHROMIUM_POLICY"; return 0; fi
+  rm -f "$tmp"
+}
 step_completions() {
   local comp=$HOME/.local/share/bash-completion/completions a
   mkdir -p "$comp"
@@ -1135,6 +1167,7 @@ setup_steps() {
   step_font
   step_themes
   step_completions
+  step_chromium
   printf '\n'
   cmd_doctor || true
   printf '\n'

@@ -365,3 +365,25 @@ $HOME/.config/hypr/xdph.conf.bak-omarchy" ]
   touch -d '3 days ago' "$STATE_DIR/nvim-1"
   [ "$(backup_age "$STATE_DIR/nvim-1")" = 3d ]
 }
+
+@test "chromium_policy lists the shared and per-host ids once, comments dropped" {
+  mkdir -p "$(dirname "$CHROMIUM_EXT")"
+  printf 'aaaa  # one\n# a comment line\nbbbb\n' >"$CHROMIUM_EXT"
+  printf 'bbbb\ncccc # host\n' >"$CHROMIUM_EXT_LOCAL"
+  [ "$(chromium_ids | paste -sd,)" = "aaaa,bbbb,cccc" ]
+  run chromium_policy
+  [ "$output" = '{
+  "ExtensionInstallForcelist": [
+    "aaaa;https://clients2.google.com/service/update2/crx",
+    "bbbb;https://clients2.google.com/service/update2/crx",
+    "cccc;https://clients2.google.com/service/update2/crx"
+  ]
+}' ]
+  python3 -c 'import json,sys; json.load(sys.stdin)' <<<"$output"
+  CHROMIUM_POLICY=$BATS_TEST_TMPDIR/policy.json
+  chromium_policy_state; [ "$cp_state" = missing ]
+  chromium_policy >"$CHROMIUM_POLICY"
+  chromium_policy_state; [ "$cp_state" = current ] && [ "$cp_n" -eq 3 ]
+  printf 'dddd\n' >>"$CHROMIUM_EXT"
+  chromium_policy_state; [ "$cp_state" = outdated ]
+}

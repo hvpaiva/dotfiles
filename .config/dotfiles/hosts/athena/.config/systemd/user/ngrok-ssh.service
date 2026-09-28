@@ -1,0 +1,11 @@
+[Unit]
+Description=ngrok TCP tunnel for SSH
+After=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/ngrok tcp 22 --log=stdout
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

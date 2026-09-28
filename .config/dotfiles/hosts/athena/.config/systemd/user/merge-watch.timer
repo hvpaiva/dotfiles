@@ -1,0 +1,11 @@
+[Unit]
+Description=merge-watch — varredura em dia útil de manhã
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 09:30:00
+Persistent=true
+AccuracySec=1min
+Unit=merge-watch.service
+
+[Install]
+WantedBy=timers.target

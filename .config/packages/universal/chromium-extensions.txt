@@ -1,0 +1,6 @@
+# Chromium extensions installed on every host by policy (ExtensionInstallForcelist),
+# written to /etc/chromium/policies/managed by `dots setup`. One store id per line;
+# chromium-extensions.local.txt next to this file (from hosts/<host>) adds a host's own.
+aeblfdkhhhdcdjpifhhbdiojplfjncoa  # 1Password
+fbmfcfkokefgbmfcjahdmomlifclekib  # Read Later
+clldacgmdnnanihiibdgemajcfkmfhia  # Color Picker for Chrome

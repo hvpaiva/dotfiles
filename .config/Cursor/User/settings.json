@@ -1,0 +1,215 @@
+{ "workbench.colorTheme": "Omarchy",
+  // ─── Editor ─────────────────────────────────────────────────────────────
+  "editor.fontSize": 16,
+  "editor.fontFamily": "JetBrainsMono Nerd Font, JetBrains Mono, Fira Code, monospace",
+  "editor.fontLigatures": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggestSelection": "first",
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.guides.indentation": true,
+  "editor.minimap.enabled": false,
+  "editor.stickyScroll.enabled": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [100, 120],
+  "editor.linkedEditing": true,
+  "editor.accessibilitySupport": "off",
+  "editor.smoothScrolling": true,
+  "editor.scrollBeyondLastLine": false,
+
+  // ─── Per-language overrides ─────────────────────────────────────────────
+  "[rust]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+  "[go]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false,
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.quickSuggestions": { "comments": "off", "strings": "off", "other": "off" }
+  },
+  "[php]": { "editor.tabSize": 4 },
+  "[ruby]": { "editor.tabSize": 2 },
+
+  // ─── Files ──────────────────────────────────────────────────────────────
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.autoSave": "onFocusChange",
+  "files.associations": {
+    "*.mdc": "markdown",
+    "AGENTS.md": "markdown",
+    "CLAUDE.md": "markdown"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/target": false,
+    "**/.next": true,
+    "**/dist": false,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true
+  },
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  },
+
+  // ─── Search ─────────────────────────────────────────────────────────────
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "**/*.lock": true,
+    "**/package-lock.json": true,
+    "**/pnpm-lock.yaml": true,
+    "**/yarn.lock": true,
+    "**/Cargo.lock": false
+  },
+  "search.useIgnoreFiles": true,
+  "search.smartCase": true,
+
+  // ─── Workbench / UI ─────────────────────────────────────────────────────
+  "workbench.activityBar.orientation": "vertical",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.highlightModifiedTabs": true,
+  "workbench.editor.tabCloseButton": "right",
+  "workbench.list.smoothScrolling": true,
+  "workbench.tree.indent": 16,
+  "workbench.startupEditor": "none",
+  "workbench.settings.editor": "json",
+  "workbench.settings.useSplitJSON": true,
+
+  // ─── Terminal ───────────────────────────────────────────────────────────
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.fontSize": 15,
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font, monospace",
+  "terminal.integrated.scrollback": 10000,
+  "terminal.integrated.persistentSessionReviveProcess": "never",
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.smoothScrolling": true,
+
+  // ─── Git ────────────────────────────────────────────────────────────────
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.openRepositoryInParentFolders": "always",
+  "git.pruneOnFetch": true,
+  "git.branchProtection": ["main", "master"],
+  "diffEditor.ignoreTrimWhitespace": false,
+  "diffEditor.renderSideBySide": true,
+
+  // ─── Language-specific tooling ──────────────────────────────────────────
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.allTargets": true,
+  "rust-analyzer.cargo.buildScripts.enable": true,
+  "rust-analyzer.procMacro.enable": true,
+  "rust-analyzer.inlayHints.chainingHints.enable": true,
+  "rust-analyzer.inlayHints.parameterHints.enable": true,
+  "rust-analyzer.inlayHints.typeHints.enable": true,
+  "rust-analyzer.completion.autoimport.enable": true,
+
+  "go.useLanguageServer": true,
+  "go.lintTool": "golangci-lint",
+  "go.formatTool": "goimports",
+  "gopls": {
+    "ui.semanticTokens": true,
+    "ui.completion.usePlaceholders": true
+  },
+
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "ruff.organizeImports": true,
+
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.inlayHints.parameterNames.enabled": "literals",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+
+  // ─── Theme ──────────────────────────────────────────────────────────────
+  
+
+  // ─── Vim ────────────────────────────────────────────────────────────────
+  "vim.enable": true,
+  "vim.useSystemClipboard": true,
+  "vim.hlsearch": true,
+  "vim.leader": "<space>",
+  "vim.normalModeKeyBindingsNonRecursive": [
+    { "before": ["<C-h>"], "after": ["<C-w>", "h"] },
+    { "before": ["<C-j>"], "after": ["<C-w>", "j"] },
+    { "before": ["<C-k>"], "after": ["<C-w>", "k"] },
+    { "before": ["<C-l>"], "after": ["<C-w>", "l"] }
+  ],
+
+  // ─── Chat ───────────────────────────────────────────────────────────────
+  "chat.editor.fontSize": 16,
+  "apc.stylesheet": {
+    ".anysphere-markdown-container-root": "font-size: 16px !important; line-height: 1.6 !important;"
+  },
+
+  // ─── Cursor-specific ────────────────────────────────────────────────────
+  "cursor.cpp.disabledLanguages": ["plaintext", "log"],
+  "cursor.chat.smoothStreaming": true,
+  "cursor.general.enableShadowWorkspace": true,
+  "cursor.diffs.useCharacterLevelDiffs": true,
+  "cursor.composer.shouldAllowCustomModes": true,
+
+  // ─── Command Center (already had) ───────────────────────────────────────
+  "window.commandCenter": true,
+  "window.titleBarStyle": "custom",
+  "window.nativeTabs": false,
+  "window.confirmBeforeClose": "keyboardOnly",
+
+  // ─── Privacy & Telemetry ────────────────────────────────────────────────
+  "telemetry.telemetryLevel": "off",
+  "update.showReleaseNotes": false,
+
+  // ─── Misc quality-of-life ───────────────────────────────────────────────
+  "security.workspace.trust.untrustedFiles": "open",
+  "explorer.compactFolders": false,
+  "explorer.confirmDragAndDrop": false,
+  "explorer.confirmDelete": true,
+  "breadcrumbs.enabled": true,
+  "problems.decorations.enabled": true,
+  "debug.console.fontSize": 13,
+  "extensions.ignoreRecommendations": true,
+  "workbench.editor.tabActionLocation": "right"
+}

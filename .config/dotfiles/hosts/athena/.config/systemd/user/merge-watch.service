@@ -1,0 +1,9 @@
+[Unit]
+Description=merge-watch — merges na master feitos fora da esteira
+
+[Service]
+Type=oneshot
+SuccessExitStatus=0 1
+TimeoutStartSec=600
+Environment=PATH=/home/hvpaiva/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/hvpaiva/.local/bin/merge-watch run

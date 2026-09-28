@@ -1,0 +1,10 @@
+# Desktop-specific packages (profile=desktop)
+# Format: PACKAGE ORIGIN
+
+# NVIDIA
+nvidia-open-dkms pacman
+nvidia-utils pacman
+lib32-nvidia-utils pacman
+
+# Gaming
+steam pacman

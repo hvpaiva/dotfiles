@@ -1,0 +1,8 @@
+# Changes require a restart to take effect.
+
+export TERMINAL=xdg-terminal-exec
+export EDITOR=nvim
+# One pager for the whole session, same as ~/.config/bash/envs (this file is POSIX sh)
+export PAGER=less
+export LESS=-FRi
+# export BROWSER=zen

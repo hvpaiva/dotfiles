@@ -1,0 +1,28 @@
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+[pull]
+	rebase = true
+[init]
+	defaultBranch = master
+[user]
+	name = Highlander Paiva
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
+[core]
+	hooksPath = ~/.config/git/hooks
+[credential "https://github.com"]
+	helper = 
+	helper = !~/.local/share/mise/shims/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !~/.local/share/mise/shims/gh auth git-credential
+# Per host (email, signing key), not tracked
+[include]
+	path = ~/.config/git/local

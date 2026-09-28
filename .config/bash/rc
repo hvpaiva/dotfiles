@@ -1,0 +1,8 @@
+# Divergence from the Omarchy defaults only. Whatever matches upstream lives upstream.
+source ~/.config/bash/envs
+source ~/.config/bash/aliases
+source ~/.config/bash/functions
+source ~/.config/bash/prompt
+source ~/.config/bash/pkg-track
+# Per-host settings, not tracked
+[[ -f ~/.config/bash/local ]] && source ~/.config/bash/local

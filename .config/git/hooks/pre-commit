@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Global pre-commit hook: only chains to the repo's own hook and the per-host one.
+source "$(dirname "$(readlink -f "$0")")/lib.sh"
+chain pre-commit "$@"

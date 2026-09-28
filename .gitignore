@@ -1,0 +1,80 @@
+# Manifest of the personal layer. Everything under $HOME is ignored unless listed
+# here, so `dots status` only ever reports files inside this boundary. Upstream
+# Omarchy config, port-owned files, app state and per-host `local` files stay out.
+/*
+!/.gitignore
+!/.bashrc
+!/.bash_profile
+!/.profile
+!/.XCompose
+
+!/.config/
+/.config/*
+
+# Shell
+!/.config/bash/
+/.config/bash/local
+!/.config/blesh/
+/.config/blesh/local.sh
+
+# Terminals: whole directories, so leftovers show up as untracked
+!/.config/alacritty/
+!/.config/ghostty/
+!/.config/kitty/
+!/.config/foot/
+
+# Multiplexers
+!/.config/tmux/
+/.config/tmux/local.conf
+!/.config/herdr/
+/.config/herdr/*
+!/.config/herdr/config.toml
+
+# Omarchy: personal pieces only; hooks the port installs and installed themes stay out
+!/.config/omarchy/
+/.config/omarchy/*
+!/.config/omarchy/shell.json
+!/.config/omarchy/shell.toml
+!/.config/omarchy/themes.txt
+!/.config/omarchy/extensions/
+!/.config/omarchy/branding/
+!/.config/omarchy/defaults/
+!/.config/omarchy/hooks/
+/.config/omarchy/hooks/*
+!/.config/omarchy/hooks/post-update.d/
+/.config/omarchy/hooks/post-update.d/*
+!/.config/omarchy/hooks/post-update.d/setup-agent.hook
+
+# Hyprland: only the personal bindings; hyprland.lua/autostart.lua are upstream (Zeus)
+# or port glue (Athena), monitors.lua is per host
+!/.config/hypr/
+/.config/hypr/*
+!/.config/hypr/bindings.lua
+
+# Session
+!/.config/uwsm/
+/.config/uwsm/*
+!/.config/uwsm/default
+!/.config/autostart/
+/.config/autostart/*
+!/.config/autostart/com.onepassword.OnePassword.desktop
+
+# Tools
+!/.config/git/
+/.config/git/local
+/.config/git/hooks.local/
+!/.config/mise/
+/.config/mise/*
+!/.config/mise/config.toml
+!/.config/packages/
+!/.config/scripts/
+!/.config/hldr/
+!/.config/sesh/
+!/.config/tensaku/
+!/.config/fastfetch/
+!/.config/aether/
+/.config/aether/*
+!/.config/aether/theme.override.css
+
+# This repo's own docs and bootstrap
+!/.config/dotfiles/

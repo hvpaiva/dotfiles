@@ -1,0 +1,44 @@
+# Tools wanted on every machine. Host-specific ones go in conf.d/local.toml (not
+# tracked), which mise loads after this file, so a pin there overrides a value here.
+[tools]
+bun = "latest"
+claude = "latest"
+codex = "latest"
+copilot = "latest"
+crush = "latest"
+"gem:rubocop" = "latest"
+"gem:ruby-lsp" = "latest"
+"gem:standard" = "latest"
+gh = "latest"
+"github:can1357/oh-my-pi" = "latest"
+"github:docker/docker-language-server" = "latest"
+go = "latest"
+"go:github.com/joshmedeski/sesh/v2" = "latest"
+"go:golang.org/x/tools/gopls" = "latest"
+helm-ls = "latest"
+herdr = "latest"
+kubecolor = "latest"
+lua-language-server = "latest"
+marksman = "latest"
+node = "25.0.0"
+"npm:bash-language-server" = "latest"
+"npm:gh-actions-language-server" = { version = "latest", allow_low_downloads = "true" }
+"npm:typescript" = "latest"
+"npm:typescript-language-server" = "latest"
+"npm:vscode-langservers-extracted" = "latest"
+"npm:yaml-language-server" = "latest"
+prettier = "latest"
+ruby = "latest"
+shfmt = "latest"
+stylua = "latest"
+tree-sitter = "latest"
+zoxide = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["ruby"]
+
+[settings.ruby]
+compile = false
+
+[settings.upgrade]
+auto_prune = false

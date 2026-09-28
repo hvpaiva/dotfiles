@@ -1,0 +1,34 @@
+# One pager everywhere. bat stays a file viewer (`bat main.rs`) and is never a $PAGER:
+# a pager receives stdin with no filename, so bat cannot detect a syntax and highlights
+# nothing, while turning the file less would seek into a pipe it must read end to end.
+export PAGER=less
+export LESS="-FRi"
+
+# man through that same less. `-c` makes groff emit backspace overstrike instead of SGR
+# attributes, which is what lets less colorize bold/italic/underline through the
+# LESS_TERMCAP entries below. Overrides the Omarchy default of `col -bx | bat -l man -p`,
+# which strips the emphasis and has bat guess it back from syntax.
+export MANROFFOPT="-c"
+unset MANPAGER
+
+# Basic ANSI colors only, so man pages follow the terminal theme, like BAT_THEME=ansi.
+export LESS_TERMCAP_md=$'\e[1;36m'    # bold      -> cyan (headings, command names)
+export LESS_TERMCAP_us=$'\e[4;32m'    # underline -> green (arguments, italics)
+export LESS_TERMCAP_so=$'\e[1;33;44m' # standout  -> status line and search hits
+export LESS_TERMCAP_mb=$'\e[1;31m'    # blink     -> red
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+
+# bun. Not redundant with the mise-managed bun: wrangler and cf-wrangler live only here.
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Cloudflare CLI
+export CLOUDFLARE_ACCOUNT_ID="543863b8eec2ed0e50a3154238278566"
+_cf_token_file="$HOME/.local/state/cloudflare/token"
+if [ -r "$_cf_token_file" ]; then
+  CLOUDFLARE_API_TOKEN="$(tr -d '[:space:]' < "$_cf_token_file")"
+  export CLOUDFLARE_API_TOKEN
+fi
+unset _cf_token_file

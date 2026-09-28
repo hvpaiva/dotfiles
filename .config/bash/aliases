@@ -1,0 +1,13 @@
+# Leaner than the Omarchy defaults: no long format, no icons.
+if command -v eza &> /dev/null; then
+  alias ls='eza --group-directories-first'
+  alias lt='eza --tree --level=2 --long --git'
+fi
+
+if command -v kubecolor &> /dev/null; then
+  alias kubectl=kubecolor
+  alias k=kubectl
+fi
+
+# Dotfiles: bare repo at ~/.dotfiles, $HOME as worktree, ~/.gitignore as the manifest
+alias dots='git --git-dir="$HOME/.dotfiles" --work-tree="$HOME"'

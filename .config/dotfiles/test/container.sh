@@ -11,8 +11,8 @@ distro=${1:?usage: container.sh arch|ubuntu [--full]}; shift
 full=0; [[ ${1:-} == --full ]] && full=1
 src=${DOTFILES_SRC:-$HOME/.dotfiles}
 case $distro in
-  arch)   image=archlinux:latest; setup='pacman -Sy --noconfirm --needed git curl make gawk base-devel tmux sudo which >/dev/null' ;;
-  ubuntu) image=ubuntu:24.04;     setup='apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y git curl make gawk build-essential tmux sudo ca-certificates >/dev/null' ;;
+  arch)   image=archlinux:latest; setup='pacman -Sy --noconfirm --needed git curl make gawk base-devel tmux sudo which python libsecret >/dev/null' ;;
+  ubuntu) image=ubuntu:24.04;     setup='apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y git curl make gawk build-essential tmux sudo ca-certificates python3 pkg-config libsecret-1-dev >/dev/null' ;;
   *) echo "unknown distro: $distro" >&2; exit 2 ;;
 esac
 work=$(mktemp -d)
@@ -71,6 +71,7 @@ if [ $full -eq 1 ]; then
   check "mise installed"              "\$(get mise)" yes
   check "mise: nothing missing"       "\$(get mise_missing)" ""
   check "mise: no install errors"     "\$(get mise_log_errors)" 0
+  [ "\$(get mise_log_errors)" = 0 ] || { echo "  --- mise-install.log errors:"; grep -iE 'failed|error' /home/tester/.local/state/dotfiles/mise-install.log | head -12 | sed 's/^/      /'; }
 fi
 echo "=================== result: \$([ \$fail -eq 0 ] && echo PASS || echo FAIL)"
 exit \$fail

@@ -117,7 +117,7 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ "$(cat "$root/.config/app/conf")" = live ] && [ -L "$HOME/.config/app/conf" ]
 }
 
-@test "link_all removes a recorded link whose per-host file went away, nothing else" {
+@test "link_all removes a link into a tree whose file went away, nothing else" {
   local root=$HOSTS_DIR/testhost
   mkdir -p "$root/.config/app" "$HOME/.config/other"; printf 1 >"$root/.config/app/a"; printf 1 >"$root/.config/app/b"
   host_name

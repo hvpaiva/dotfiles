@@ -28,7 +28,6 @@ FONT="MesloLGLDZ Nerd Font Mono"
 STATE_DIR=$HOME/.local/state/dotfiles
 HOST_FILE=$HOME/.config/dotfiles/host
 HOSTS_DIR=$HOME/.config/dotfiles/hosts
-LINKS_FILE=$HOME/.local/state/dotfiles/links
 TPM_DIR=$HOME/.local/share/tmux/plugins
 PACMAN_HOOK=/etc/pacman.d/hooks/pkg-snapshot-append.hook
 FETCH_TTL=600
@@ -482,13 +481,12 @@ link_trees() { # "root|label" per tree that applies to this host
 # If a program replaced a link with a regular file (omarchy-shell rewrites shell.json, the
 # monitor panel rewrites monitors.local.lua), the live file is the truth: it is copied back into
 # its tree and re-linked, and shows up as a change to save.
-link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept, appends to LINKED
+link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
   local root=$1 label=$2 src rel dst
   lt_linked=0 lt_adopted=0 lt_kept=0
   [[ -d $root ]] || return 0
   while IFS= read -r src; do
     rel=${src#"$root"/}; dst=$HOME/$rel
-    LINKED+=("$dst")
     if [[ -L $dst ]]; then
       [[ $(readlink "$dst") == "$src" ]] && { lt_kept=$((lt_kept + 1)); continue; }
       rm -f "$dst"
@@ -501,24 +499,20 @@ link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept, appends to LIN
     mkdir -p "$(dirname "$dst")" && ln -s "$src" "$dst" && lt_linked=$((lt_linked + 1))
   done < <(find "$root" -type f 2>/dev/null)
 }
-# The links made last time are kept in $LINKS_FILE. One that no tree produces any more
-# (the per-host file moved to the shared layer, or was dropped) is removed when it still
-# points into a tree and dangles; anything else at that path is left alone.
-stale_links() { # recorded links no tree produces now, that dangle into a tree
+# A link into one of the trees whose file is gone (moved to the shared layer, or dropped)
+# is stale: it is removed. Dangling links that point anywhere else are not ours to touch.
+stale_links() { # dangling links into a tree, anywhere the trees reach in $HOME
   local dst target
-  [[ -r $LINKS_FILE ]] || return 0
   while IFS= read -r dst; do
-    [[ -n $dst ]] || continue
-    case " ${LINKED[*]} " in *" $dst "*) continue ;; esac
-    [[ -L $dst && ! -e $dst ]] || continue
-    target=$(readlink "$dst")
+    target=$(readlink "$dst") || continue
     [[ $target == "$HOSTS_DIR"/* || $target == "$PRIVATE_DIR"/* ]] && printf '%s\n' "$dst"
-  done <"$LINKS_FILE"
+  done < <(find "$HOME" -maxdepth 5 \( -path "$HOME/.cache" -o -path "$HOME/.local/share" -o -path "$HOME/.local/state" \
+    -o -path "$HOME/dev" -o -path "$HOME/.dotfiles" -o -name node_modules -o -name .git \) -prune -o -xtype l -print 2>/dev/null)
+  return 0
 }
 link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned
   local root label dst
   la_ok=0 la_linked=0 la_adopted=0 la_pruned=0
-  LINKED=()
   while IFS='|' read -r root label; do
     link_tree "$root" "$label"
     la_ok=$((la_ok + lt_kept + lt_linked)); la_linked=$((la_linked + lt_linked)); la_adopted=$((la_adopted + lt_adopted))
@@ -527,13 +521,11 @@ link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned
     [[ -n $dst ]] || continue
     rm -f "$dst" && la_pruned=$((la_pruned + 1)) && line links "removed the stale ${dst#"$HOME"/}"
   done < <(stale_links)
-  mkdir -p "$STATE_DIR" && printf '%s\n' "${LINKED[@]}" >"$LINKS_FILE"
   (( $1 )) || line links "$la_ok/$la_ok, $la_linked linked now, $la_adopted adopted$( (( la_pruned )) && printf ', %d stale removed' "$la_pruned")"
 }
 link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_stale lk_detail
   local root label src rel dst
   lk_ok=0 lk_replaced=0 lk_missing=0 lk_other=0 lk_stale=0 lk_detail=''
-  LINKED=()
   while IFS='|' read -r root label; do
     [[ -d $root ]] || continue
     while IFS= read -r src; do
@@ -545,7 +537,6 @@ link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_stale lk_detail
       elif [[ -e $dst ]]; then lk_replaced=$((lk_replaced + 1)); lk_detail+="${lk_detail:+, }$rel replaced"
       else lk_missing=$((lk_missing + 1)); lk_detail+="${lk_detail:+, }$rel missing"
       fi
-      LINKED+=("$dst")
     done < <(find "$root" -type f 2>/dev/null)
   done < <(link_trees)
   while IFS= read -r dst; do [[ -n $dst ]] && { lk_stale=$((lk_stale + 1)); lk_detail+="${lk_detail:+, }${dst#"$HOME"/} stale"; }; done < <(stale_links)
@@ -715,7 +706,7 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
 checks_deep() { # slower: a real login shell, GitHub over SSH
   local out st detail
   st=ok detail=''
-  out=$(bash -lic true 2>&1 | grep -vE 'cannot set terminal process group|no job control in this shell')
+  out=$(LC_ALL=C bash -lic true 2>&1 | grep -vE 'cannot set terminal process group|no job control in this shell')
   if [[ -z $out ]]; then detail="login shell clean"; else st=warn detail="login shell prints: ${out%%$'\n'*}"; fi
   out=$(bash -lic 'printf "%s|%s" "${PAGER-}" "$(command -v dots)"' 2>/dev/null)
   if [[ $out == "less|$HOME/.local/bin/dots" ]]; then detail+=", PAGER=less, dots on PATH"; else st=warn detail+=", PAGER='${out%%|*}', dots='${out#*|}'"; fi

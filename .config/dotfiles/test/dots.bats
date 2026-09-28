@@ -223,9 +223,32 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ "$(repo_git public ls-files -s "$NVIM_PATH" | awk '{print $2}')" != "$(git -C "$NVIM_DIR" rev-parse HEAD)" ]
 }
 
+@test "a live nvim commit ahead of the record is a dotfiles change, behind it is nvim behind record" {
+  make_public; make_nvim
+  repo_state public; [[ $st_changes == "A  .config/nvim" ]]
+  record; repo_git public commit -q -m "record nvim"
+  repo_state public; [ "$st_n" -eq 0 ]
+  commit "$NVIM_DIR" more "nvim moved"
+  repo_state public; [ "$st_n" -eq 1 ] && [[ $st_changes == "M  .config/nvim" ]]
+  record; repo_git public commit -q -m "record nvim again"
+  git -C "$NVIM_DIR" reset -q --hard HEAD~1
+  repo_state public; [ "$st_n" -eq 0 ]
+  repo_state nvim; [ "$(nvim_origin_text)" = "behind record" ]
+}
+
+@test "next_text names one command, in order, and what needs a hand" {
+  nx_update=0 nx_save=0 nx_hand=''
+  [ "$(next_text)" = "nothing to do" ]
+  next_note "in sync" 2 dotfiles; [ "$(next_text)" = "dots save" ]
+  next_note "3 behind" 0 private; [ "$(next_text)" = "dots update, then dots save" ]
+  next_note "diverged 1/2" 0 nvim; [ "$(next_text)" = "dots update, then dots save; by hand: nvim diverged 1/2" ]
+  nx_update=0 nx_save=0 nx_hand=''
+  next_note "2 to push" 0 nvim; [ "$(next_text)" = "dots save" ]
+}
+
 @test "a recorded nvim commit counts as a dotfiles change until it is committed" {
   make_public; make_nvim
-  repo_state public; [ "$st_n" -eq 0 ]
+  repo_state public; [[ $st_changes == "A  .config/nvim" ]]
   record_nvim >/dev/null
   repo_state public
   [ "$st_n" -eq 1 ] && [[ $st_changes == "M  .config/nvim" ]]

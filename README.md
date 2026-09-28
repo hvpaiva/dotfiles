@@ -107,18 +107,28 @@ output follows kubectl's shape (tables, one object per row, states coloured by m
 
 ```
 $ dots
-REPO       BRANCH   CHANGES     ORIGIN      NVIM
-dotfiles   main   2 changed   in sync
+REPO       BRANCH   CHANGES     ORIGIN
+dotfiles   main     3 changed   in sync
 private    main     clean       in sync
-nvim       main     clean       in sync     recorded
+nvim       main     clean       1 to push
 
 PATH                        STATE       REPO
 .config/bash/aliases        modified    dotfiles
 .config/scripts/new-thing   untracked   dotfiles
+.config/nvim                modified    dotfiles
+
+next: dots save
 
 HOST   LINKS   CHECKS
 zeus   5/5     ok
 ```
+
+The `next` line is the verdict: `dots update` when origin or the nvim record has
+something this machine lacks, `dots save` when this machine has something to record,
+commit and push, both in that order when both apply, and what git cannot settle alone
+(a diverged branch, a detached HEAD) named for you to handle. The commit dotfiles
+records for nvim is a dotfiles file, so a newer nvim commit shows up as `.config/nvim
+modified dotfiles`, not as a state of its own.
 
 Edit a file where the program reads it, `dots save` on this machine, `dots update` on the
 other. New files inside the tracked boundary show up as `untracked` instead of silently

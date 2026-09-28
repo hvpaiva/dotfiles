@@ -56,9 +56,11 @@ row, state words coloured by meaning when standard output is a terminal.
 .SH COMMANDS
 .TP
 .BR status " [" -f "|" --fetch "] [" -o "|" --offline ]
-The default. Three tables. REPO: branch, local changes, origin state (in sync,
-N to push, N behind, diverged) and, for nvim, whether the live commit is the one
-recorded in dotfiles. PATH: every changed or new file inside the tracked
+The default. Three tables and one line. REPO: branch, local changes, origin
+state (in sync, N to push, N behind, diverged). The commit dotfiles records for
+nvim is a dotfiles file: a live nvim commit it does not have yet counts as a
+dotfiles change, and nvim not yet on the recorded commit shows as behind
+record. PATH: every changed or new file inside the tracked
 boundary and the repo it belongs to. HOST: the per-host links and how many of
 the local checks of
 .B doctor

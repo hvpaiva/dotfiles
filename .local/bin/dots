@@ -93,8 +93,9 @@ help_for() { # COMMAND
     status) cat <<'H'
 Show what changed here, what is waiting on origin and what the machine lacks.
 
-Three tables. REPO: branch, local changes, origin state and, for nvim, whether
-the live commit is the one recorded in dotfiles. PATH: every changed or new file
+Three tables and one line. REPO: branch, local changes, origin state. A live
+nvim commit the dotfiles record does not have yet counts as a dotfiles change;
+nvim not yet on the recorded commit shows as behind. PATH: every changed or new file
 inside the tracked boundary and the repo it belongs to. HOST: the per-host links,
 the number of local checks that warn (dots doctor lists them) and, only while
 some exist, the backups setup left behind (dots clean lists them). Origin is
@@ -308,9 +309,9 @@ cell_colour() { # TEXT COLUMN — kubecolor-like: state words by meaning, other 
     return 0
   fi
   case $1 in
-    ok | clean | 'in sync' | recorded | present | installed | 'up to date' | done) printf '%s' "$c_g" ;;
-    warn | modified | untracked | added | deleted | renamed | new | skipped | missing* | *' to push' | *' behind'* \
-      | *replaced* | 'not set up' | 'no upstream' | offline* | newer* | older* | unknown* | 'not '* | conflict \
+    ok | clean | 'in sync' | present | installed | 'up to date' | done) printf '%s' "$c_g" ;;
+    warn | modified | untracked | added | deleted | renamed | new | skipped | missing* | *' to push' | *behind* \
+      | *replaced* | 'not set up' | 'no upstream' | offline* | unknown* | 'not '* | conflict \
       | [0-9]*', '[0-9]*[KMGT]) printf '%s' "$c_y" ;;
     error | failed | diverged* | detached*) printf '%s' "$c_r" ;;
     *) (( $2 % 2 )) && printf '%s' "$c_c" ;;
@@ -400,12 +401,17 @@ repo_fetch() { # NAME FORCE — fetch origin, at most once every FETCH_TTL secon
 repo_state() { # NAME — sets st_branch st_changes st_n st_upstream st_ahead st_behind
   local r=$1 counts
   st_branch=$(repo_git "$r" symbolic-ref --short -q HEAD 2>/dev/null) || st_branch=detached
-  # ignore-submodules=all: the nvim work tree gets its own row; a recorded pointer that
-  # moved is detected by nvim_pointer_state
+  # ignore-submodules=all: the nvim work tree has its own row. The pointer dotfiles
+  # keeps for nvim is a dotfiles file, so it is put back here by hand: a live nvim
+  # commit ahead of the record, or not recorded yet, is a dotfiles change that
+  # `save` records, and so is a record staged and not committed.
   st_changes=$(repo_git "$r" status --porcelain --ignore-submodules=all 2>/dev/null)
-  # a recorded nvim commit waiting in the index is a change to save; =all hides it
-  if [[ $r == public ]] && ! repo_git public diff --cached --quiet --ignore-submodules=dirty -- "$NVIM_PATH" 2>/dev/null; then
-    st_changes+="${st_changes:+$'\n'}M  $NVIM_PATH"
+  if [[ $r == public ]] && repo_present nvim; then
+    case $(nvim_pointer_state) in
+      ahead) st_changes+="${st_changes:+$'\n'}M  $NVIM_PATH" ;;
+      none) st_changes+="${st_changes:+$'\n'}A  $NVIM_PATH" ;;
+      same) repo_git public diff --cached --quiet --ignore-submodules=dirty -- "$NVIM_PATH" 2>/dev/null || st_changes+="${st_changes:+$'\n'}M  $NVIM_PATH" ;;
+    esac
   fi
   st_n=0; [[ -n $st_changes ]] && st_n=$(wc -l <<<"$st_changes")
   st_upstream='' st_ahead=0 st_behind=0
@@ -485,15 +491,16 @@ nvim_pointer_state() { # prints same|ahead|behind|diverged|unknown|none
   else printf diverged
   fi
 }
-nvim_pointer_text() {
+nvim_origin_text() { # after repo_state nvim: the origin phrase, with the record folded in
+  local origin
+  origin=$(origin_text)
+  # The record is a commit nvim should be on: not being there yet is the same
+  # kind of state as being behind origin, and `update` resolves both.
   case $(nvim_pointer_state) in
-    same) printf recorded ;;
-    ahead) printf 'newer than recorded' ;;
-    behind) printf 'older than recorded' ;;
-    unknown) printf 'unknown record' ;;
-    diverged) printf 'diverged from record' ;;
-    none) printf 'not recorded' ;;
+    behind | unknown) case $origin in *behind* | *diverged* | *push*) ;; *) origin='behind record' ;; esac ;;
+    diverged) origin='diverged from record' ;;
   esac
+  printf '%s' "$origin"
 }
 record_nvim() { # stage the live nvim commit in dotfiles when it moved forward
   repo_present nvim || return 0
@@ -716,9 +723,8 @@ checks_repos() { # needs the network: fetches, then compares with origin
     repo_state "$r"
     st=ok
     detail=$( (( st_n )) && printf '%d changed' "$st_n" || printf clean )
-    detail+=", $(origin_text)"
-    [[ $r == nvim ]] && detail+=", $(nvim_pointer_text)"
-    case $detail in *changed* | *push* | *behind* | *diverged* | *detached* | *upstream* | *newer* | *older* | *unknown* | *'not recorded'*) st=warn ;; esac
+    if [[ $r == nvim ]]; then detail+=", $(nvim_origin_text)"; else detail+=", $(origin_text)"; fi
+    case $detail in *changed* | *push* | *behind* | *diverged* | *detached* | *upstream*) st=warn ;; esac
     chk "$label" "$st" "$detail"
   done
 }
@@ -863,30 +869,51 @@ cmd_doctor() {
 }
 
 # ── status ───────────────────────────────────────────────────────────────────
+# The one thing to run, from every repo row: `update` brings what origin or the
+# nvim record has, `save` records, commits and pushes what is here. Both, in
+# that order, when both apply. Anything git cannot settle alone is named.
+next_note() { # ORIGIN-PHRASE CHANGES — accumulates nx_update nx_save nx_hand
+  case $1 in
+    *behind*) nx_update=1 ;;
+    *diverged* | *detached* | *'no upstream'*) nx_hand+="${nx_hand:+, }$3 $1" ;;
+    *push*) nx_save=1 ;;
+  esac
+  (( $2 )) && nx_save=1
+  return 0
+}
+next_text() {
+  local next=''
+  (( nx_update )) && next='dots update'
+  (( nx_save )) && next+="${next:+, then }dots save"
+  [[ -n $nx_hand ]] && next+="${next:+; }by hand: $nx_hand"
+  printf '%s' "${next:-nothing to do}"
+}
 overview() { # MODE auto|force|off
-  local mode=$1 r label origin nv changes='' repos='' checks l
+  local mode=$1 r label origin changes='' repos='' checks l
+  nx_update=0 nx_save=0 nx_hand=''
   host_name
   for r in public private nvim; do
     label=$(repo_label "$r")
-    if ! repo_present "$r"; then repos+="$(row "$label" '' '' 'not set up' '')"$'\n'; continue; fi
+    if ! repo_present "$r"; then repos+="$(row "$label" '' '' 'not set up')"$'\n'; nx_hand+="${nx_hand:+, }$label not set up"; continue; fi
     origin=''
     case $mode in
       force) repo_fetch "$r" 1 || origin='offline, ' ;;
       auto)  repo_fetch "$r" 0 || origin='offline, ' ;;
     esac
     repo_state "$r"
-    origin+=$(origin_text)
-    nv=''; [[ $r == nvim ]] && nv=$(nvim_pointer_text)
-    repos+="$(row "$label" "$st_branch" "$( (( st_n )) && printf '%d changed' "$st_n" || printf clean )" "$origin" "$nv")"$'\n'
+    if [[ $r == nvim ]]; then origin+=$(nvim_origin_text); else origin+=$(origin_text); fi
+    next_note "$origin" "$st_n" "$label"
+    repos+="$(row "$label" "$st_branch" "$( (( st_n )) && printf '%d changed' "$st_n" || printf clean )" "$origin")"$'\n'
     [[ -n $st_changes ]] && while IFS= read -r l; do
       changes+="$(row "${l:3}" "$(change_state "${l:0:2}")" "$label")"$'\n'
     done <<<"$st_changes"
   done
-  { row REPO BRANCH CHANGES ORIGIN NVIM; printf '%s' "$repos"; } | table
+  { row REPO BRANCH CHANGES ORIGIN; printf '%s' "$repos"; } | table
   if [[ -n $changes ]]; then
     printf '\n'
     { row PATH STATE REPO; printf '%s' "$changes"; } | table
   fi
+  printf '\nnext: %s\n' "$(next_text)"
   chk_rows='' chk_warns=0
   checks_machine
   if (( chk_warns )); then checks="$chk_warns warn"; else checks=ok; fi

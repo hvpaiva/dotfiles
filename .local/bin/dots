@@ -42,8 +42,9 @@ FETCH_TTL=600
 ROOT_ENTRIES=(README.md bootstrap.sh .github)
 ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # System packages the layer needs and mise cannot provide: compilers and headers for the
-# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig
-ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion)
+# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, and on
+# Arch the 1Password CLI from the omarchy repo (the Ubuntu port installs app and CLI)
+ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion 1password-cli)
 UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
@@ -191,8 +192,9 @@ extension policy (sudo). Then dots doctor and a summary. The output is also
 written to ~/.local/state/dotfiles/setup.log. This is what bootstrap.sh runs
 after the clone.
 
-Secrets: unlock 1Password once (the app, with CLI integration on) and setup
-does the logins itself from the item op://Private/dots (DOTS_OP_ITEM overrides
+Secrets: authorize the CLI once in the 1Password app (it asks; Settings >
+Developer > CLI integration must be on) and setup does the logins itself from
+the item op://Private/dots (DOTS_OP_ITEM overrides
 it): field github-token logs gh in (a token with repo, read:org,
 admin:public_key, admin:ssh_signing_key); this machine's SSH key
 (~/.ssh/id_ed25519, or the one ssh already offers github.com) is generated if
@@ -1043,17 +1045,13 @@ step_host() {
   line host "$host"
 }
 step_secrets() { # before the private layer: gh, this machine's key on GitHub, tailscale
-  local a
   if (( skip_secrets )); then line secrets "skipped"; return 0; fi
   if ! have op; then line secrets "1Password CLI (op) not installed; logins by hand (dots doctor lists them)"; return 0; fi
   if ! op_ready; then
-    if [[ -t 0 ]]; then
-      read -rp "unlock 1Password (Settings > Developer > CLI integration) and press Enter, s to skip: " a
-      [[ $a == s ]] && { line secrets "skipped"; return 0; }
-      op_ready || { warn secrets "1Password not signed in; rerun dots setup once it is"; return 0; }
-    else
-      warn secrets "1Password CLI not signed in; run dots setup on a terminal"; return 0
-    fi
+    # with the app integration, op signin is what makes the app ask to authorize the CLI
+    line 1password "signing in: authorize the CLI in the app (or cancel to skip)"
+    timeout 120 op signin >/dev/null 2>&1 || true
+    op_ready || { warn secrets "1Password not signed in: in the app, Settings > Security (system authentication) and Developer > CLI integration on, then rerun dots setup"; return 0; }
   fi
   line 1password "signed in"
   secrets_gh && secrets_key

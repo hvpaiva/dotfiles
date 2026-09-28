@@ -71,6 +71,13 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   st_branch=detached; [ "$(origin_text)" = "detached HEAD" ]
 }
 
+@test "cell_colour reads N/M as all in place or not" {
+  c_g=G c_y=Y
+  [ "$(cell_colour 6/6 0)" = G ]
+  [ "$(cell_colour 5/6 0)" = Y ]
+  [ "$(cell_colour '6/6, x replaced' 0)" = Y ]
+}
+
 @test "table aligns columns and pads short rows" {
   run table <<<"$(row NAME STATE; row alpha ok; row b 'two words')"
   [ "${lines[0]}" = "NAME    STATE       " ]
@@ -117,7 +124,7 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   ln -s "$root/a/ok" "$HOME/a/ok"; printf 2 >"$HOME/a/replaced"
   link_state
   [ "$lk_ok" -eq 1 ] && [ "$lk_replaced" -eq 1 ] && [ "$lk_missing" -eq 1 ]
-  [[ $(links_text) == "1 in place, "* ]] && [[ $(links_text) == *"a/replaced replaced"* ]]
+  [[ $(links_text) == "1/3, "* ]] && [[ $(links_text) == *"a/replaced replaced"* ]]
 }
 
 @test "themes_missing and tmux_plugins_missing read the config files" {

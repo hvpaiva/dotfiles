@@ -43,8 +43,8 @@ UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier
 # life of the machine.
-ARCH_DROP=(herdr sesh-bin zoxide zsh tree-sitter-cli mise-bin cliamp tobi-try starship glow rust-src rust rust-analyzer)
-UBUNTU_DROP=(mise zoxide zsh starship)
+ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli mise-bin cliamp tobi-try starship glow rust-src rust rust-analyzer)
+UBUNTU_DROP=(mise zoxide zsh fish starship)
 STALE_NAMES=(herdr sesh zoxide starship cliamp tree-sitter mise try glow)
 
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH:$HOME/.local/share/mise/shims"
@@ -245,6 +245,10 @@ indent() { local l; while IFS= read -r l; do printf '%s%s\n' "$1" "$l"; done; }
 SEP=$'\x1f'
 row() { local IFS=$SEP; printf '%s\n' "$*"; }
 cell_colour() { # TEXT COLUMN — kubecolor-like: state words by meaning, other columns alternate
+  if [[ $1 =~ ^([0-9]+)/([0-9]+)(,.*)?$ ]]; then
+    if [[ ${BASH_REMATCH[1]} == "${BASH_REMATCH[2]}" && -z ${BASH_REMATCH[3]} ]]; then printf '%s' "$c_g"; else printf '%s' "$c_y"; fi
+    return 0
+  fi
   case $1 in
     ok | clean | 'in sync' | recorded | present | installed | 'up to date' | 'in place'* | done) printf '%s' "$c_g" ;;
     warn | modified | untracked | added | deleted | renamed | new | skipped | missing* | *' to push' | *' behind'* \
@@ -479,7 +483,7 @@ link_all() { # QUIET — sets la_ok la_linked la_adopted
     link_tree "$root" "$label"
     la_ok=$((la_ok + lt_kept + lt_linked)); la_linked=$((la_linked + lt_linked)); la_adopted=$((la_adopted + lt_adopted))
   done < <(link_trees)
-  (( $1 )) || line links "$la_ok in place, $la_linked linked now, $la_adopted adopted"
+  (( $1 )) || line links "$la_ok/$la_ok, $la_linked linked now, $la_adopted adopted"
 }
 link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_detail
   local root label src rel dst
@@ -498,8 +502,9 @@ link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_detail
     done < <(find "$root" -type f 2>/dev/null)
   done < <(link_trees)
 }
-links_text() { # after link_state
-  if (( lk_replaced + lk_missing + lk_other )); then printf '%d in place, %s' "$lk_ok" "$lk_detail"; else printf '%d in place' "$lk_ok"; fi
+links_text() { # after link_state: "in place/expected", then what is off
+  local total=$((lk_ok + lk_replaced + lk_missing + lk_other))
+  if (( lk_replaced + lk_missing + lk_other )); then printf '%d/%d, %s' "$lk_ok" "$total" "$lk_detail"; else printf '%d/%d' "$lk_ok" "$total"; fi
 }
 
 # ── root entries: README.md, bootstrap.sh, .github live in the repo, not in $HOME ──

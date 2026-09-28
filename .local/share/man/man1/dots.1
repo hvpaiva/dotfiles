@@ -141,6 +141,24 @@ Do not install mise or its tools.
 .TP
 .B \-\-skip\-rust
 Do not install rustup or augur.
+.TP
+.B \-\-skip\-secrets
+Do not touch 1Password, gh, the SSH key or Tailscale.
+.RE
+.PP
+Secrets: unlock 1Password once (the app, with CLI integration on) and
+.B setup
+does the logins itself from the item
+.I op://Private/dots
+(DOTS_OP_ITEM overrides it): field
+.I github-token
+logs gh in; this machine's SSH key is generated when missing and added to GitHub
+for authentication and signing, so nothing asks again afterwards;
+.I tailscale-auth-key
+connects Tailscale;
+.I cloudflare-token
+writes the token file. A missing field is reported, never fatal.
+.RS
 .RE
 .TP
 .BR root " show|hide"

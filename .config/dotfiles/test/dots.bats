@@ -387,3 +387,80 @@ $HOME/.config/hypr/xdph.conf.bak-omarchy" ]
   printf 'dddd\n' >>"$CHROMIUM_EXT"
   chromium_policy_state; [ "$cp_state" = outdated ]
 }
+
+# 1Password, gh and tailscale as stubs: op answers fields from files, gh keeps its
+# login and the keys it was given in files, tailscale is never running
+make_secret_stubs() {
+  mkdir -p "$BATS_TEST_TMPDIR/bin" "$BATS_TEST_TMPDIR/op"
+  cat >"$BATS_TEST_TMPDIR/bin/op" <<'OP'
+#!/usr/bin/env bash
+case $1 in
+  whoami) [[ -f ${BATS_TEST_TMPDIR:?}/op/unlocked ]] ;;
+  read) f=${BATS_TEST_TMPDIR:?}/op/${2##*/}; [[ -f $f ]] && cat "$f" ;;
+esac
+OP
+  cat >"$BATS_TEST_TMPDIR/bin/gh" <<'GH'
+#!/usr/bin/env bash
+d=${BATS_TEST_TMPDIR:?}/gh; mkdir -p "$d"; touch "$d/keys" "$d/signing"
+case "$1 $2" in
+  "auth status") [[ -f $d/token ]] ;;
+  "auth login") cat >"$d/token" ;;
+  "api user/keys") cat "$d/keys" ;;
+  "api user/ssh_signing_keys") cat "$d/signing" ;;
+  "ssh-key add") if [[ $* == *"--type signing"* ]]; then cut -d' ' -f1,2 <"$3" >>"$d/signing"; else cut -d' ' -f1,2 <"$3" >>"$d/keys"; fi ;;
+esac
+GH
+  chmod +x "$BATS_TEST_TMPDIR/bin/op" "$BATS_TEST_TMPDIR/bin/gh"
+  export PATH=$BATS_TEST_TMPDIR/bin:$PATH
+  host=testhost
+}
+
+@test "secrets_gh logs gh in with the token from 1Password, once" {
+  make_secret_stubs; touch "$BATS_TEST_TMPDIR/op/unlocked"
+  run secrets_gh
+  [ "$status" -eq 1 ] && [[ $output == *"github-token not set"* ]]
+  printf 'ghp_x\n' >"$BATS_TEST_TMPDIR/op/github-token"
+  run secrets_gh
+  [ "$status" -eq 0 ] && [[ $output == *"logged in with the token"* ]] && [ "$(cat "$BATS_TEST_TMPDIR/gh/token")" = ghp_x ]
+  run secrets_gh
+  [[ $output == *"gh         logged in"* ]]
+}
+
+@test "secrets_key generates this machine's key and registers it for auth and signing, idempotent" {
+  make_secret_stubs; printf 'ghp_x\n' >"$BATS_TEST_TMPDIR/op/github-token"; secrets_gh >/dev/null
+  [ "$(ssh_key)" = "$HOME/.ssh/id_ed25519" ]
+  run secrets_key
+  [ "$status" -eq 0 ]
+  [[ $output == *"generated ~/.ssh/id_ed25519"* ]] && [[ $output == *"key added to GitHub as Testhost (on-disk)"* ]]
+  pub=$(cut -d' ' -f1,2 <"$HOME/.ssh/id_ed25519.pub")
+  [ "$(cat "$BATS_TEST_TMPDIR/gh/keys")" = "$pub" ] && [ "$(cat "$BATS_TEST_TMPDIR/gh/signing")" = "$pub" ]
+  run secrets_key
+  [[ $output == *"ssh        key on GitHub"* ]] && [[ $output == *"signing    key on GitHub"* ]]
+  [ "$(wc -l <"$BATS_TEST_TMPDIR/gh/keys")" -eq 1 ]
+  # another key configured for signing: left alone
+  export GIT_CONFIG_GLOBAL=$BATS_TEST_TMPDIR/gitconfig; git config --global user.signingkey "$HOME/.ssh/other.pub"
+  : >"$BATS_TEST_TMPDIR/gh/signing"
+  run secrets_key
+  [[ $output == *"another key signs here"* ]] && [ ! -s "$BATS_TEST_TMPDIR/gh/signing" ]
+}
+
+@test "step_identity writes git/local, adds the key to allowed_signers once, writes the cloudflare token" {
+  make_secret_stubs; touch "$BATS_TEST_TMPDIR/op/unlocked"
+  mkdir -p "$HOME/.ssh" "$HOME/.config/git" "$HOME/.config/bash" "$PRIVATE_DIR/common/.config/git"
+  ssh-keygen -q -t ed25519 -N '' -f "$HOME/.ssh/id_ed25519"
+  printf '# trusted\nme@x.dev,me@work.com ssh-ed25519 AAAAold\n' >"$PRIVATE_DIR/common/.config/git/allowed_signers"
+  printf 'f=$HOME/.local/state/cloudflare/token\n' >"$HOME/.config/bash/private"
+  printf 'cf-secret\n' >"$BATS_TEST_TMPDIR/op/cloudflare-token"
+  export GIT_CONFIG_GLOBAL=$HOME/.config/git/local
+  run step_identity
+  [ "$status" -eq 0 ]
+  [[ $output == *"identity written"* ]] && [[ $output == *"added to allowed_signers"* ]] && [[ $output == *"token written"* ]]
+  grep -q "email = contact@hvpaiva.dev" "$HOME/.config/git/local"
+  grep -q "signingkey = ~/.ssh/id_ed25519.pub" "$HOME/.config/git/local"
+  pub=$(cut -d' ' -f1,2 <"$HOME/.ssh/id_ed25519.pub")
+  [ "$(tail -1 "$PRIVATE_DIR/common/.config/git/allowed_signers")" = "me@x.dev,me@work.com $pub" ]
+  [ "$(cat "$HOME/.local/state/cloudflare/token")" = cf-secret ]
+  [ "$(stat -c %a "$HOME/.local/state/cloudflare/token")" = 600 ]
+  run step_identity
+  [[ $output != *"added to allowed_signers"* ]] && [ "$(grep -c "$pub" "$PRIVATE_DIR/common/.config/git/allowed_signers")" -eq 1 ]
+}

@@ -18,7 +18,7 @@ _dots() {
     status) mapfile -t COMPREPLY < <(compgen -S ' ' -W "-f --fetch -o --offline" -- "$cur"); return 0 ;;
     save)   mapfile -t COMPREPLY < <(compgen -S ' ' -W "-m --message -n --no-push" -- "$cur"); return 0 ;;
     update) mapfile -t COMPREPLY < <(compgen -S ' ' -W "--quick" -- "$cur"); return 0 ;;
-    setup)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--host --reset --skip-omarchy --skip-private --skip-mise --skip-rust" -- "$cur"); return 0 ;;
+    setup)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--host --reset --skip-omarchy --skip-private --skip-mise --skip-rust --skip-secrets" -- "$cur"); return 0 ;;
     root)   mapfile -t COMPREPLY < <(compgen -S ' ' -W "show hide" -- "$cur"); return 0 ;;
     clean)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--all -y --yes" -- "$cur"); return 0 ;;
     push | doctor | help) return 0 ;;

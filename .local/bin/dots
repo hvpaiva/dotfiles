@@ -33,6 +33,9 @@ PACMAN_HOOK=/etc/pacman.d/hooks/pkg-snapshot-append.hook
 CHROMIUM_POLICY=/etc/chromium/policies/managed/dotfiles-extensions.json
 CHROMIUM_EXT=$HOME/.config/packages/universal/chromium-extensions.txt
 CHROMIUM_EXT_LOCAL=$HOME/.config/packages/universal/chromium-extensions.local.txt
+# One 1Password item feeds every login setup can do by itself (dots help setup)
+OP_ITEM=${DOTS_OP_ITEM:-op://Private/dots}
+PERSONAL_EMAIL=contact@hvpaiva.dev
 FETCH_TTL=600
 # Tracked at the repo root, kept out of $HOME by a sparse checkout (bootstrap.sh writes the
 # same patterns before the first checkout)
@@ -178,17 +181,29 @@ H
 Install or repair the whole layer. Idempotent: every step checks before acting.
 The steps, in order: build dependencies (sudo); Omarchy, on Ubuntu through the
 omarchy-ubuntu bootstrap; the dotfiles repo (remotes, sparse checkout,
-fast-forward); host marker; private layer (needs GitHub over SSH); per-host
-links; neovim config; distro packages the layer replaces (sudo); the pacman hook
-that records installs (Arch, sudo); rustup; augur; ble.sh; tmux plugins; mise and
-every tool in mise/config.toml; terminal font; themes; kubectl completion. Then
-dots doctor and a summary. The output is also written to
-~/.local/state/dotfiles/setup.log. This is what bootstrap.sh runs after the
-clone.
+fast-forward); host marker; secrets (below); private layer (needs GitHub over
+SSH); per-host links; identity (git/local when no layer provides one, this
+host's key among the allowed signers, the Cloudflare token file); neovim config;
+distro packages the layer replaces (sudo); the pacman hook that records installs
+(Arch, sudo); rustup; augur; ble.sh; tmux plugins; mise and every tool in
+mise/config.toml; terminal font; themes; kubectl completion; the Chromium
+extension policy (sudo). Then dots doctor and a summary. The output is also
+written to ~/.local/state/dotfiles/setup.log. This is what bootstrap.sh runs
+after the clone.
+
+Secrets: unlock 1Password once (the app, with CLI integration on) and setup
+does the logins itself from the item op://Private/dots (DOTS_OP_ITEM overrides
+it): field github-token logs gh in (a token with repo, read:org,
+admin:public_key, admin:ssh_signing_key); this machine's SSH key
+(~/.ssh/id_ed25519, or the one ssh already offers github.com) is generated if
+missing and added to GitHub for authentication and signing, so nothing asks
+again afterwards; tailscale-auth-key connects Tailscale; cloudflare-token
+writes ~/.local/state/cloudflare/token. A missing field is reported, never
+fatal. Without 1Password the step says what is left to do by hand.
 
 Usage:
   dots setup [--host NAME] [--reset] [--skip-omarchy] [--skip-private]
-             [--skip-mise] [--skip-rust]
+             [--skip-mise] [--skip-rust] [--skip-secrets]
 
 Flags:
   --host NAME      which hosts/NAME layers this machine uses (asked once,
@@ -198,6 +213,7 @@ Flags:
   --skip-private   do not touch the private layer
   --skip-mise      do not install mise or its tools
   --skip-rust      do not install rustup or augur
+  --skip-secrets   do not touch 1Password, gh, the SSH key or Tailscale
 
 Examples:
   dots setup
@@ -619,6 +635,24 @@ chromium_policy_state() { # sets cp_state current|outdated|missing, cp_n
   fi
 }
 theme_name() { local n=${1##*/}; n=${n%.git}; n=${n#omarchy-}; printf '%s' "${n%-theme}"; }
+
+# ── secrets: unlock 1Password once, the rest follows ─────────────────────────
+# OP_ITEM holds, as fields: github-token (a gh token with repo, read:org,
+# admin:public_key and admin:ssh_signing_key), tailscale-auth-key, cloudflare-token.
+# The path is public, the values never leave 1Password. This machine's SSH key is
+# generated here, stays here, and goes to GitHub through gh for authentication and
+# signing: after setup, commits and pushes need nothing else.
+op_ready() { have op && op whoami >/dev/null 2>&1; }
+op_field() { op read "$OP_ITEM/$1" 2>/dev/null; }
+ssh_key() { # the key ssh offers GitHub when one exists, else the one setup generates
+  local f
+  while read -r _ f; do
+    f=${f/#\~/$HOME}
+    [[ -f $f ]] && { printf '%s' "$f"; return 0; }
+  done < <(ssh -G github.com 2>/dev/null | grep '^identityfile ')
+  printf '%s' "$HOME/.ssh/id_ed25519"
+}
+tailscale_state() { local s; s=$(tailscale status --json 2>/dev/null | grep -o '"BackendState": *"[A-Za-z]*"' | head -1); s=${s%\"}; printf '%s' "${s##*\"}"; }
 themes_missing() { # urls from omarchy/themes.txt whose theme is not installed
   local url
   [[ -r $HOME/.config/omarchy/themes.txt ]] || return 0
@@ -746,7 +780,7 @@ checks_deep() { # slower: a real login shell, GitHub over SSH
     if gh auth status >/dev/null 2>&1; then chk gh ok "logged in"; else chk gh warn "not logged in: gh auth login"; fi
   fi
   if have tailscale; then
-    out=$(tailscale status --json 2>/dev/null | grep -o '"BackendState": *"[A-Za-z]*"' | head -1); out=${out%\"}; out=${out##*\"}
+    out=$(tailscale_state)
     if [[ $out == Running ]]; then chk tailscale ok "connected"; else chk tailscale warn "${out:-not running}: sudo tailscale up"; fi
   fi
   key=$(git config --get user.signingkey 2>/dev/null); key=${key/#\~/$HOME}
@@ -1008,6 +1042,89 @@ step_host() {
   host_name
   line host "$host"
 }
+step_secrets() { # before the private layer: gh, this machine's key on GitHub, tailscale
+  local a
+  if (( skip_secrets )); then line secrets "skipped"; return 0; fi
+  if ! have op; then warn secrets "1Password CLI (op) not installed; logins stay by hand"; return 0; fi
+  if ! op_ready; then
+    if [[ -t 0 ]]; then
+      read -rp "unlock 1Password (Settings > Developer > CLI integration) and press Enter, s to skip: " a
+      [[ $a == s ]] && { line secrets "skipped"; return 0; }
+      op_ready || { warn secrets "1Password not signed in; rerun dots setup once it is"; return 0; }
+    else
+      warn secrets "1Password CLI not signed in; run dots setup on a terminal"; return 0
+    fi
+  fi
+  line 1password "signed in"
+  secrets_gh && secrets_key
+  secrets_tailscale
+  return 0
+}
+secrets_gh() {
+  local t
+  have gh || { warn gh "not installed"; return 1; }
+  if gh auth status >/dev/null 2>&1; then line gh "logged in"; return 0; fi
+  t=$(op_field github-token)
+  [[ -n $t ]] || { warn gh "not logged in and $OP_ITEM/github-token not set"; return 1; }
+  if gh auth login --with-token <<<"$t" >/dev/null 2>&1; then line gh "logged in with the token from 1Password"; else warn gh "login with the token from 1Password failed"; return 1; fi
+}
+secrets_key() { # generated here, on GitHub for authentication and (unless another key signs) signing
+  local key pub title sk
+  key=$(ssh_key); title="${host^} (on-disk)"
+  if [[ ! -f $key ]]; then
+    mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+    ssh-keygen -q -t ed25519 -N '' -C "$host" -f "$key" || { warn ssh "could not generate ${key/#$HOME/\~}"; return 1; }
+    line ssh "generated ${key/#$HOME/\~}"
+  fi
+  pub=$(cut -d' ' -f1,2 <"$key.pub")
+  if gh api user/keys --jq '.[].key' 2>/dev/null | grep -qxF "$pub"; then line ssh "key on GitHub"
+  elif gh ssh-key add "$key.pub" --title "$title" >/dev/null 2>&1; then line ssh "key added to GitHub as $title"
+  else warn ssh "could not add the key to GitHub (token scope admin:public_key?)"
+  fi
+  sk=$(git config --get user.signingkey 2>/dev/null); sk=${sk/#\~/$HOME}
+  if [[ -n $sk && $sk != "$key.pub" ]]; then line signing "another key signs here (${sk/#$HOME/\~})"; return 0; fi
+  if gh api user/ssh_signing_keys --jq '.[].key' 2>/dev/null | grep -qxF "$pub"; then line signing "key on GitHub"
+  elif gh ssh-key add "$key.pub" --type signing --title "$title" >/dev/null 2>&1; then line signing "key added to GitHub as $title"
+  else warn signing "could not add the signing key to GitHub (token scope admin:ssh_signing_key?)"
+  fi
+}
+secrets_tailscale() {
+  local k tmp
+  have tailscale || return 0
+  [[ $(tailscale_state) == Running ]] && { line tailscale "connected"; return 0; }
+  k=$(op_field tailscale-auth-key)
+  [[ -n $k ]] || { warn tailscale "not connected and $OP_ITEM/tailscale-auth-key not set: sudo tailscale up"; return 0; }
+  tmp=$(mktemp) && printf '%s\n' "$k" >"$tmp"
+  if run_root tailscale up --auth-key "file:$tmp" >/dev/null 2>&1; then line tailscale "connected with the auth key from 1Password"; else warn tailscale "tailscale up failed"; fi
+  rm -f "$tmp"
+}
+step_identity() { # after the links: git identity, this key among the allowed signers, token files
+  local f=$HOME/.config/git/local key pub sk signers principals t email=''
+  key=$(ssh_key)
+  if [[ ! -e $f ]]; then
+    [[ -t 0 ]] && read -rp "git email for this host [$PERSONAL_EMAIL]: " email
+    printf '[user]\n\temail = %s\n\tsigningkey = %s\n' "${email:-$PERSONAL_EMAIL}" "${key/#$HOME/\~}.pub" >"$f"
+    line git "identity written to ~/.config/git/local (this host only)"
+  fi
+  signers=$PRIVATE_DIR/common/.config/git/allowed_signers
+  sk=$(git config --get user.signingkey 2>/dev/null); sk=${sk/#\~/$HOME}
+  if [[ -f $key.pub && -f $signers && $sk == "$key.pub" ]]; then
+    pub=$(cut -d' ' -f1,2 <"$key.pub")
+    if ! grep -qF "$pub" "$signers"; then
+      principals=$(awk '!/^#/ && NF { p = $1 } END { print p }' "$signers"); principals=${principals:-$PERSONAL_EMAIL}
+      printf '# %s - added by dots setup %s (%s)\n%s %s\n' "$host" "$(date +%F)" "${key/#$HOME/\~}" "$principals" "$pub" >>"$signers"
+      line signers "this host's key added to allowed_signers; dots save publishes it"
+    fi
+  fi
+  if grep -qs cloudflare/token "$HOME/.config/bash/private" && [[ ! -r $HOME/.local/state/cloudflare/token ]] && op_ready; then
+    t=$(op_field cloudflare-token)
+    if [[ -n $t ]]; then
+      mkdir -p "$HOME/.local/state/cloudflare" && (umask 077; printf '%s\n' "$t" >"$HOME/.local/state/cloudflare/token") && line cloudflare "token written from 1Password"
+    else warn cloudflare "token file missing and $OP_ITEM/cloudflare-token not set"
+    fi
+  fi
+  return 0
+}
 step_private() {
   if (( skip_private )); then line private "skipped"; return 0; fi
   if ! GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" git ls-remote -q "$PRIVATE_REPO" HEAD >/dev/null 2>&1; then
@@ -1175,8 +1292,10 @@ setup_steps() {
   step_omarchy
   step_repo
   step_host
+  step_secrets
   step_private
   link_all 0
+  step_identity
   step_nvim
   step_drop_packages
   step_pacman_hook
@@ -1201,7 +1320,7 @@ setup_steps() {
 }
 cmd_setup() {
   local args="$*" log
-  host_opt='' reset=0 skip_omarchy=0 skip_private=0 skip_mise=0 skip_rust=0
+  host_opt='' reset=0 skip_omarchy=0 skip_private=0 skip_mise=0 skip_rust=0 skip_secrets=0
   while (($#)); do
     case $1 in
       --host) host_opt=${2:?--host needs a name}; shift ;;
@@ -1210,6 +1329,7 @@ cmd_setup() {
       --skip-private) skip_private=1 ;;
       --skip-mise) skip_mise=1 ;;
       --skip-rust) skip_rust=1 ;;
+      --skip-secrets) skip_secrets=1 ;;
       -h | --help) help_for setup; return 0 ;;
       *) die "setup: unknown flag $1" ;;
     esac

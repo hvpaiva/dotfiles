@@ -27,21 +27,27 @@ goes:
 1. the build dependencies mise cannot provide (compilers, headers, tmux, fontconfig);
 2. on Ubuntu, Omarchy itself through the omarchy-ubuntu bootstrap (asks for your password,
    20–40 minutes the first time);
-3. the per-host layers: public files from `hosts/<host>/`, sensitive ones from the private
-   repo (needs the GitHub SSH key; skipped with a warning until it works);
-4. [hvpaiva/nvim](https://github.com/hvpaiva/nvim) on `main`;
-5. the distro packages this layer replaces with mise's copy (Omarchy ships `mise-bin`,
+3. the logins, after you unlock 1Password once (the app, CLI integration on): gh with the
+   token in the item `op://Private/dots` (field `github-token`), this machine's SSH key
+   generated and added to GitHub for authentication and signing, Tailscale with
+   `tailscale-auth-key`, the Cloudflare token file from `cloudflare-token`. The key stays on
+   the machine, so commits and pushes never ask again. No 1Password, no field: reported,
+   never fatal;
+4. the per-host layers: public files from `hosts/<host>/`, sensitive ones from the private
+   repo (needs the GitHub SSH key from the step above; skipped with a warning until it works);
+5. [hvpaiva/nvim](https://github.com/hvpaiva/nvim) on `main`;
+6. the distro packages this layer replaces with mise's copy (Omarchy ships `mise-bin`,
    `zoxide`, `herdr`, `cliamp`, `tobi-try`, `tree-sitter-cli`, `starship`; they go);
-6. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, tmux plugins, the official
+7. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, tmux plugins, the official
    mise build in `~/.local/bin` and every tool in `mise/config.toml`;
-7. the terminal font and the extra Omarchy themes;
-8. `dots doctor`, then a summary of anything that did not go as planned. The full output is
+8. the terminal font and the extra Omarchy themes;
+9. `dots doctor`, then a summary of anything that did not go as planned. The full output is
    kept in `~/.local/state/dotfiles/setup.log`.
 
 Every step checks before acting, so running it again repairs a machine instead of
 redoing it. Options: `--host NAME` (which per-host layers to use; asked on the first run),
 `--reset` (drop local edits to tracked files), `--skip-omarchy`, `--skip-private`,
-`--skip-mise`, `--skip-rust`.
+`--skip-mise`, `--skip-rust`, `--skip-secrets`.
 
 ## Day to day: `dots`
 

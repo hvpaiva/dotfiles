@@ -18,6 +18,8 @@ esac
 work=$(mktemp -d)
 git clone -q --bare "$src" "$work/dotfiles.git" || exit 1
 git --git-dir="$work/dotfiles.git" show HEAD:.config/dotfiles/bootstrap.sh >"$work/bootstrap.sh"
+# mktemp gives 0700; the container user may not share our uid (ubuntu:24.04 already has uid 1000)
+chmod -R a+rX "$work"
 flags="--host test --skip-omarchy --skip-private"; (( full )) || flags+=" --skip-mise --skip-rust"
 cat >"$work/inside.sh" <<INSIDE
 set -u

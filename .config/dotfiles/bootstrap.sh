@@ -83,7 +83,11 @@ if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   . /etc/os-release
   # Omarchy ships its own os-release (ID=omarchy); ID_LIKE keeps the family
-  case "${ID:-} ${ID_LIKE:-}" in *arch*|*omarchy*) os=arch ;; *ubuntu*) os=ubuntu ;; esac
+  case ${ID:-} in
+    arch|omarchy) os=arch ;;
+    ubuntu) os=ubuntu ;;
+    *) case ${ID_LIKE:-} in *arch*) os=arch ;; *ubuntu*) os=ubuntu ;; esac ;;
+  esac
 fi
 mkdir -p "$STATE_DIR" "$HOME/.local/bin" "$HOME/.config/dotfiles"
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"

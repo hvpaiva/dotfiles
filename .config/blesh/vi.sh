@@ -20,11 +20,14 @@ function ble/prompt/backslash:my/vim-mode {
   esac
 }
 
-# Host label, only over SSH. BLESH_HOST_LABEL (set in blesh/local.sh) replaces the
-# hostname where that is an asset tag rather than a name.
+# Host label, only over SSH: the name dots uses for this host (~/.config/dotfiles/host,
+# written by `dots setup`), which on athena is not the asset-tag hostname. BLESH_HOST_LABEL
+# (blesh/local.sh) still overrides it; without either, the hostname.
 function ble/prompt/backslash:my/ssh-host {
+  local label=${BLESH_HOST_LABEL-}
+  [[ -z $label && -r ~/.config/dotfiles/host ]] && label=$(<~/.config/dotfiles/host)
   if [[ -n ${SSH_CONNECTION-} || -n ${SSH_CLIENT-} ]]; then
-    ble/prompt/process-prompt-string "\e[36m${BLESH_HOST_LABEL:-\\h} "
+    ble/prompt/process-prompt-string "\e[36m${label:-\\h} "
   fi
 }
 

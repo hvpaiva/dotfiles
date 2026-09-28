@@ -28,6 +28,7 @@ FONT="MesloLGLDZ Nerd Font Mono"
 STATE_DIR=$HOME/.local/state/dotfiles
 HOST_FILE=$HOME/.config/dotfiles/host
 HOSTS_DIR=$HOME/.config/dotfiles/hosts
+LINKS_FILE=$HOME/.local/state/dotfiles/links
 TPM_DIR=$HOME/.local/share/tmux/plugins
 PACMAN_HOOK=/etc/pacman.d/hooks/pkg-snapshot-append.hook
 FETCH_TTL=600
@@ -479,14 +480,15 @@ link_trees() { # "root|label" per tree that applies to this host
   fi
 }
 # If a program replaced a link with a regular file (omarchy-shell rewrites shell.json, the
-# monitor panel rewrites monitors.lua), the live file is the truth: it is copied back into
+# monitor panel rewrites monitors.local.lua), the live file is the truth: it is copied back into
 # its tree and re-linked, and shows up as a change to save.
-link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
+link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept, appends to LINKED
   local root=$1 label=$2 src rel dst
   lt_linked=0 lt_adopted=0 lt_kept=0
   [[ -d $root ]] || return 0
   while IFS= read -r src; do
     rel=${src#"$root"/}; dst=$HOME/$rel
+    LINKED+=("$dst")
     if [[ -L $dst ]]; then
       [[ $(readlink "$dst") == "$src" ]] && { lt_kept=$((lt_kept + 1)); continue; }
       rm -f "$dst"
@@ -499,18 +501,39 @@ link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
     mkdir -p "$(dirname "$dst")" && ln -s "$src" "$dst" && lt_linked=$((lt_linked + 1))
   done < <(find "$root" -type f 2>/dev/null)
 }
-link_all() { # QUIET — sets la_ok la_linked la_adopted
-  local root label
-  la_ok=0 la_linked=0 la_adopted=0
+# The links made last time are kept in $LINKS_FILE. One that no tree produces any more
+# (the per-host file moved to the shared layer, or was dropped) is removed when it still
+# points into a tree and dangles; anything else at that path is left alone.
+stale_links() { # recorded links no tree produces now, that dangle into a tree
+  local dst target
+  [[ -r $LINKS_FILE ]] || return 0
+  while IFS= read -r dst; do
+    [[ -n $dst ]] || continue
+    case " ${LINKED[*]} " in *" $dst "*) continue ;; esac
+    [[ -L $dst && ! -e $dst ]] || continue
+    target=$(readlink "$dst")
+    [[ $target == "$HOSTS_DIR"/* || $target == "$PRIVATE_DIR"/* ]] && printf '%s\n' "$dst"
+  done <"$LINKS_FILE"
+}
+link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned
+  local root label dst
+  la_ok=0 la_linked=0 la_adopted=0 la_pruned=0
+  LINKED=()
   while IFS='|' read -r root label; do
     link_tree "$root" "$label"
     la_ok=$((la_ok + lt_kept + lt_linked)); la_linked=$((la_linked + lt_linked)); la_adopted=$((la_adopted + lt_adopted))
   done < <(link_trees)
-  (( $1 )) || line links "$la_ok/$la_ok, $la_linked linked now, $la_adopted adopted"
+  while IFS= read -r dst; do
+    [[ -n $dst ]] || continue
+    rm -f "$dst" && la_pruned=$((la_pruned + 1)) && line links "removed the stale ${dst#"$HOME"/}"
+  done < <(stale_links)
+  mkdir -p "$STATE_DIR" && printf '%s\n' "${LINKED[@]}" >"$LINKS_FILE"
+  (( $1 )) || line links "$la_ok/$la_ok, $la_linked linked now, $la_adopted adopted$( (( la_pruned )) && printf ', %d stale removed' "$la_pruned")"
 }
-link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_detail
+link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_stale lk_detail
   local root label src rel dst
-  lk_ok=0 lk_replaced=0 lk_missing=0 lk_other=0 lk_detail=''
+  lk_ok=0 lk_replaced=0 lk_missing=0 lk_other=0 lk_stale=0 lk_detail=''
+  LINKED=()
   while IFS='|' read -r root label; do
     [[ -d $root ]] || continue
     while IFS= read -r src; do
@@ -522,12 +545,14 @@ link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_detail
       elif [[ -e $dst ]]; then lk_replaced=$((lk_replaced + 1)); lk_detail+="${lk_detail:+, }$rel replaced"
       else lk_missing=$((lk_missing + 1)); lk_detail+="${lk_detail:+, }$rel missing"
       fi
+      LINKED+=("$dst")
     done < <(find "$root" -type f 2>/dev/null)
   done < <(link_trees)
+  while IFS= read -r dst; do [[ -n $dst ]] && { lk_stale=$((lk_stale + 1)); lk_detail+="${lk_detail:+, }${dst#"$HOME"/} stale"; }; done < <(stale_links)
 }
 links_text() { # after link_state: "in place/expected", then what is off
   local total=$((lk_ok + lk_replaced + lk_missing + lk_other))
-  if (( lk_replaced + lk_missing + lk_other )); then printf '%d/%d, %s' "$lk_ok" "$total" "$lk_detail"; else printf '%d/%d' "$lk_ok" "$total"; fi
+  if (( lk_replaced + lk_missing + lk_other + lk_stale )); then printf '%d/%d, %s' "$lk_ok" "$total" "$lk_detail"; else printf '%d/%d' "$lk_ok" "$total"; fi
 }
 
 # ── root entries: README.md, bootstrap.sh, .github live in the repo, not in $HOME ──
@@ -625,7 +650,7 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   detect_os
   if [[ -r $HOST_FILE ]]; then chk host ok "$host"; else chk host warn "no marker, assuming $host"; fi
   link_state
-  if (( lk_replaced + lk_missing + lk_other )); then chk links warn "$(links_text)"; else chk links ok "$(links_text)"; fi
+  if (( lk_replaced + lk_missing + lk_other + lk_stale )); then chk links warn "$(links_text)"; else chk links ok "$(links_text)"; fi
   if root_hidden; then chk root ok "${ROOT_ENTRIES[*]} out of \$HOME"; else chk root warn "${ROOT_ENTRIES[*]} in \$HOME, or sparse checkout off"; fi
   st=ok detail=''
   if [[ -e $HOME/.config/git/local ]]; then detail="identity present"; else st=warn detail="no identity (~/.config/git/local)"; fi

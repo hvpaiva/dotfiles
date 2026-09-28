@@ -52,6 +52,7 @@
 !/.config/hypr/
 /.config/hypr/*
 !/.config/hypr/bindings.lua
+!/.config/hypr/monitors.lua
 
 # Session
 !/.config/uwsm/

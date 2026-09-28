@@ -117,6 +117,23 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [ "$(cat "$root/.config/app/conf")" = live ] && [ -L "$HOME/.config/app/conf" ]
 }
 
+@test "link_all removes a recorded link whose per-host file went away, nothing else" {
+  local root=$HOSTS_DIR/testhost
+  mkdir -p "$root/.config/app" "$HOME/.config/other"; printf 1 >"$root/.config/app/a"; printf 1 >"$root/.config/app/b"
+  host_name
+  link_all 1
+  [ "$la_ok" -eq 2 ] && [ -L "$HOME/.config/app/b" ]
+  ln -s "$HOME/nowhere" "$HOME/.config/other/foreign"   # dangling, not made by dots
+  rm "$root/.config/app/b"
+  link_state
+  [ "$lk_stale" -eq 1 ] && [[ $(links_text) == "1/1, .config/app/b stale" ]]
+  run link_all 0
+  [[ $output == *"removed the stale .config/app/b"* ]] && [[ $output == *"1 stale removed"* ]]
+  [ ! -L "$HOME/.config/app/b" ] && [ -L "$HOME/.config/app/a" ] && [ -L "$HOME/.config/other/foreign" ]
+  link_state
+  [ "$lk_stale" -eq 0 ]
+}
+
 @test "link_state counts links in place, replaced and missing" {
   local root=$HOSTS_DIR/testhost
   mkdir -p "$root/a" "$HOME/a"; printf 1 >"$root/a/ok"; printf 1 >"$root/a/replaced"; printf 1 >"$root/a/missing"

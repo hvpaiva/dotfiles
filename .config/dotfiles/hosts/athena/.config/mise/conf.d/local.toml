@@ -4,6 +4,3 @@
 # work pins (shared file says 25.0.0 / latest)
 bun = "1.3.13"
 node = "24.18.1"
-# build dependencies of the omarchy-ubuntu port's Qt step; they belong to the port
-"pipx:aqtinstall" = "latest"
-"pipx:fonttools" = "latest"

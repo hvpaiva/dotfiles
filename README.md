@@ -89,7 +89,7 @@ augur, ble.sh, tmux plugins, per-host links, distro packages that came back, pro
 still on a replaced binary, font, themes, a real login shell, GitHub over SSH).
 
 If a program replaces one of the per-host links with a plain file (omarchy-shell rewrites
-`shell.json`, the monitor panel rewrites `monitors.lua`), the live file wins: `dots save`
+`shell.json`, the monitor panel rewrites `monitors.local.lua`), the live file wins: `dots save`
 and `dots update` copy it back into its tree, restore the link and show it as a change.
 
 ## What you get
@@ -166,14 +166,19 @@ Two trees, same layout (`<path relative to $HOME>`), both symlinked into place:
 
 | tree | holds | examples |
 |---|---|---|
-| `~/.config/dotfiles/hosts/<host>/` (this repo) | machine-specific but harmless | `hypr/monitors.lua`, `git/local` identity, `tmux/local.conf` label, `mise/conf.d/local.toml` pins, `.profile.local` paths |
-| `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/hosts/<host>/` | anything that should not be public | account ids, internal endpoints, `omarchy/shell.json` |
+| `~/.config/dotfiles/hosts/<host>/` (this repo) | machine-specific but harmless | `hypr/monitors.local.lua` (a laptop panel), `git/local` identity, `mise/conf.d/local.toml` pins, `.profile.local` paths |
+| `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/hosts/<host>/` | anything that should not be public | account ids, internal endpoints |
+| `hvpaiva/dotfiles-private` → `~/.local/share/dotfiles-private/common/` | sensitive, same on every host | `omarchy/shell.json`, `git/allowed_signers` |
 
 Per-host does not mean private: only sensitive content goes to the private repo. The
 shared files have hooks for both trees: `bash/rc` sources `bash/local` then `bash/private`,
 `.profile` sources `.profile.local` then `.profile.private`, `git/config` includes
 `git/local` and `git/private`, mise reads everything in `conf.d/`, tmux sources
-`local.conf`, ble.sh sources `blesh/local.sh`.
+`local.conf`, ble.sh sources `blesh/local.sh`, `hypr/monitors.lua` runs `monitors.local.lua`.
+The host's name (`~/.config/dotfiles/host`, written by `dots setup`) is what the tmux
+status line, the ble.sh prompt over SSH and herdr's tab bar show, so a host whose
+hostname is an asset tag needs no per-host file for that. A link left behind by a per-host
+file that moved or went away is removed by the next `dots update`.
 
 ## Decisions
 

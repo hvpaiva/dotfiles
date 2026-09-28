@@ -25,8 +25,9 @@ repo and hands over to `dots setup`, which does the rest and says what it is doi
 goes:
 
 1. the build dependencies mise cannot provide (compilers, headers, tmux, fontconfig);
-2. on Ubuntu, Omarchy itself through the omarchy-ubuntu bootstrap (asks for your password,
-   20–40 minutes the first time);
+2. on Ubuntu, Omarchy itself through the omarchy-ubuntu bootstrap (20–40 minutes the
+   first time). sudo asks for your password once for the whole run; the credential is kept
+   alive until setup ends;
 3. the logins, after you unlock 1Password once (the app, CLI integration on): gh with the
    token in the item `op://Private/dots` (field `github-token`), this machine's SSH key
    generated and added to GitHub for authentication and signing, Tailscale with

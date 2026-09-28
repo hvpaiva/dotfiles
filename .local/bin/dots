@@ -182,6 +182,8 @@ H
     ;;
     setup) cat <<'H'
 Install or repair the whole layer. Idempotent: every step checks before acting.
+sudo asks for the password once; its credential is kept alive for the run, so
+every root step (the Ubuntu port's included) rides on it.
 The steps, in order: build dependencies (sudo); Omarchy, on Ubuntu through the
 omarchy-ubuntu bootstrap; the dotfiles repo (remotes, sparse checkout,
 fast-forward); host marker; secrets (below); private layer (needs GitHub over
@@ -974,6 +976,18 @@ cmd_update() {
 }
 
 # ── setup: install or repair the whole layer ─────────────────────────────────
+# One password for the whole run: sudo asks once, a background refresh keeps its timestamp
+# alive, and every root step (the port's too, it uses sudo on a terminal) rides on it.
+sudo_keepalive() {
+  [[ -t 0 ]] && have sudo || return 0
+  if ! sudo -n true 2>/dev/null; then
+    line sudo "password once, for every root step of this run"
+    sudo -v </dev/tty 2>/dev/null || { line sudo "no password given; root steps ask on their own"; return 0; }
+  fi
+  ( while sudo -n -v 2>/dev/null; do sleep 50; done ) &
+  SUDO_KEEPALIVE=$!
+  trap 'kill "$SUDO_KEEPALIVE" 2>/dev/null; sudo -k 2>/dev/null' EXIT
+}
 step_deps() {
   local -a want missing
   case $os in
@@ -1063,13 +1077,26 @@ step_secrets() { # before the private layer: gh, this machine's key on GitHub, t
   secrets_tailscale
   return 0
 }
-secrets_gh() {
+GH_SCOPES=(admin:public_key admin:ssh_signing_key)
+gh_scopes_ok() { # the logged-in token can list and add keys
+  local out sc
+  out=$(gh auth status 2>&1) || return 1
+  for sc in "${GH_SCOPES[@]}"; do [[ $out == *"'$sc'"* ]] || return 1; done
+}
+secrets_gh() { # logged in, with the scopes the key step needs
   local t
   have gh || { warn gh "not installed"; return 1; }
-  if gh auth status >/dev/null 2>&1; then line gh "logged in"; return 0; fi
+  if gh auth status >/dev/null 2>&1; then
+    if gh_scopes_ok; then line gh "logged in"; return 0; fi
+    t=$(op_field github-token)
+    if [[ -n $t ]] && gh auth login --with-token <<<"$t" >/dev/null 2>&1 && gh_scopes_ok; then line gh "logged in again with the token from 1Password (the old one lacked ${GH_SCOPES[*]})"; return 0; fi
+    warn gh "token lacks ${GH_SCOPES[*]}: gh auth refresh -h github.com -s ${GH_SCOPES[0]} -s ${GH_SCOPES[1]}, or a token with them in $OP_ITEM/github-token"
+    return 1
+  fi
   t=$(op_field github-token)
   [[ -n $t ]] || { warn gh "not logged in and $OP_ITEM/github-token not set"; return 1; }
   if gh auth login --with-token <<<"$t" >/dev/null 2>&1; then line gh "logged in with the token from 1Password"; else warn gh "login with the token from 1Password failed"; return 1; fi
+  gh_scopes_ok || { warn gh "the token from 1Password lacks ${GH_SCOPES[*]}"; return 1; }
 }
 secrets_key() { # generated here, on GitHub for authentication and (unless another key signs) signing
   local key pub title sk
@@ -1080,15 +1107,20 @@ secrets_key() { # generated here, on GitHub for authentication and (unless anoth
     line ssh "generated ${key/#$HOME/\~}"
   fi
   pub=$(cut -d' ' -f1,2 <"$key.pub")
-  if gh api user/keys --jq '.[].key' 2>/dev/null | grep -qxF "$pub"; then line ssh "key on GitHub"
+  local -a on_github
+  mapfile -t on_github < <(gh api user/keys --jq '.[].key' 2>/dev/null) || on_github=()
+  if ! gh api user/keys >/dev/null 2>&1; then warn ssh "cannot list the keys on GitHub"; return 1
+  elif printf '%s\n' "${on_github[@]}" | grep -qxF "$pub"; then line ssh "key on GitHub"
   elif gh ssh-key add "$key.pub" --title "$title" >/dev/null 2>&1; then line ssh "key added to GitHub as $title"
-  else warn ssh "could not add the key to GitHub (token scope admin:public_key?)"
+  else warn ssh "could not add the key to GitHub"
   fi
   sk=$(git config --get user.signingkey 2>/dev/null); sk=${sk/#\~/$HOME}
   if [[ -n $sk && $sk != "$key.pub" ]]; then line signing "another key signs here (${sk/#$HOME/\~})"; return 0; fi
-  if gh api user/ssh_signing_keys --jq '.[].key' 2>/dev/null | grep -qxF "$pub"; then line signing "key on GitHub"
+  mapfile -t on_github < <(gh api user/ssh_signing_keys --jq '.[].key' 2>/dev/null) || on_github=()
+  if ! gh api user/ssh_signing_keys >/dev/null 2>&1; then warn signing "cannot list the signing keys on GitHub"
+  elif printf '%s\n' "${on_github[@]}" | grep -qxF "$pub"; then line signing "key on GitHub"
   elif gh ssh-key add "$key.pub" --type signing --title "$title" >/dev/null 2>&1; then line signing "key added to GitHub as $title"
-  else warn signing "could not add the signing key to GitHub (token scope admin:ssh_signing_key?)"
+  else warn signing "could not add the signing key to GitHub"
   fi
 }
 secrets_tailscale() {
@@ -1292,6 +1324,7 @@ step_completions() {
   fi
 }
 setup_steps() {
+  sudo_keepalive
   step_deps
   step_omarchy
   step_repo

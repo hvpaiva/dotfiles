@@ -403,10 +403,10 @@ OP
 #!/usr/bin/env bash
 d=${BATS_TEST_TMPDIR:?}/gh; mkdir -p "$d"; touch "$d/keys" "$d/signing"
 case "$1 $2" in
-  "auth status") [[ -f $d/token ]] ;;
+  "auth status") [[ -f $d/token ]] || exit 1; if [[ $(<"$d/token") == narrow ]]; then echo "Token scopes: 'repo'"; else echo "Token scopes: 'admin:public_key', 'admin:ssh_signing_key', 'repo'"; fi ;;
   "auth login") cat >"$d/token" ;;
-  "api user/keys") cat "$d/keys" ;;
-  "api user/ssh_signing_keys") cat "$d/signing" ;;
+  "api user/keys") [[ $(<"$d/token") == narrow ]] && exit 1; [[ $3 == --jq ]] && cat "$d/keys"; exit 0 ;;
+  "api user/ssh_signing_keys") [[ $(<"$d/token") == narrow ]] && exit 1; [[ $3 == --jq ]] && cat "$d/signing"; exit 0 ;;
   "ssh-key add") if [[ $* == *"--type signing"* ]]; then cut -d' ' -f1,2 <"$3" >>"$d/signing"; else cut -d' ' -f1,2 <"$3" >>"$d/keys"; fi ;;
 esac
 GH
@@ -424,6 +424,20 @@ GH
   [ "$status" -eq 0 ] && [[ $output == *"logged in with the token"* ]] && [ "$(cat "$BATS_TEST_TMPDIR/gh/token")" = ghp_x ]
   run secrets_gh
   [[ $output == *"gh         logged in"* ]]
+  # a token without the key scopes: replaced by the one from 1Password
+  printf 'narrow' >"$BATS_TEST_TMPDIR/gh/token"
+  run secrets_gh
+  [ "$status" -eq 0 ] && [[ $output == *"logged in again with the token from 1Password"* ]]
+  printf 'narrow' >"$BATS_TEST_TMPDIR/gh/token"; rm "$BATS_TEST_TMPDIR/op/github-token"
+  run secrets_gh
+  [ "$status" -eq 1 ] && [[ $output == *"gh auth refresh -h github.com -s admin:public_key -s admin:ssh_signing_key"* ]]
+}
+
+@test "secrets_key does not add a key it could not list" {
+  make_secret_stubs; mkdir -p "$BATS_TEST_TMPDIR/gh"; printf 'narrow' >"$BATS_TEST_TMPDIR/gh/token"
+  mkdir -p "$HOME/.ssh"; ssh-keygen -q -t ed25519 -N '' -f "$HOME/.ssh/id_ed25519"
+  run secrets_key
+  [ "$status" -eq 1 ] && [[ $output == *"cannot list the keys on GitHub"* ]] && [ ! -s "$BATS_TEST_TMPDIR/gh/keys" ]
 }
 
 @test "secrets_key generates this machine's key and registers it for auth and signing, idempotent" {

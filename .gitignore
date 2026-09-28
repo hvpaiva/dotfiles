@@ -40,13 +40,12 @@
 !/.config/herdr/config.toml
 
 # Omarchy: personal pieces only. shell.json stays per host (it carries personal widget
-# data), and the hooks the port installs and the installed themes stay out
+# data); branding, the menu extension template, the hooks the port installs and the
+# installed themes stay out
 !/.config/omarchy/
 /.config/omarchy/*
 !/.config/omarchy/shell.toml
 !/.config/omarchy/themes.txt
-!/.config/omarchy/extensions/
-!/.config/omarchy/branding/
 !/.config/omarchy/defaults/
 !/.config/omarchy/hooks/
 /.config/omarchy/hooks/*
@@ -78,13 +77,9 @@
 !/.config/mise/config.toml
 !/.config/packages/
 !/.config/scripts/
-!/.config/hldr/
 !/.config/sesh/
 !/.config/tensaku/
 !/.config/fastfetch/
-!/.config/aether/
-/.config/aether/*
-!/.config/aether/theme.override.css
 
 # This repo's own support files: per-host trees and the container test
 !/.config/dotfiles/
@@ -105,3 +100,8 @@
 !/.local/share/bash-completion/completions/
 /.local/share/bash-completion/completions/*
 !/.local/share/bash-completion/completions/dots
+!/.local/share/man/
+/.local/share/man/*
+!/.local/share/man/man1/
+/.local/share/man/man1/*
+!/.local/share/man/man1/dots.1

@@ -51,58 +51,41 @@ think about which one a change belongs to:
 | repo | where | holds |
 |---|---|---|
 | dotfiles | `~/.dotfiles`, bare, `$HOME` is the work tree | everything shared, plus `hosts/<host>/` |
-| private | `~/.local/share/dotfiles-private` | sensitive per-host files |
+| private | `~/.local/share/dotfiles-private` | sensitive per-host files, and `common/` for every host |
 | nvim | `~/.config/nvim` | the editor config, recorded here as a submodule pointer |
 
 ```
-dots                    what changed here, what is waiting on origin, what the machine lacks
-dots diff               the changes themselves, every repo
-dots save [-m MSG]      commit and push every change, in every repo (asks for a message per repo)
-dots update [--quick]   bring the machine up to date: repos, per-host links, tools
-dots doctor             check the machine against the intended state, installs included
-dots setup              install or repair the whole layer (what the one-liner runs)
-dots root show|hide     edit README.md, bootstrap.sh or .github/, then put them away again
-dots private <git…>     git in the private repo          dots nvim <git…>   git in the nvim repo
-dots <git…>             git in the dotfiles repo (dots log, dots diff HEAD~3, dots add -p …)
+dots            what changed here, what is waiting on origin, what the machine lacks
+dots save       commit and push every change, every repo
+dots update     bring the machine up to date: repos, per-host links, tools
+dots doctor     check the machine against the intended state, installs included
+dots setup      install or repair the whole layer (what the one-liner runs)
 ```
 
-A day looks like this. Edit a file where the program reads it, on either machine:
+`dots help`, `dots help <command>` and `man dots` document every command and flag; the
+output follows kubectl's shape (tables, one object per row, states coloured by meaning):
 
 ```
 $ dots
-  dotfiles  master   2 changed         in sync
-  private   main     clean             in sync
-  nvim      main     clean             in sync   recorded in dotfiles
-  zeus      links    5 in place
-  machine   checks   everything installed and wired
+REPO       BRANCH   CHANGES     ORIGIN      NVIM
+dotfiles   master   2 changed   in sync
+private    main     clean       in sync
+nvim       main     clean       in sync     recorded
 
-  dotfiles
-      M .config/bash/aliases
-     ?? .config/scripts/new-thing
+PATH                        STATE       REPO
+.config/bash/aliases        modified    dotfiles
+.config/scripts/new-thing   untracked   dotfiles
 
-  → dots save       commit and push what changed here
-
-$ dots save
-dotfiles
-   M .config/bash/aliases
-  ?? .config/scripts/new-thing
-  message [chore: update aliases, new-thing]: feat: new-thing script
-    committed 3f2a1c0 feat: new-thing script
-    dotfiles: pushed 1 commit(s)
+HOST   LINKS        CHECKS
+zeus   5 in place   ok
 ```
 
-On the other machine, `dots update` takes it (and anything else that is waiting: private
-files, the nvim config, tools added to `mise/config.toml`, newer tool versions). `dots`
-lists new files inside the tracked boundary as well as edits, so a file you created but
-never added shows up instead of silently staying behind.
-
-The `machine` line is the difference between "the files match" and "the machine is what
-the files say". `dots doctor` spells it out: is every mise tool installed, is rustup, augur,
-ble.sh and every tmux plugin there, are the per-host links in place, did a distro package
-come back (an Omarchy migration re-adding `mise-bin`, say), is a process still running a
-binary that was replaced, is the font set, are the themes installed, does a login shell
-start clean, does GitHub accept the SSH key. Each warning ends with the command that fixes
-it; most of the time that is `dots update` or `dots setup`.
+Edit a file where the program reads it, `dots save` on this machine, `dots update` on the
+other. New files inside the tracked boundary show up as `untracked` instead of silently
+staying behind. The `CHECKS` column is the difference between "the files match" and "the
+machine is what the files say": `dots doctor` spells out every check (mise tools, rustup,
+augur, ble.sh, tmux plugins, per-host links, distro packages that came back, processes
+still on a replaced binary, font, themes, a real login shell, GitHub over SSH).
 
 If a program replaces one of the per-host links with a plain file (omarchy-shell rewrites
 `shell.json`, the monitor panel rewrites `monitors.lua`), the live file wins: `dots save`
@@ -129,14 +112,14 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
   layer.
 - **mise** — the official build in `~/.local/bin`, one `config.toml` with every tool wanted
   on every machine, mise first over distro packages (herdr, zoxide, sesh, cliamp, try,
-  tree-sitter…). Per-host pins live in `conf.d/local.toml`.
+  tree-sitter, glow…). Per-host pins live in `conf.d/local.toml`. Rust comes from rustup.
 - **neovim** — [hvpaiva/nvim](https://github.com/hvpaiva/nvim), its own repo, declared here
   as a submodule so a clone cannot forget it; `dots update` keeps it on `main` and
   `dots save` records the commit in use.
-- **Omarchy personal bits** — hypr bindings, menu extension, branding, default agent, the
-  list of extra themes (`omarchy/themes.txt`), `shell.toml`.
-- **package lists** — `packages/universal` (cargo, go, npm, pip), `packages/arch`,
-  `packages/ubuntu`, with the pacman hook scripts that keep the Arch lists current.
+- **Omarchy personal bits** — hypr bindings, default agent, the list of extra themes
+  (`omarchy/themes.txt`), `shell.toml`.
+- **package lists** — `packages/universal` (cargo, go, npm) written by the `ci`/`ni`/`gi`
+  wrappers, and `packages/arch`, kept current by a pacman hook that `dots setup` installs.
 
 ## Layout
 
@@ -146,16 +129,18 @@ README.md  bootstrap.sh  .github/    the repo root; kept out of $HOME by a spars
 ~/.bashrc ~/.bash_profile ~/.profile ~/.XCompose ~/.inputrc ~/.gitmodules
 ~/.local/bin/dots                     the command above
 ~/.local/share/bash-completion/completions/dots
+~/.local/share/man/man1/dots.1        man dots
 ~/.config/
   bash/ blesh/ tmux/ herdr/ git/ mise/ alacritty/ ghostty/ kitty/ foot/
-  omarchy/{extensions,branding,defaults,hooks/post-update.d/setup-agent.hook,themes.txt,shell.toml}
+  omarchy/{defaults,hooks/post-update.d/setup-agent.hook,themes.txt,shell.toml}
   hypr/bindings.lua  uwsm/default  autostart/com.onepassword.OnePassword.desktop
-  hldr/ sesh/ tensaku/ fastfetch/ aether/theme.override.css  packages/ scripts/
+  sesh/ tensaku/ fastfetch/  packages/ scripts/
   nvim/                               submodule → hvpaiva/nvim
   dotfiles/
     hosts/<host>/                     per-host, non-sensitive files (symlinked into $HOME)
     host                              which host this machine is (written by dots setup, untracked)
     test/container.sh                 the one-liner in a clean Arch or Ubuntu container
+    test/dots.bats                    unit tests for dots
 ```
 
 ## How it works
@@ -205,11 +190,15 @@ shared files have hooks for both trees: `bash/rc` sources `bash/local` then `bas
 
 ## Testing and CI
 
+`bats .config/dotfiles/test` runs the unit tests for `dots` (bats comes from mise): the
+pure helpers, and the git-backed ones against throwaway repositories, with no network and
+no sudo.
+
 `.config/dotfiles/test/container.sh arch|ubuntu [--full]` runs the one-liner twice inside a
 clean container that has only what a fresh desktop install guarantees (on Ubuntu not even
 git), checks that the second run is a no-op and that the build dependencies were installed
 and the distro copies removed, then exercises `dots save` and `dots update` against the
 local origin. `--full` also installs rustup, augur and every mise tool, which takes a while.
 
-The GitHub workflow runs shellcheck and the quick container test for both distros on every
-push, and the full test weekly.
+The GitHub workflow runs shellcheck, the unit tests and the quick container test for both
+distros on every push, and the full container test weekly.

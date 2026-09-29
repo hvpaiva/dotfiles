@@ -71,6 +71,7 @@ yq = "4.53.2"
 zellij = "0.44.1"
 zoxide = "latest"
 "npm:wrangler" = "latest"
+cmake = "4.4.3"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

@@ -3,7 +3,7 @@ source ~/.config/bash/envs
 source ~/.config/bash/aliases
 source ~/.config/bash/functions
 source ~/.config/bash/prompt
-source ~/.config/bash/pkg-track
+source ~/.config/bash/mise-intercept
 # Per-host settings (hosts/<host>, linked into place)
 [[ -f ~/.config/bash/local ]] && source ~/.config/bash/local
 # Sensitive per-host settings (private repo, linked into place)

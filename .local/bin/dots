@@ -610,6 +610,27 @@ root_hidden() {
 
 # ── tools and packages ───────────────────────────────────────────────────────
 mise_missing() { mise ls --missing --no-header 2>/dev/null | awk 'NF { print $1 }'; }
+# Language tools installed straight through their own manager instead of a mise
+# backend: dots cannot carry them, and a gem or npm package inside mise's ruby
+# or node goes with the next version. mise-intercept (bash) offers the mise
+# route at the prompt; this catches what went around it. Local builds
+# (cargo --path/--git, like augur) are deliberate and left out, and so are the
+# tools a port step installs for its own builds. Gems are not checked: one
+# installed by hand cannot be told apart from those Ruby bundles.
+OUTSIDE_MISE_OK=(go:wails pipx:aqtinstall) # the Ubuntu port's build tools: Wails for aether, aqt for Qt
+outside_mise() {
+  local n
+  {
+    have cargo && command cargo install --list 2>/dev/null | awk '/^[^ ]/ && !/\(/ { print "cargo:" $1 }'
+    have npm && command npm ls -g --depth=0 --parseable 2>/dev/null |
+      sed -n 's|.*/node_modules/||p' | grep -vxE 'npm|corepack' | sed 's/^/npm:/'
+    if have go && n=$(command go env GOPATH 2>/dev/null) && [[ -d $n/bin ]]; then
+      find "$n/bin" -maxdepth 1 -type f -printf 'go:%f\n'
+    fi
+    have uv && command uv tool list 2>/dev/null | awk '/^[^ -]/ { print "uv:" $1 }'
+    have pipx && command pipx list --short 2>/dev/null | awk 'NF { print "pipx:" $1 }'
+  } | grep -vxF -f <(printf '%s\n' "${OUTSIDE_MISE_OK[@]}") | sort -u
+}
 # Tools mise cannot resolve to any version, which `ls --missing` leaves out: it
 # only warns on stderr. The usual case is a release younger than mise's
 # minimum_release_age, which resolves on its own once it is old enough.
@@ -814,8 +835,12 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
     if [[ $cp_state == current ]]; then chk chromium ok "$cp_n extensions by policy"; else chk chromium warn "extension policy $cp_state: dots setup"; fi
   fi
 }
-checks_deep() { # slower: a real login shell, GitHub over SSH
+checks_deep() { # slower: a real login shell, GitHub over SSH, installs outside mise
   local out st detail key
+  out=$(outside_mise)
+  if [[ -z $out ]]; then chk tools ok "every language tool through mise"
+  else chk tools warn "outside mise: $(words "$out") (mise use -g <backend>:<name>, then uninstall the copy)"
+  fi
   st=ok detail=''
   out=$(LC_ALL=C bash -lic true 2>&1 | grep -vE 'cannot set terminal process group|no job control in this shell')
   if [[ -z $out ]]; then detail="login shell clean"; else st=warn detail="login shell prints: ${out%%$'\n'*}"; fi

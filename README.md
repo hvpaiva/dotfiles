@@ -145,11 +145,19 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
 ## What you get
 
 - **bash** — Omarchy's `default/bash/rc` sourced whole, then only what diverges:
-  `~/.config/bash/{envs,aliases,functions,prompt,pkg-track}`. One pager everywhere
+  `~/.config/bash/{envs,aliases,functions,prompt,mise-intercept}`. One pager everywhere
   (`less`, `LESS=-FRi`), man pages coloured through `LESS_TERMCAP` in the eight ANSI
   colours so they follow the theme. `ri` renders Markdown through glow; `riv` opens Ruby
-  docs in a scratch nvim buffer. `pkg-track` wraps `cargo/npm/go/pipx install` and records
-  what you installed. No starship.
+  docs in a scratch nvim buffer. No starship.
+- **global installs through mise** — `mise-intercept` catches `cargo install`,
+  `gem install`, `npm i -g` (and pnpm, bun, yarn), `go install mod@v`, `pipx install` and
+  `uv tool install` in an interactive shell and offers the matching `mise use -g
+  <backend>:<name>`. Yes lands the tool in `~/.config/mise/config.toml`, so dots carries
+  it and a Ruby or Node upgrade does not drop it; no runs the original, untracked.
+  Local builds (`--path`, `--git`, `./pkg`) and flags it cannot translate pass straight
+  through, scripts and agents without a terminal are never asked, and `command cargo
+  install ...` always bypasses it. `dots doctor` warns about anything installed outside
+  mise all the same.
 - **ble.sh** — vi mode with a coloured mode indicator, transient prompt, shared history,
   fzf integration and [augur](https://github.com/hvpaiva/augur) inline suggestions.
 - **tmux and herdr** — Omarchy's configuration read straight from the package
@@ -169,8 +177,9 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
   `dots save` records the commit in use.
 - **Omarchy personal bits** — hypr bindings, default agent, the list of extra themes
   (`omarchy/themes.txt`), `shell.toml`.
-- **package lists** — `packages/universal` (cargo, go, npm) written by the `ci`/`ni`/`gi`
-  wrappers, and `packages/arch`, kept current by a pacman hook that `dots setup` installs.
+- **package lists** — `packages/arch`, kept current by a pacman hook that `dots setup`
+  installs, `packages/ubuntu`, and the package sets each host picks. Language tools are
+  not listed here: they are mise tools.
 
 ## Layout
 

@@ -1,3 +1,0 @@
-# Go tools — installed via `go install`
-# Full module path required (e.g. github.com/user/tool@latest).
-# Auto-tracked by pkg-track wrapper.

@@ -1,0 +1,201 @@
+# Global installs go through mise. `cargo install`, `gem install`, `npm i -g`,
+# `pnpm add -g`, `bun add -g`, `yarn global add`, `go install mod@v`,
+# `pipx install` and `uv tool install` are offered as the matching
+# `mise use -g <backend>:<name>`: the tool lands in ~/.config/mise/config.toml,
+# dots carries it to the other machine, and it survives a toolchain upgrade
+# (a gem or an npm package installed straight into mise's ruby or node
+# disappears with the next version). Answering no runs the original command,
+# untracked. Anything else passes straight through: local and project
+# installs, `--path`/`--git` builds, flags this cannot translate. Without a
+# terminal (scripts, agents) nothing is asked: the original runs, with a note
+# on stderr. `command cargo install ...` always bypasses the offer.
+
+_mi_tty() { [[ -t 0 && -t 1 ]]; }
+
+# _mi_run SPECS ORIGINAL...: SPECS is a space-separated list of backend:name[@version]
+_mi_run() {
+  local specs=$1 answer
+  shift
+  if ! command -v mise >/dev/null 2>&1; then
+    command "$@"
+    return
+  fi
+  if ! _mi_tty; then
+    printf 'mise-intercept: "%s" is not tracked by dots; `mise use -g %s` would be\n' "$*" "$specs" >&2
+    command "$@"
+    return
+  fi
+  printf '\e[1m%s\e[0m → \e[1mmise use -g %s\e[0m\n' "$*" "$specs"
+  printf '  in ~/.config/mise/config.toml: dots carries it, toolchain upgrades keep it\n'
+  read -r -p 'Run through mise? [Y/n] ' answer
+  case $answer in
+    n | N | no | não | nao)
+      printf 'Running %s as asked: not tracked, and gone with the next toolchain version.\n' "$1"
+      command "$@"
+      ;;
+    *)
+      # shellcheck disable=SC2086
+      mise use -g $specs
+      ;;
+  esac
+}
+
+# _mi_pass MESSAGE ORIGINAL...: run as is, saying why it was not offered
+_mi_pass() {
+  local why=$1
+  shift
+  [[ -t 1 ]] && printf 'mise-intercept: %s; running it as is (not tracked by dots)\n' "$why" >&2
+  command "$@"
+}
+
+cargo() {
+  [[ ${1:-} == install ]] || { command cargo "$@"; return; }
+  local -a names=()
+  local version='' a
+  local -a args=("${@:2}")
+  local i=0
+  while (( i < ${#args[@]} )); do
+    a=${args[i]}
+    case $a in
+      --path | --path=* | --git | --git=* | --root | --root=* | --registry | --index | --bin | --example | --features | --features=* | -F | --all-features | --no-default-features)
+        [[ $a == --path* || $a == --git* ]] && { command cargo "$@"; return; }
+        _mi_pass "cargo install $a has no mise equivalent here" cargo "$@"; return ;;
+      --version | --vers) version=${args[i + 1]:-}; i=$((i + 1)) ;;
+      --version=* | --vers=*) version=${a#*=} ;;
+      --locked | -f | --force | -q | --quiet) ;;
+      -*) _mi_pass "cargo install $a is not translated" cargo "$@"; return ;;
+      *) names+=("$a") ;;
+    esac
+    i=$((i + 1))
+  done
+  (( ${#names[@]} )) || { command cargo "$@"; return; }
+  [[ ${#names[@]} -eq 1 || -z $version ]] || { _mi_pass "--version with several crates" cargo "$@"; return; }
+  local specs='' n
+  for n in "${names[@]}"; do
+    if [[ $n == *@* ]]; then specs+=" cargo:$n"
+    else specs+=" cargo:$n${version:+@$version}"
+    fi
+  done
+  _mi_run "${specs# }" cargo "$@"
+}
+
+gem() {
+  [[ ${1:-} == install || ${1:-} == i ]] || { command gem "$@"; return; }
+  local -a names=() args=("${@:2}")
+  local version='' a i=0
+  while (( i < ${#args[@]} )); do
+    a=${args[i]}
+    case $a in
+      -v | --version) version=${args[i + 1]:-}; i=$((i + 1)) ;;
+      --version=*) version=${a#*=} ;;
+      -N | --no-document | --no-doc | --user-install | -q | --quiet) ;;
+      -*) _mi_pass "gem install $a is not translated" gem "$@"; return ;;
+      *.gem) command gem "$@"; return ;;
+      *) names+=("$a") ;;
+    esac
+    i=$((i + 1))
+  done
+  (( ${#names[@]} )) || { command gem "$@"; return; }
+  [[ ${#names[@]} -eq 1 || -z $version ]] || { _mi_pass "-v with several gems" gem "$@"; return; }
+  local specs='' n
+  for n in "${names[@]}"; do specs+=" gem:$n${version:+@$version}"; done
+  _mi_run "${specs# }" gem "$@"
+}
+
+# _mi_npm_specs ARGS...: npm:name[@version] for each package, or fail on a flag
+# or a local/remote path; the global flag was already removed by the caller.
+_mi_npm_specs() {
+  local a specs=''
+  for a in "$@"; do
+    case $a in
+      -*) return 1 ;;
+      . | ./* | ../* | /* | ~/* | *.tgz | git+* | http:* | https:* | github:* | file:*) return 1 ;;
+      *) specs+=" npm:$a" ;;
+    esac
+  done
+  [[ -n $specs ]] || return 1
+  printf '%s' "${specs# }"
+}
+
+# _mi_js TOOL SUBCOMMANDS -- ORIGINAL...: npm, pnpm and bun share the shape
+# `<tool> <install|add|i> -g <pkgs>`
+_mi_js() {
+  local tool=$1 subs=$2
+  shift 2
+  local sub=${1:-} global=0 a specs
+  local -a rest=()
+  [[ " $subs " == *" $sub "* ]] || { command "$tool" "$@"; return; }
+  for a in "${@:2}"; do
+    case $a in
+      -g | --global | --location=global) global=1 ;;
+      *) rest+=("$a") ;;
+    esac
+  done
+  (( global )) || { command "$tool" "$@"; return; }
+  if specs=$(_mi_npm_specs "${rest[@]}"); then
+    _mi_run "$specs" "$tool" "$@"
+  else
+    _mi_pass "$tool $sub -g with a flag or a path is not translated" "$tool" "$@"
+  fi
+}
+
+npm() { _mi_js npm "install i add isntall" "$@"; }
+pnpm() { _mi_js pnpm "add install i" "$@"; }
+bun() { _mi_js bun "add install i" "$@"; }
+
+yarn() {
+  [[ ${1:-} == global && ${2:-} == add ]] || { command yarn "$@"; return; }
+  local specs
+  if specs=$(_mi_npm_specs "${@:3}"); then
+    _mi_run "$specs" yarn "$@"
+  else
+    _mi_pass "yarn global add with a flag or a path is not translated" yarn "$@"
+  fi
+}
+
+go() {
+  [[ ${1:-} == install ]] || { command go "$@"; return; }
+  local -a mods=()
+  local a mod ver specs=''
+  for a in "${@:2}"; do
+    case $a in
+      -*) _mi_pass "go install $a is not translated" go "$@"; return ;;
+      *@*) mods+=("$a") ;;
+      *) command go "$@"; return ;; # no @version: a package of the current module
+    esac
+  done
+  (( ${#mods[@]} )) || { command go "$@"; return; }
+  for a in "${mods[@]}"; do
+    mod=${a%@*} ver=${a##*@}
+    [[ $mod == ./* || $mod == ../* || $mod == /* ]] && { command go "$@"; return; }
+    if [[ $ver == latest ]]; then specs+=" go:$mod"; else specs+=" go:$mod@${ver#v}"; fi
+  done
+  _mi_run "${specs# }" go "$@"
+}
+
+# pipx and uv: the Python tools; mise's pipx backend installs through uv when it can.
+_mi_py() { # ORIGINAL-PREFIX-LENGTH ORIGINAL...
+  local skip=$1
+  shift
+  local a specs=''
+  for a in "${@:skip+1}"; do
+    case $a in
+      -*) _mi_pass "$* has a flag that is not translated" "$@"; return ;;
+      . | ./* | ../* | /* | *.whl | *.tar.gz | git+* | http:* | https:*) command "$@"; return ;;
+      *==*) specs+=" pipx:${a%%==*}@${a##*==}" ;;
+      *) specs+=" pipx:$a" ;;
+    esac
+  done
+  [[ -n $specs ]] || { command "$@"; return; }
+  _mi_run "${specs# }" "$@"
+}
+
+pipx() {
+  [[ ${1:-} == install ]] || { command pipx "$@"; return; }
+  _mi_py 2 pipx "$@"
+}
+
+uv() {
+  [[ ${1:-} == tool && ${2:-} == install ]] || { command uv "$@"; return; }
+  _mi_py 3 uv "$@"
+}

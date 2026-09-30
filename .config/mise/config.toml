@@ -72,6 +72,12 @@ zellij = "0.44.1"
 zoxide = "latest"
 "npm:wrangler" = "latest"
 "gem:slipway" = "latest"
+"cargo:bacon" = "latest"
+"cargo:cargo-aoc" = "latest"
+"cargo:tardis-cli" = "latest"
+"cargo:cargo-nextest" = "latest"
+"cargo:cargo-vet" = "latest"
+"pipx:graphifyy" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

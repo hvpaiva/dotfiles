@@ -536,3 +536,65 @@ GH
   [ "${lines[0]}" = "gem:slipway until 2026-10-01 17:48" ]
   [ "${lines[1]}" = "npm:gone unresolved" ]
 }
+
+# ── mise-intercept (~/.config/bash/mise-intercept) ──────────────────────────
+mi_setup() {
+  local bin=$BATS_TEST_TMPDIR/bin t
+  mkdir -p "$bin"
+  for t in cargo gem npm pnpm bun yarn go pipx uv; do
+    printf '#!/bin/sh\necho "orig %s $*"\n' "$t" >"$bin/$t"; chmod +x "$bin/$t"
+  done
+  printf '#!/bin/sh\necho "mise $*"\n' >"$bin/mise"; chmod +x "$bin/mise"
+  PATH=$bin:$PATH
+  source "$BATS_TEST_DIRNAME/../../bash/mise-intercept"
+}
+mi_yes() { _mi_tty() { return 0; }; }
+
+# last line of OUTPUT: what ran in the end
+last() { printf '%s\n' "$1" | tail -n1; }
+
+@test "mise-intercept offers mise for global installs and runs it on yes" {
+  mi_setup; mi_yes
+  out=$(cargo install bacon cargo-aoc <<<y)
+  [[ $out == *"mise use -g cargo:bacon cargo:cargo-aoc"* ]] && [ "$(last "$out")" = "mise use -g cargo:bacon cargo:cargo-aoc" ]
+  [ "$(last "$(cargo install tardis-cli --version 0.1.0 --locked <<<'')")" = "mise use -g cargo:tardis-cli@0.1.0" ]
+  [ "$(last "$(gem install slipway -N <<<y)")" = "mise use -g gem:slipway" ]
+  [ "$(last "$(npm i -g @scope/tool@1.2 <<<y)")" = "mise use -g npm:@scope/tool@1.2" ]
+  [ "$(last "$(go install golang.org/x/tools/gopls@latest <<<y)")" = "mise use -g go:golang.org/x/tools/gopls" ]
+  [ "$(last "$(uv tool install graphifyy==0.4.23 <<<y)")" = "mise use -g pipx:graphifyy@0.4.23" ]
+}
+
+@test "mise-intercept runs the original on no, and without a terminal" {
+  mi_setup; mi_yes
+  [ "$(last "$(cargo install bacon <<<n)")" = "orig cargo install bacon" ]
+  mi_setup
+  out=$(cargo install bacon 2>&1)
+  [ "$(last "$out")" = "orig cargo install bacon" ] && [[ $out == *"mise use -g cargo:bacon"* ]]
+}
+
+@test "mise-intercept leaves local, project and untranslatable commands alone" {
+  mi_setup; mi_yes
+  run cargo install --path .;               [ "$output" = "orig cargo install --path ." ]
+  run cargo build --release;                [ "$output" = "orig cargo build --release" ]
+  run npm install left-pad;                 [ "$output" = "orig npm install left-pad" ]
+  run npm i -g ./local-pkg;                 [[ ${lines[-1]} == "orig npm i -g ./local-pkg" ]]
+  run go install ./cmd/tool;                [ "$output" = "orig go install ./cmd/tool" ]
+  run go install;                           [ "$output" = "orig go install" ]
+  run gem list;                             [ "$output" = "orig gem list" ]
+  run gem install ./local.gem;              [ "$output" = "orig gem install ./local.gem" ]
+  run cargo install ripgrep --features pcre2; [[ ${lines[-1]} == "orig cargo install ripgrep --features pcre2" ]]
+  run uv pip install requests;              [ "$output" = "orig uv pip install requests" ]
+}
+
+@test "outside_mise lists direct installs, not local builds or the port's tools" {
+  local bin=$BATS_TEST_TMPDIR/obin gp=$BATS_TEST_TMPDIR/gopath
+  mkdir -p "$bin" "$gp/bin"; touch "$gp/bin/wails" "$gp/bin/sesh"
+  printf '#!/bin/sh\nprintf "augur v0.1.0 (/src/augur):\\n    augur\\nbacon v3.19.0:\\n    bacon\\n"\n' >"$bin/cargo"
+  printf '#!/bin/sh\nprintf "/n/lib\\n/n/lib/node_modules/npm\\n/n/lib/node_modules/corepack\\n/n/lib/node_modules/ccusage\\n"\n' >"$bin/npm"
+  printf '#!/bin/sh\necho %s\n' "$gp" >"$bin/go"
+  printf '#!/bin/sh\nprintf "graphifyy v0.4.23\\n- graphify\\n"\n' >"$bin/uv"
+  chmod +x "$bin"/*
+  PATH=$bin:/usr/bin:/bin
+  run outside_mise
+  [ "$output" = "$(printf 'cargo:bacon\ngo:sesh\nnpm:ccusage\nuv:graphifyy')" ]
+}

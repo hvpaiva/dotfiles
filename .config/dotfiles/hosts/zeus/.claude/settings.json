@@ -1,4 +1,5 @@
 {
+  "cleanupPeriodDays": 180,
   "permissions": {
     "allow": [
       "Read",
@@ -212,6 +213,7 @@
     "ruby-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true
   },
+  "effortLevel": "medium",
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
@@ -222,6 +224,9 @@
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "voiceEnabled": true,
-  "effortLevel": "medium",
-  "cleanupPeriodDays": 180
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
+    }
+  }
 }

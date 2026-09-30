@@ -93,6 +93,9 @@ cocogitto = "latest"
 "cargo:rustlings" = "latest"
 "cargo:trlt" = "latest"
 "pipx:browser-use" = "latest"
+"github:asciinema/agg" = { version = "latest", bin = "agg" }
+"github:BurntSushi/biff" = "latest" # renamed bttf upstream from 0.1.4: the binary is bttf
+"github:webstonehq/tuxedo" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

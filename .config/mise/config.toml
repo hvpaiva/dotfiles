@@ -78,6 +78,21 @@ zoxide = "latest"
 "cargo:cargo-nextest" = "latest"
 "cargo:cargo-vet" = "latest"
 "pipx:graphifyy" = "latest"
+# mise's cargo backend installs through cargo-binstall when it is present: the
+# release binary when a crate publishes one, a source build otherwise
+cargo-binstall = "latest"
+cocogitto = "latest"
+"cargo:bootimage" = "latest"
+"cargo:cargo-audit" = "latest"
+"cargo:cargo-llvm-cov" = "latest"
+"cargo:cargo-outdated" = "latest"
+"cargo:cargo-sbom" = "latest"
+"cargo:cargo-semver-checks" = "latest"
+"cargo:flamegraph" = "latest"
+"cargo:presenterm" = "latest"
+"cargo:rustlings" = "latest"
+"cargo:trlt" = "latest"
+"pipx:browser-use" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

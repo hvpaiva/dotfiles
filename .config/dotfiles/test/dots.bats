@@ -525,3 +525,14 @@ GH
   [ "$(nvim_pointer_state)" = same ]
   [ -z "$(repo_git public status --porcelain --ignore-submodules=all)" ]
 }
+
+@test "mise_held names what mise cannot resolve yet, with the date it can" {
+  mise() {
+    echo "mise WARN  Failed to resolve tool version list for gem:slipway: [~/.config/mise/config.toml] gem:slipway@latest: no versions found for gem:slipway matching minimum_release_age (24h): it hid 1 release, the newest being 0.1.0 (released 2026-09-30, eligible 2026-10-01 17:48 -03). Install that one now." >&2
+    echo "mise WARN  Failed to resolve tool version list for npm:gone: [~/.config/mise/config.toml] npm:gone@latest: not found" >&2
+  }
+  [ -z "$(mise_missing)" ]
+  run mise_held
+  [ "${lines[0]}" = "gem:slipway until 2026-10-01 17:48" ]
+  [ "${lines[1]}" = "npm:gone unresolved" ]
+}

@@ -610,6 +610,14 @@ root_hidden() {
 
 # ── tools and packages ───────────────────────────────────────────────────────
 mise_missing() { mise ls --missing --no-header 2>/dev/null | awk 'NF { print $1 }'; }
+# Tools mise cannot resolve to any version, which `ls --missing` leaves out: it
+# only warns on stderr. The usual case is a release younger than mise's
+# minimum_release_age, which resolves on its own once it is old enough.
+mise_held() {
+  mise ls --missing --no-header 2>&1 >/dev/null |
+    sed -nE -e 's/.*Failed to resolve tool version list for ([^ ]+):.*eligible ([0-9-]+ [0-9:]+).*/\1 until \2/p' -e 't' \
+      -e 's/.*Failed to resolve tool version list for ([^ ]+):.*/\1 unresolved/p' | sort -u
+}
 installed_pkgs() { # PKG… — those installed here
   local p
   case $os in
@@ -729,7 +737,7 @@ checks_repos() { # needs the network: fetches, then compares with origin
   done
 }
 checks_machine() { # fast, local: what is installed and wired, against what the layer intends
-  local missing n cur detail st
+  local missing held n cur detail st
   local -a dup
   detect_os
   if [[ -r $HOST_FILE ]]; then chk host ok "$host"; else chk host warn "no marker, assuming $host"; fi
@@ -759,8 +767,10 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   if have mise; then
     st=ok detail="$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }')"
     [[ $(command -v mise) == "$HOME/.local/bin/mise" ]] || { st=warn detail+=" (not the official build)"; }
-    missing=$(mise_missing)
-    if [[ -z $missing ]]; then detail+=", every tool installed"; else st=warn detail+=", missing $(words "$missing")"; fi
+    missing=$(mise_missing) held=$(mise_held)
+    if [[ -z $missing && -z $held ]]; then detail+=", every tool installed"; fi
+    [[ -n $missing ]] && { st=warn detail+=", missing $(words "$missing")"; }
+    [[ -n $held ]] && { st=warn detail+=", not installable yet: $(paste -sd, - <<<"$held" | sed 's/,/, /g')"; }
     chk mise "$st" "$detail"
   else
     chk mise warn "not installed"
@@ -1019,7 +1029,7 @@ cmd_push() {
 
 # ── update: bring the machine up to date ─────────────────────────────────────
 cmd_update() {
-  local quick=0 r missing
+  local quick=0 r missing held l
   while (($#)); do
     case $1 in
       --quick) quick=1 ;;
@@ -1042,6 +1052,8 @@ cmd_update() {
     else
       line mise "nothing missing"
     fi
+    held=$(mise_held)
+    [[ -n $held ]] && while IFS= read -r l; do warn mise "not installable yet: $l"; done <<<"$held"
     if (( ! quick )); then
       if mise upgrade >"$STATE_DIR/mise-upgrade.log" 2>&1; then line mise "upgraded, log $STATE_DIR/mise-upgrade.log"; else warn mise "upgrade failed, log $STATE_DIR/mise-upgrade.log"; fi
     fi

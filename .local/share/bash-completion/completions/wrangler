@@ -1,0 +1,3 @@
+# Lazy 3rd party completion loader: emits via "$cmd complete bash".
+# Loaded on demand by bash-completion's dynamic loader, so it never goes stale.
+eval -- "$("$1" complete bash 2>/dev/null)"

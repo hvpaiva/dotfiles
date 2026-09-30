@@ -1,0 +1,2 @@
+# The AWS CLI ships its own completer binary instead of a generated script.
+complete -C aws_completer aws

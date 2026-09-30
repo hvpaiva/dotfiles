@@ -1,0 +1,2 @@
+# Kong-based self-completion; "$1" is the resolved command path.
+complete -C "$1" crossplane

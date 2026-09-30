@@ -1,0 +1,67 @@
+# bash completion for ollama(1)
+#
+# Upstream disables cobra's "completion" command, so this is hand-written.
+# Model arguments are completed from the locally installed models.
+
+_comp_cmd_ollama__models()
+{
+    _comp_compgen_split -- "$(ollama list 2>/dev/null | awk 'NR > 1 { print $1 }')"
+}
+
+_comp_cmd_ollama()
+{
+    local cur prev words cword comp_args
+    _comp_initialize -- "$@" || return
+
+    local subcommands='serve create show run stop pull push signin signout
+        list ps cp rm launch help'
+
+    local i subcommand=""
+    for ((i = 1; i < cword; i++)); do
+        if [[ ${words[i]} != -* ]]; then
+            subcommand=${words[i]}
+            break
+        fi
+    done
+
+    if [[ ! $subcommand ]]; then
+        if [[ $cur == -* ]]; then
+            _comp_compgen -- -W '--help --version'
+        else
+            _comp_compgen -- -W "$subcommands"
+        fi
+        return
+    fi
+
+    case $prev in
+        -f | --file)
+            _comp_compgen_filedir
+            return
+            ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        case $subcommand in
+            run) _comp_compgen -- -W '--format --hidethinking --keepalive --nowordwrap --think --verbose' ;;
+            serve) _comp_compgen -- -W '--help' ;;
+            show) _comp_compgen -- -W '--license --modelfile --parameters --system --template --verbose' ;;
+            create) _comp_compgen -- -W '--file --quantize' ;;
+            list | ps) _comp_compgen -- -W '--help' ;;
+            *) _comp_compgen -- -W '--help' ;;
+        esac
+        return
+    fi
+
+    case $subcommand in
+        run | show | stop | push | rm | cp)
+            _comp_cmd_ollama__models
+            ;;
+        create)
+            # first arg is the new model name, nothing to complete
+            ;;
+        help)
+            _comp_compgen -- -W "$subcommands"
+            ;;
+    esac
+}
+complete -F _comp_cmd_ollama ollama

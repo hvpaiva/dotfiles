@@ -1,0 +1,117 @@
+# bash completion for go(1)
+#
+# The go command has no completion generator of its own, so the command and
+# subcommand lists are parsed from "go help" and friends, which keeps this from
+# going stale when the toolchain is upgraded.
+
+_comp_cmd_go__commands()
+{
+    _comp_compgen_split -- "$(
+        go help 2>/dev/null |
+            awk '/^The commands are:/ { c = 1; next }
+                 /^Additional help topics:/ { c = 0 }
+                 c && /^\t[a-z]/ { print $1 }'
+    )"
+}
+
+_comp_cmd_go__subcommands()
+{
+    # "go help mod" etc. list their own subcommands the same way.
+    _comp_compgen_split -- "$(
+        go help "$1" 2>/dev/null |
+            awk '/^The commands are:/ { c = 1; next }
+                 /^Use "go help/ { c = 0 }
+                 c && /^\t[a-z]/ { print $1 }'
+    )"
+}
+
+_comp_cmd_go__packages()
+{
+    # Local packages (directories holding .go files) plus the recursive pattern.
+    _comp_compgen -a -- -W './...'
+    _comp_compgen -a -d -- "$cur"
+}
+
+_comp_cmd_go()
+{
+    local cur prev words cword comp_args
+    _comp_initialize -- "$@" || return
+
+    local i command=""
+    for ((i = 1; i < cword; i++)); do
+        if [[ ${words[i]} != -* ]]; then
+            command=${words[i]}
+            break
+        fi
+    done
+
+    if [[ ! $command ]]; then
+        _comp_cmd_go__commands
+        return
+    fi
+
+    case $prev in
+        -o)
+            _comp_compgen_filedir
+            return
+            ;;
+        -C)
+            _comp_compgen_filedir -d
+            return
+            ;;
+        -tags | -ldflags | -gcflags | -covermode | -run | -bench | -timeout)
+            return
+            ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        case $command in
+            build) _comp_compgen -- -W '-o -C -a -n -p -race -msan -asan -cover -covermode -v -work -x -asmflags -buildmode -buildvcs -compiler -gcflags -installsuffix -ldflags -linkshared -mod -modcacherw -modfile -overlay -pgo -pkgdir -tags -trimpath -toolexec' ;;
+            test) _comp_compgen -- -W '-args -bench -benchmem -benchtime -count -cover -covermode -coverpkg -coverprofile -cpu -cpuprofile -exec -failfast -fullpath -fuzz -fuzztime -json -list -memprofile -mutexprofile -outputdir -parallel -race -run -short -shuffle -timeout -trace -v -vet -c -o -x' ;;
+            run) _comp_compgen -- -W '-exec -race -msan -asan -cover -tags -mod -gcflags -ldflags -v -x' ;;
+            get) _comp_compgen -- -W '-d -t -u -v -x -tool' ;;
+            list) _comp_compgen -- -W '-e -f -json -m -u -versions -deps -test -export -compiled -find -retracted -mod -tags' ;;
+            vet) _comp_compgen -- -W '-n -x -vettool -tags -json -c' ;;
+            mod) _comp_compgen -- -W '-x' ;;
+            install) _comp_compgen -- -W '-i -n -race -tags -v -x -mod -pgo -trimpath' ;;
+            *) _comp_compgen -- -W '-h' ;;
+        esac
+        return
+    fi
+
+    case $command in
+        tool)
+            if ((i == cword - 1)); then
+                # "go tool" with no arguments lists the installed tools.
+                _comp_compgen_split -- "$(go tool 2>/dev/null)"
+            else
+                _comp_compgen_filedir
+            fi
+            ;;
+        mod | work | telemetry)
+            # "go mod tidy", "go tool compile", ...
+            if [[ ${words[i + 1]-} == "$cur" || $i -eq $((cword - 1)) ]]; then
+                _comp_cmd_go__subcommands "$command"
+            else
+                _comp_compgen_filedir
+            fi
+            ;;
+        help)
+            _comp_cmd_go__commands
+            ;;
+        run)
+            _comp_compgen -a -- -G '*.go'
+            _comp_cmd_go__packages
+            ;;
+        build | test | vet | fmt | list | install | generate | fix | clean | doc)
+            _comp_cmd_go__packages
+            ;;
+        get)
+            # module paths: nothing local to complete
+            ;;
+        env)
+            _comp_compgen_split -- "$(go env 2>/dev/null | sed -n 's/^\([A-Z0-9_]*\)=.*/\1/p')"
+            ;;
+    esac
+}
+complete -F _comp_cmd_go go

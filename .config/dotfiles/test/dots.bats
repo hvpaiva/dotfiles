@@ -598,3 +598,23 @@ last() { printf '%s\n' "$1" | tail -n1; }
   run outside_mise
   [ "$output" = "$(printf 'cargo:bacon\ngo:sesh\nnpm:ccusage\nuv:graphifyy')" ]
 }
+
+@test "the claude-session filter keeps model and effort out of git" {
+  command -v jq >/dev/null || skip "jq not installed"
+  make_public
+  local f=.config/dotfiles/hosts/testhost/.claude/settings.json
+  mkdir -p "$HOME/${f%/*}"
+  printf '*/.claude/settings.json filter=claude-session\n' >"$HOME/.config/dotfiles/hosts/.gitattributes"
+  printf '{\n  "hooks": {},\n  "model": "opus",\n  "effortLevel": "high"\n}\n' >"$HOME/$f"
+  repo_filters
+  repo_git public add -f "$f" .config/dotfiles/hosts/.gitattributes && repo_git public commit -q -m settings
+  [ "$(repo_git public show "HEAD:$f")" = "$(printf '{\n  "hooks": {}\n}')" ]
+  grep -q '"model": "opus"' "$HOME/$f"
+  printf '{\n  "hooks": {},\n  "model": "fable",\n  "effortLevel": "xhigh"\n}\n' >"$HOME/$f"
+  repo_refresh_filtered
+  repo_state public; [ "$st_n" -eq 0 ]
+  printf '{\n  "hooks": {"x": 1},\n  "model": "fable"\n}\n' >"$HOME/$f"
+  repo_refresh_filtered
+  repo_state public; [ "$st_n" -eq 1 ]
+  [ "$(repo_git public diff --cached --name-only)" = "" ]
+}

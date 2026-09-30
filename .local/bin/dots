@@ -384,7 +384,35 @@ repo_present() {
   esac
 }
 repo_label() { case $1 in public) printf dotfiles ;; private) printf private ;; nvim) printf nvim ;; esac; }
-need_public() { [[ -d $PUBLIC_GIT_DIR ]] || die "no ~/.dotfiles on this machine; start with: bash <(curl -fsSL $BOOTSTRAP_URL)"; }
+need_public() {
+  [[ -d $PUBLIC_GIT_DIR ]] || die "no ~/.dotfiles on this machine; start with: bash <(curl -fsSL $BOOTSTRAP_URL)"
+  repo_filters
+  repo_refresh_filtered
+}
+# Git filters named in the repo's .gitattributes. Their commands live in the repo
+# config, which a clone does not carry, so every command makes sure they are set.
+# claude-session: the model and effort Claude Code records from a session stay on
+# disk and out of git (hosts/.gitattributes).
+CLAUDE_SESSION_CLEAN="jq --indent 2 'del(.model, .effortLevel, .modelSettings)'"
+repo_filters() {
+  have jq || return 0
+  [[ $(repo_git public config --get filter.claude-session.clean 2>/dev/null) == "$CLAUDE_SESSION_CLEAN" ]] && return 0
+  repo_git public config filter.claude-session.clean "$CLAUDE_SESSION_CLEAN"
+  repo_git public config filter.claude-session.smudge cat
+}
+# Git takes a size change for a content change without running the clean filter,
+# so a model switch ("opus" to "fable") still reads as modified, and a pull that
+# touches the file would refuse to overwrite it. When the filtered diff is empty
+# the file is added again: same blob, fresh stat, and nothing left to report.
+repo_refresh_filtered() {
+  local f
+  have jq || return 0
+  while IFS= read -r f; do
+    [[ -n $f ]] || continue
+    repo_git public diff --quiet -- "$f" 2>/dev/null && repo_git public add -- "$f" 2>/dev/null
+  done < <(repo_git public ls-files -m -- '.config/dotfiles/hosts/*/.claude/settings.json' 2>/dev/null)
+  return 0
+}
 need_repo() { repo_present "$1" || die "the $(repo_label "$1") repo is not set up here (dots setup)"; }
 
 repo_fetch() { # NAME FORCE — fetch origin, at most once every FETCH_TTL seconds unless forced

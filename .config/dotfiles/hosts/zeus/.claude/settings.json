@@ -129,7 +129,6 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "model": "opus",
   "hooks": {
     "Stop": [
       {
@@ -212,12 +211,6 @@
   "enabledPlugins": {
     "ruby-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true
-  },
-  "effortLevel": "medium",
-  "modelSettings": {
-    "claude-opus-5-5": {
-      "effortLevel": "xhigh"
-    }
   },
   "tui": "fullscreen",
   "voice": {

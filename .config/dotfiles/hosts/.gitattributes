@@ -1,0 +1,5 @@
+# Claude Code writes the model and effort picked in a session (/model, /effort)
+# into settings.json. That is session state, not configuration: the claude-session
+# filter (set up by dots) keeps those keys out of what git sees, so switching
+# models leaves the repo clean and each machine keeps its last pick on disk.
+*/.claude/settings.json filter=claude-session

@@ -75,8 +75,10 @@
 /.config/herdr/*
 !/.config/herdr/config.toml
 
-# Omarchy: personal pieces only; hooks and the installed themes stay out. omarchy-shell
-# rewrites shell.json from its settings panel, so it shows up as a change to save
+# Omarchy: personal pieces only; the installed themes and the hooks stay out, except
+# herdr-accent, the other half of herdr/config.toml (it copies the theme's accent there on
+# every theme change). That rewrite and omarchy-shell's, which saves its settings panel to
+# shell.json, both show up as changes to save
 !/.config/omarchy/
 /.config/omarchy/*
 !/.config/omarchy/shell.toml
@@ -85,6 +87,11 @@
 !/.config/omarchy/defaults/
 !/.config/omarchy/branding/
 !/.config/omarchy/extensions/
+!/.config/omarchy/hooks/
+/.config/omarchy/hooks/*
+!/.config/omarchy/hooks/theme-set.d/
+/.config/omarchy/hooks/theme-set.d/*
+!/.config/omarchy/hooks/theme-set.d/herdr-accent
 !/.config/aether/
 /.config/aether/*
 !/.config/aether/theme.override.css
@@ -111,6 +118,9 @@
 /.config/git/private
 /.config/git/allowed_signers
 /.config/git/hooks.local/
+!/.config/lazygit/
+/.config/lazygit/*
+!/.config/lazygit/config.yml
 !/.config/mise/
 /.config/mise/*
 !/.config/mise/config.toml

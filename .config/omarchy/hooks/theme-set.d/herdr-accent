@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Keep herdr's accent on the active theme's accent. herdr takes a hex color there but has no
+# include mechanism, so the [ui] accent line of config.toml is rewritten in place and the
+# running server reloads it.
+
+config=$HOME/.config/herdr/config.toml
+[[ -f $config ]] || exit 0
+
+accent=$(omarchy-theme-color accent 2>/dev/null) || exit 0
+[[ $accent =~ ^#[0-9A-Fa-f]{6}$ ]] || exit 0
+
+current=$(awk '/^\[/ { ui = ($0 == "[ui]") } ui && /^accent = / { print; exit }' "$config")
+[[ -n $current && $current != "accent = \"$accent\"" ]] || exit 0
+
+sed -i "/^\[ui\]$/,/^\[/ s/^accent = .*/accent = \"$accent\"/" "$config"
+
+if command -v herdr >/dev/null; then
+  herdr server reload-config >/dev/null 2>&1
+fi

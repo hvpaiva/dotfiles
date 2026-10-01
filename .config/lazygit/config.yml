@@ -1,0 +1,6 @@
+gui:
+  theme:
+    # The default blue background puts light text on a light blue in themes whose blue is
+    # light. Reverse video stays readable on any palette.
+    selectedLineBgColor:
+      - reverse

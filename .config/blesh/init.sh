@@ -1,8 +1,3 @@
-function blerc/define-sabbrev-date {
-  ble-sabbrev -m '\date'='ble/util/assign COMPREPLY "date +%F"'
-}
-blehook/eval-after-load complete blerc/define-sabbrev-date
-
 # Per-host tweaks (BLESH_HOST_LABEL for the prompt), from hosts/<host>
 [[ -f ~/.config/blesh/local.sh ]] && source ~/.config/blesh/local.sh
 

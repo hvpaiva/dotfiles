@@ -1,6 +1,7 @@
 # Faces use the 16 terminal palette slots (fg=N/bg=N), so ble.sh follows whatever colors the
 # active Omarchy theme sets, live, including in shells that were already open.
-# Slots: 0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 magenta, 6 cyan, 8 bright black.
+# Slots: 0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 magenta, 6 cyan, 8 bright black, 15 bright white.
+# The faces not listed keep ble.sh defaults, which already name palette slots (red, teal, lime...).
 #
 # Syntax follows Dave Eddy's bash highlighting (bat --theme base16, as on style.ysap.sh):
 # keywords magenta, builtins cyan, function names blue, strings green, comments bright black,
@@ -16,7 +17,10 @@ ble-face -s command_directory         'fg=4'
 ble-face -s command_file              'none'
 ble-face -s command_function          'fg=4'
 ble-face -s command_keyword           'fg=5'
+ble-face -s command_suffix            'fg=0,bg=2'
+ble-face -s command_suffix_new        'fg=0,bg=1'
 ble-face -s disabled                  'fg=8'
+ble-face -s filename_character        'fg=15,bg=0,underline'
 ble-face -s filename_directory        'fg=4'
 ble-face -s filename_directory_sticky 'fg=0,bg=2'
 ble-face -s filename_executable       'fg=2,bold'
@@ -53,6 +57,7 @@ ble-face -s varname_empty             'fg=8'
 ble-face -s varname_export            'bold'
 ble-face -s varname_expr              'none'
 ble-face -s varname_hash              'none'
+ble-face -s varname_new               'none'
 ble-face -s varname_number            'none'
 ble-face -s varname_readonly          'bold'
 ble-face -s varname_transform         'none'

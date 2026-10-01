@@ -148,7 +148,7 @@
   },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "custom:omarchy",
+  "theme": "dark",
   "switchModelsOnFlag": false,
   "agentPushNotifEnabled": true,
   "voiceEnabled": true

@@ -4,6 +4,11 @@
 export PAGER=less
 export LESS="-FRi"
 
+# base16 also sticks to the 16 terminal colors but maps them the way style.ysap.sh renders
+# code (comments bright black, keywords magenta, strings green). The Omarchy default, ansi,
+# paints comments green like strings.
+export BAT_THEME=base16
+
 # man through that same less. `-c` makes groff emit backspace overstrike instead of SGR
 # attributes, which is what lets less colorize bold/italic/underline through the
 # LESS_TERMCAP entries below. Overrides the Omarchy default of `col -bx | bat -l man -p`,
@@ -11,10 +16,11 @@ export LESS="-FRi"
 export MANROFFOPT="-c"
 unset MANPAGER
 
-# Basic ANSI colors only, so man pages follow the terminal theme, like BAT_THEME=ansi.
+# Basic ANSI colors only, so man pages follow the terminal theme. Standout is black on
+# yellow because yellow on blue drops to about 1.2:1 when a theme's blue is light.
 export LESS_TERMCAP_md=$'\e[1;36m'    # bold      -> cyan (headings, command names)
 export LESS_TERMCAP_us=$'\e[4;32m'    # underline -> green (arguments, italics)
-export LESS_TERMCAP_so=$'\e[1;33;44m' # standout  -> status line and search hits
+export LESS_TERMCAP_so=$'\e[30;43m'   # standout  -> status line and search hits
 export LESS_TERMCAP_mb=$'\e[1;31m'    # blink     -> red
 export LESS_TERMCAP_me=$'\e[0m'
 export LESS_TERMCAP_ue=$'\e[0m'

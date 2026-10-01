@@ -7,9 +7,9 @@
 #   Peach     builtins, variables  -> orange        Sky       orphans       -> 14 light cyan
 #   Mauve     keywords             -> 5 pink        Green     strings       -> 2 green
 #   Lavender  function names       -> 12 light blue Red       expansions    -> 1 red
-#   Flamingo  options, escapes     -> 13 light pink Rosewater variable names -> 15 white
+#   Flamingo  options, escapes     -> 13 light pink Rosewater variable names -> 11 light cream
 #   Overlay   braces, delimiters   -> border gray   Surface   selection     -> selection
-# Comments are 8 gray, because YSAP's yellow is the text cream. Slot numbers follow
+# Comments are 8 gray, since YSAP's yellow is a pale cream. Slot numbers follow
 # the terminal palette; orange, the border gray and the selection have no slot.
 
 ble-face -s argument_error            'fg=0,bg=1'
@@ -45,8 +45,8 @@ ble-face -s syntax_brace              'fg=#626262'
 ble-face -s syntax_command            'fg=4'
 ble-face -s syntax_comment            'fg=8'
 ble-face -s syntax_delimiter          'fg=#626262'
-ble-face -s syntax_document           'fg=15,bold'
-ble-face -s syntax_document_begin     'fg=15,bold'
+ble-face -s syntax_document           'fg=11,bold'
+ble-face -s syntax_document_begin     'fg=11,bold'
 ble-face -s syntax_error              'fg=0,bg=1'
 ble-face -s syntax_escape             'fg=13'
 ble-face -s syntax_expr               'fg=5'
@@ -56,14 +56,14 @@ ble-face -s syntax_history_expansion  'fg=12,italic'
 ble-face -s syntax_param_expansion    'fg=1'
 ble-face -s syntax_quotation          'fg=2'
 ble-face -s syntax_tilde              'fg=5'
-ble-face -s syntax_varname            'fg=15'
+ble-face -s syntax_varname            'fg=11'
 ble-face -s varname_array             'fg=#ffaf5f'
 ble-face -s varname_empty             'fg=#ffaf5f'
 ble-face -s varname_export            'fg=#ffaf5f'
 ble-face -s varname_expr              'fg=#ffaf5f'
 ble-face -s varname_hash              'fg=#ffaf5f'
 ble-face -s varname_new               'fg=#ffaf5f'
-ble-face -s varname_number            'fg=15'
+ble-face -s varname_number            'fg=11'
 ble-face -s varname_readonly          'fg=#ffaf5f'
 ble-face -s varname_transform         'fg=#ffaf5f'
 ble-face -s varname_unset             'fg=0,bg=1'

@@ -1,0 +1,2 @@
+command -v crictl >/dev/null 2>&1 || return 1
+eval -- "$(command crictl completion bash 2>/dev/null)" && complete -p crictl >/dev/null 2>&1

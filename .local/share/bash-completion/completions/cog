@@ -1,0 +1,2 @@
+command -v cog >/dev/null 2>&1 || return 1
+eval -- "$(command cog generate-completions bash 2>/dev/null)" && complete -p cog >/dev/null 2>&1

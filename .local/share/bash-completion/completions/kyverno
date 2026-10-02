@@ -1,0 +1,2 @@
+command -v kyverno >/dev/null 2>&1 || return 1
+eval -- "$(command kyverno completion bash 2>/dev/null)" && complete -p kyverno >/dev/null 2>&1

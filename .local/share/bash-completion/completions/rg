@@ -1,0 +1,2 @@
+command -v rg >/dev/null 2>&1 || return 1
+eval -- "$(command rg --generate complete-bash 2>/dev/null)" && complete -p rg >/dev/null 2>&1

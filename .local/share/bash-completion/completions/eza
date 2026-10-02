@@ -1,0 +1,2 @@
+command -v eza >/dev/null 2>&1 || return 1
+source "$HOME/.config/dotfiles/completions/eza.bash"

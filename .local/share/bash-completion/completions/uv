@@ -1,0 +1,2 @@
+command -v uv >/dev/null 2>&1 || return 1
+eval -- "$(command uv generate-shell-completion bash 2>/dev/null)" && complete -p uv >/dev/null 2>&1

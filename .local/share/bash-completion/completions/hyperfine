@@ -1,0 +1,2 @@
+command -v hyperfine >/dev/null 2>&1 || return 1
+source "$HOME/.config/dotfiles/completions/hyperfine.bash"

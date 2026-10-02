@@ -23,3 +23,7 @@ fi
 
 # dots (~/.local/bin/dots) fronts the dotfiles, private and nvim repos; dotp is git in the private one
 alias dotp='dots private'
+
+if command -v nvim &> /dev/null; then
+  alias vim='nvim'
+fi

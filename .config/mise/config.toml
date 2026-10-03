@@ -105,6 +105,7 @@ stack = "latest"
 "cargo:ghcitty" = "latest"
 ormolu = "latest"
 "github:tfausak/cabal-gild" = "latest"
+hlint = "latest"
 
 [plugins]
 "vfox-backend:mise-ghcup" = "https://github.com/wasp-lang/mise-ghcup.git"

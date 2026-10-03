@@ -1,0 +1,11 @@
+command -v hlint >/dev/null 2>&1 || return 1
+eval -- "$(command hlint --help=bash 2>/dev/null)" || return 1
+declare -F _hlint >/dev/null || return 1
+
+_dots_hlint() {
+  mapfile -t COMPREPLY < <(
+    _hlint "$@" >/dev/null 2>&1
+    ((${#COMPREPLY[@]})) && printf '%s\n' "${COMPREPLY[@]}"
+  )
+}
+complete -o bashdefault -o filenames -F _dots_hlint hlint

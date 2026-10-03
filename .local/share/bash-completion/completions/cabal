@@ -1,0 +1,37 @@
+command -v cabal >/dev/null 2>&1 || return 1
+
+_dots_cabal() {
+  local cur prev words cword split options targets='' kind='' word file
+  local -a args
+  _init_completion -s || return
+  case $prev in
+    --config-file|--project-file|--with-compiler|--with-hc-pkg|--with-ghc|--with-ghc-pkg)
+      _filedir
+      return
+      ;;
+    --builddir|--store-dir|--prefix|--project-dir|--logs-dir)
+      _filedir -d
+      return
+      ;;
+  esac
+  for word in "${words[@]:1:cword-1}"; do
+    case $word in
+      --) return ;;
+      build|v2-build|repl|v2-repl) kind='library|executable|test-suite|benchmark|foreign-library' ;;
+      run|v2-run) kind=executable ;;
+      test|v2-test) kind=test-suite ;;
+      bench|v2-bench) kind=benchmark ;;
+    esac
+  done
+  args=(cabal "${words[@]:1:cword-1}" --list-options)
+  options=$(command "${args[@]}" 2>/dev/null)
+  if [[ -n $kind && $cur != -* ]]; then
+    for file in ./*.cabal ./*/*.cabal ./*/*/*.cabal; do
+      [[ -f $file ]] || continue
+      targets+=$'\n'$(awk -v kind="$kind" '$1 ~ "^(" kind ")$" && NF > 1 { print $2 }' "$file")
+    done
+  fi
+  mapfile -t COMPREPLY < <(compgen -W "$options$targets" -- "$cur")
+  ((${#COMPREPLY[@]})) || _filedir
+}
+complete -F _dots_cabal cabal

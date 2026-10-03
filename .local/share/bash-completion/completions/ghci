@@ -1,0 +1,12 @@
+command -v ghci >/dev/null 2>&1 || return 1
+source "${BASH_SOURCE[0]%/*}/ghc"
+source "${BASH_SOURCE[0]%/*}/ghcitty"
+
+_dots_ghci() {
+  if [[ $(alias ghci 2>/dev/null) == "alias ghci='ghcitty'" && ! $COMP_LINE =~ ^[[:space:]]*command[[:space:]] ]]; then
+    _dots_ghcitty "$@"
+  else
+    _dots_ghc ghci
+  fi
+}
+complete -F _dots_ghci ghci

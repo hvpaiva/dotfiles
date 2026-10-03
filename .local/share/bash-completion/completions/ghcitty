@@ -1,0 +1,39 @@
+command -v ghcitty >/dev/null 2>&1 || return 1
+source "${BASH_SOURCE[0]%/*}/ghc"
+
+_dots_ghcitty() {
+  local cur prev words cword options i plain=false
+  local -a subcommand=()
+  _init_completion || return
+  for ((i = 1; i < cword; i++)); do
+    case ${words[i]} in
+      --session) ((i++)) ;;
+      --plain) plain=true ;;
+      eval) subcommand=(eval); break ;;
+      help)
+        mapfile -t COMPREPLY < <(compgen -W 'eval help' -- "$cur")
+        return
+        ;;
+      --)
+        if $plain; then _dots_ghc ghci; else _filedir; fi
+        return
+        ;;
+    esac
+  done
+  [[ $prev == --session ]] && return
+  options=$(command ghcitty "${subcommand[@]}" --help 2>/dev/null | awk '
+    /^Commands:/ { commands = 1; next }
+    /^[[:alnum:]][^:]*:/ { commands = 0 }
+    commands && NF { print $1 }
+    /^[[:space:]]*-/ {
+      for (i = 1; i <= NF; i++) {
+        if ($i ~ /^--?[[:alnum:]][[:alnum:]-]*,?$/) {
+          sub(/,$/, "", $i)
+          print $i
+        }
+      }
+    }
+  ')
+  mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
+}
+complete -F _dots_ghcitty ghcitty

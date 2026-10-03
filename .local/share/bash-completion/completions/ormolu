@@ -1,0 +1,15 @@
+command -v ormolu >/dev/null 2>&1 || return 1
+eval -- "$(command ormolu --bash-completion-script ormolu 2>/dev/null)" && complete -p ormolu >/dev/null 2>&1
+
+_dots_ormolu() {
+  local cur prev words cword split options
+  _init_completion -s || return
+  case $prev in
+    --mode|-m) options='stdout inplace check' ;;
+    --color) options='never always auto' ;;
+    --source-type|-t) options='module sig auto' ;;
+    *) _ormolu "$@"; return ;;
+  esac
+  mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
+}
+complete -o filenames -F _dots_ormolu ormolu

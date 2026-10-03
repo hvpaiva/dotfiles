@@ -1,0 +1,31 @@
+command -v ghc >/dev/null 2>&1 || return 1
+
+_dots_ghc() {
+  local cur prev words cword options
+  _init_completion || return
+  case $prev in
+    -hidir|-odir|-stubdir|-dumpdir|-outputdir|-tmpdir|-hpcdir|-framework-path|-package-db)
+      _filedir -d
+      return
+      ;;
+    -package|-hide-package|-ignore-package|-trust|-distrust)
+      options=$(command ghc-pkg list --simple-output --names-only 2>/dev/null)
+      mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
+      return
+      ;;
+    -e|-x|-hcsuf|-hisuf|-osuf|-framework)
+      return
+      ;;
+  esac
+  if [[ $cur == -* ]]; then
+    if [[ $1 == ghci ]]; then
+      options=$(command ghc --interactive --show-options 2>/dev/null)
+    else
+      options=$(command ghc --show-options 2>/dev/null)
+    fi
+    mapfile -t COMPREPLY < <(compgen -W "$options -x" -- "$cur")
+  else
+    _filedir
+  fi
+}
+complete -F _dots_ghc ghc

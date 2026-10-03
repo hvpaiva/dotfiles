@@ -1,0 +1,36 @@
+command -v cabal-gild >/dev/null 2>&1 || return 1
+
+_dots_cabal_gild() {
+  local cur prev words cword split options
+  _init_completion -s || return
+  case $prev in
+    --mode|-m)
+      mapfile -t COMPREPLY < <(compgen -W 'check format' -- "$cur")
+      return
+      ;;
+    --crlf)
+      mapfile -t COMPREPLY < <(compgen -W 'lenient strict' -- "$cur")
+      return
+      ;;
+    --stdin|--input|--output|--io|-s|-i|-o)
+      _filedir
+      return
+      ;;
+  esac
+  if [[ $cur == -* ]]; then
+    options=$(command cabal-gild --help 2>/dev/null | awk '
+      /^[[:space:]]*-/ {
+        for (i = 1; i <= NF; i++) {
+          if ($i ~ /^--?[^-]/) {
+            sub(/[,=].*$/, "", $i)
+            print $i
+          }
+        }
+      }
+    ')
+    mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
+  else
+    _filedir
+  fi
+}
+complete -F _dots_cabal_gild cabal-gild

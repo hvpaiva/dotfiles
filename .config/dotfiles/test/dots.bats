@@ -338,6 +338,103 @@ PM
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]
 }
 
+tmux_fixture() {
+  local binary=$HOME/.local/share/mise/installs/tmux/3.7c/tmux
+  mkdir -p "${binary%/*}" "$HOME/.local/share/mise/shims" "$TPM_DIR/tpm" "$HOME/.config/tmux"
+  cat >"$binary" <<'SH'
+#!/bin/sh
+case "$1" in
+  -V) printf 'tmux 3.7c\n' ;;
+  display-message)
+    [ -n "${DOTS_TEST_SERVER_VERSION:-}" ] || exit 1
+    printf '%s\n' "$DOTS_TEST_SERVER_VERSION" ;;
+  *) exit 1 ;;
+esac
+SH
+  chmod +x "$binary"
+  cp "$binary" "$HOME/.local/share/mise/shims/tmux"
+  printf 'set -g @plugin "tmux-plugins/tpm"\n' >"$HOME/.config/tmux/extras.conf"
+  mise() {
+    case "$*" in
+      'current tmux') printf '3.7c\n' ;;
+      'which tmux') printf '%s\n' "$HOME/.local/share/mise/installs/tmux/3.7c/tmux" ;;
+      *) return 1 ;;
+    esac
+  }
+  export PATH="$HOME/.local/share/mise/shims:$PATH"
+}
+
+@test "tmux check accepts the configured mise binary without a running server" {
+  tmux_fixture
+  checks_tmux
+  [ "$chk_warns" -eq 0 ]
+  [[ $chk_rows == *"tmux 3.7c, mise, tpm, 1 plugins"* ]]
+}
+
+@test "tmux check accepts mise activation without shims" {
+  tmux_fixture
+  PATH="$HOME/.local/share/mise/installs/tmux/3.7c:$PATH"
+  checks_tmux
+  [ "$chk_warns" -eq 0 ]
+}
+
+@test "tmux check warns when a distro binary shadows mise even at the same version" {
+  tmux_fixture
+  mkdir -p "$BATS_TEST_TMPDIR/system"
+  cp "$HOME/.local/share/mise/shims/tmux" "$BATS_TEST_TMPDIR/system/tmux"
+  PATH="$BATS_TEST_TMPDIR/system:$PATH"
+  checks_tmux
+  [ "$chk_warns" -eq 1 ]
+  [[ $chk_rows == *"outside mise ($BATS_TEST_TMPDIR/system/tmux)"* ]]
+}
+
+@test "tmux check warns when the client does not match the configured version" {
+  tmux_fixture
+  sed -i 's/tmux 3.7c/tmux 3.4/' "$HOME/.local/share/mise/shims/tmux"
+  checks_tmux
+  [ "$chk_warns" -eq 1 ]
+  [[ $chk_rows == *"tmux 3.4, expected 3.7c from mise"* ]]
+}
+
+@test "tmux check warns about an older running server" {
+  tmux_fixture
+  export DOTS_TEST_SERVER_VERSION=3.4
+  checks_tmux
+  [ "$chk_warns" -eq 1 ]
+  [[ $chk_rows == *"server 3.4 differs from 3.7c"* ]]
+}
+
+@test "tmux check reports a missing mise installation" {
+  mise() { return 1; }
+  checks_tmux
+  [ "$chk_warns" -eq 1 ]
+  [[ $chk_rows == *"mise tmux not installed: dots update"* ]]
+}
+
+@test "tmux check still reports missing plugins" {
+  tmux_fixture
+  printf 'set -g @plugin "tmux-plugins/tmux-yank"\n' >>"$HOME/.config/tmux/extras.conf"
+  checks_tmux
+  [ "$chk_warns" -eq 1 ]
+  [[ $chk_rows == *"plugins missing: tmux-yank"* ]]
+}
+
+@test "noninteractive bash prioritizes mise over distro binaries" {
+  tmux_fixture
+  export PATH="/usr/bin:/bin:$HOME/.local/share/mise/shims"
+  run bash --noprofile --norc -c 'source "$1"; command -v tmux' bash "$BATS_TEST_DIRNAME/../../../.bashrc"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$HOME/.local/share/mise/shims/tmux" ]
+}
+
+@test "the login profile prioritizes mise without adding another entry on reload" {
+  tmux_fixture
+  export PATH="/usr/bin:/bin:$HOME/.local/share/mise/shims"
+  run sh -c '. "$1"; first=$PATH; . "$1"; [ "$first" = "$PATH" ] && command -v tmux' sh "$BATS_TEST_DIRNAME/../../../.profile"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$HOME/.local/share/mise/shims/tmux" ]
+}
+
 # the backups setup, bootstrap.sh and the port leave behind, in a throwaway $HOME
 make_backups() {
   mkdir -p "$STATE_DIR/pre-checkout-20260101-000000" "$STATE_DIR/nvim-1700000000" \

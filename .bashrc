@@ -1,6 +1,10 @@
 # Omarchy environment (OMARCHY_PATH + PATH), needed even for non-interactive shells
 [[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
 
+if [[ -d $HOME/.local/share/mise/shims && $PATH != "$HOME/.local/share/mise/shims:"* ]]; then
+  export PATH="$HOME/.local/share/mise/shims:$PATH"
+fi
+
 # If not running interactively, don't do anything else (leave this above the rc source)
 [[ $- != *i* ]] && return
 

@@ -44,7 +44,7 @@ FETCH_TTL=600
 ROOT_ENTRIES=(README.md bootstrap.sh .github)
 ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # System packages the layer needs and mise cannot provide: compilers and headers for the
-# tools that build here (augur, ble.sh, node native modules), tmux, fontconfig, what the
+# tools that build here (augur, ble.sh, node native modules), fontconfig, what the
 # tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
 # the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
 ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion ghostty figlet tailscale neovim)
@@ -60,7 +60,7 @@ ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli mise-bin cliamp
 UBUNTU_DROP=(mise zoxide zsh fish starship)
 STALE_NAMES=(herdr sesh zoxide starship cliamp tree-sitter mise try glow)
 
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH:$HOME/.local/share/mise/shims"
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
 # ── help ─────────────────────────────────────────────────────────────────────
 usage() {
@@ -174,7 +174,7 @@ H
 Check the machine against the intended state, one row per check: the three
 repos (changes, origin, nvim record), host marker, per-host links, root entries,
 git identity and hooks, Omarchy, build dependencies, mise and its tools, rust,
-augur, ble.sh, tmux plugins, the Chromium extension policy, distro copies of
+augur, ble.sh, tmux version and plugins, the Chromium extension policy, distro copies of
 replaced tools, processes still running a removed binary, font, themes, kubectl
 completion, a real login shell, GitHub over SSH, and the logins only a person can
 do (1Password CLI, gh with its scopes, Tailscale, the git signing key, the
@@ -771,6 +771,39 @@ chk() { # NAME ok|warn DETAIL
   chk_rows+="$(row "$1" "$2" "$3")"$'\n'
   return 0
 }
+checks_tmux() {
+  local expected wanted actual current server missing detail st=ok
+  if ! have mise || ! wanted=$(mise current tmux 2>/dev/null) || [[ -z $wanted ]] ||
+    ! expected=$(mise which tmux 2>/dev/null) || [[ ! -x $expected ]]; then
+    chk tmux warn "mise tmux not installed: dots update"
+    return 0
+  fi
+  current=$(command -v tmux) || current=''
+  actual=$(tmux -V 2>/dev/null) || actual=''
+  detail="${actual:-tmux unavailable}"
+  if [[ $actual != "tmux $wanted" ]]; then
+    st=warn detail+=", expected $wanted from mise"
+  fi
+  if [[ $current == "$HOME/.local/share/mise/shims/tmux" || $current -ef $expected ]]; then
+    detail+=", mise"
+  else
+    st=warn detail+=", outside mise (${current:-not on PATH})"
+  fi
+  if server=$("$expected" display-message -p '#{version}' 2>/dev/null); then
+    if [[ $server == "$wanted" ]]; then detail+=", server $server"
+    else st=warn detail+=", server $server differs from $wanted"
+    fi
+  fi
+  if [[ -d $TPM_DIR/tpm ]]; then
+    missing=$(tmux_plugins_missing)
+    if [[ -z $missing ]]; then detail+=", tpm, $(tmux_plugins | wc -l) plugins"
+    else st=warn detail+=", plugins missing: $(words "$missing")"
+    fi
+  else
+    st=warn detail+=", tpm not installed"
+  fi
+  chk tmux "$st" "$detail"
+}
 checks_repos() { # needs the network: fetches, then compares with origin
   local r label st detail
   for r in public private nvim; do
@@ -827,12 +860,7 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   if [[ -x $HOME/.cargo/bin/cargo ]]; then chk rust ok "$("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else chk rust warn "rustup not installed"; fi
   if have augur; then chk augur ok "$(augur --version 2>/dev/null)"; else chk augur warn "not installed"; fi
   if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then chk ble.sh ok present; else chk ble.sh warn "not installed"; fi
-  if [[ -d $TPM_DIR/tpm ]]; then
-    missing=$(tmux_plugins_missing)
-    if [[ -z $missing ]]; then chk tmux ok "tpm, $(tmux_plugins | wc -l) plugins"; else chk tmux warn "plugins missing: $(words "$missing")"; fi
-  else
-    chk tmux warn "tpm not installed"
-  fi
+  checks_tmux
   mapfile -t dup < <(installed_pkgs "${DROP[@]}")
   if ((${#dup[@]})); then chk packages warn "distro copies: ${dup[*]}"; else chk packages ok "no distro copies"; fi
   if [[ -r $SETS_FILE ]]; then

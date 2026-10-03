@@ -24,7 +24,8 @@ That is the whole install. The script installs `git` if the machine lacks it, cl
 repo and hands over to `dots setup`, which does the rest and says what it is doing as it
 goes:
 
-1. the build dependencies mise cannot provide (compilers, headers, tmux, fontconfig);
+1. build dependencies (compilers, headers, fontconfig) and the distro tmux for
+   plugin setup before mise is installed;
 2. on Ubuntu, Omarchy itself through the omarchy-ubuntu bootstrap (20–40 minutes the
    first time). sudo asks for your password once for the whole run; the credential is kept
    alive until setup ends;
@@ -135,7 +136,7 @@ Edit a file where the program reads it, `dots save` on this machine, `dots updat
 other. New files inside the tracked boundary show up as `untracked` instead of silently
 staying behind. The `CHECKS` column is the difference between "the files match" and "the
 machine is what the files say": `dots doctor` spells out every check (mise tools, rustup,
-augur, ble.sh, tmux plugins, per-host links, distro packages that came back, processes
+augur, ble.sh, tmux version and plugins, per-host links, distro packages that came back, processes
 still on a replaced binary, font, themes, a real login shell, GitHub over SSH).
 
 If a program replaces one of the per-host links with a plain file (the monitor panel
@@ -176,6 +177,10 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
   (`source-file /usr/share/omarchy/config/tmux/tmux.conf`), plus `extras.conf`: tpm
   plugins under `~/.local/share/tmux`, sesh on `prefix+s`, resurrect/continuum, yank.
   herdr has no include mechanism, so its file is Omarchy's with three marked additions.
+  The tmux version is pinned in the shared mise configuration on both distros.
+  The distro package remains available for bootstrap; shells and dots prioritize mise.
+  `dots doctor` checks the selected binary and warns when a running server uses
+  a different version.
 - **terminals** — alacritty, ghostty, kitty and foot, all on `MesloLGLDZ Nerd Font Mono` 11.
 - **git** — shared config with global hooks (`~/.config/git/hooks`) that strip AI
   attribution trailers, run the repository's own hooks (a global `core.hooksPath` would

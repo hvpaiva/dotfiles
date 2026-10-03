@@ -21,6 +21,10 @@ if command -v irb &> /dev/null; then
   alias irb='irb --simple-prompt'
 fi
 
+if command -v ghcitty &> /dev/null; then
+  alias ghci='ghcitty'
+fi
+
 # dots (~/.local/bin/dots) fronts the dotfiles, private and nvim repos; dotp is git in the private one
 alias dotp='dots private'
 

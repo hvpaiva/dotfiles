@@ -1,0 +1,394 @@
+declare -F _init_completion >/dev/null || return 0
+
+declare -Ag _ruby_completion_cache=() _ruby_completion_times=()
+_ruby_completion_helper=${BASH_SOURCE[0]%/*}/ruby-completion.rb
+
+_ruby_completion_query() {
+  local key
+  printf -v key '%q ' "$PWD" "$PATH" "${GEM_HOME-}" "${GEM_PATH-}" \
+    "${BUNDLE_GEMFILE-}" "${RUBYOPT-}" "${_ruby_completion_prefix[@]}" "$@"
+  if [[ ${_ruby_completion_times[$key]+present} ]] &&
+    ((EPOCHSECONDS - _ruby_completion_times[$key] < 5)); then
+    REPLY=${_ruby_completion_cache[$key]}
+    return 0
+  fi
+  if REPLY=$(BUNDLE_FROZEN=true BUNDLE_AUTO_INSTALL=false \
+    timeout 5 "${_ruby_completion_prefix[@]}" "$@" 2>/dev/null); then
+    _ruby_completion_cache[$key]=$REPLY
+    _ruby_completion_times[$key]=$EPOCHSECONDS
+    return 0
+  fi
+  REPLY=
+  return 1
+}
+
+_ruby_completion_offer() {
+  local candidate
+  local -A seen=()
+  for candidate in "${COMPREPLY[@]}"; do
+    seen[$candidate]=1
+  done
+  for candidate in "$@"; do
+    [[ -n $candidate && $candidate == "$cur"* ]] || continue
+    [[ ${seen[$candidate]+present} ]] && continue
+    COMPREPLY+=("$candidate")
+    seen[$candidate]=1
+  done
+  if ((${#COMPREPLY[@]} == 1)) && [[ ${COMPREPLY[0]} == *[=/] ]]; then
+    compopt -o nospace 2>/dev/null || :
+  fi
+}
+
+_ruby_completion_lines() {
+  local -a candidates=()
+  mapfile -t candidates <<<"$1"
+  _ruby_completion_offer "${candidates[@]}"
+}
+
+_ruby_completion_metadata() {
+  _ruby_completion_query ruby "$_ruby_completion_helper" "$@" || return 0
+  _ruby_completion_lines "$REPLY"
+}
+
+_ruby_completion_flags() {
+  local line flag name=${1##*/}
+  local -a flags=()
+  if _ruby_completion_query "$@" --help; then
+    mapfile -t flags < <(printf '%s\n' "$REPLY" | _parse_help -)
+    for flag in "${flags[@]}"; do
+      [[ $name == ruby && $flag != --* ]] && continue
+      _ruby_completion_offer "$flag"
+    done
+    while IFS= read -r line; do
+      [[ $name == ruby && $line == 'Dump List:' ]] && break
+      [[ $line =~ ^[[:space:]]+(-[[:alnum:]]) ]] && _ruby_completion_offer "${BASH_REMATCH[1]}"
+    done <<<"$REPLY"
+    [[ $name == ruby ]] && _ruby_completion_offer -h
+  else
+    _ruby_completion_offer --help --version
+  fi
+  return 0
+}
+
+_ruby_completion_delegate() {
+  local offset=$1
+  local COMP_LINE=$COMP_LINE COMP_POINT=$COMP_POINT COMP_CWORD=$COMP_CWORD
+  local -a COMP_WORDS=("${COMP_WORDS[@]}")
+  _command_offset "$offset"
+}
+
+_ruby_completion_remote_gems() {
+  _ruby_completion_metadata gem-names
+  ((${#cur} >= 2)) || return 0
+  [[ $cur == *[/[:space:]]* ]] && return 0
+  local -a _ruby_completion_prefix=()
+  if _ruby_completion_query curl --fail --silent --get --connect-timeout 1 --max-time 2 \
+    https://rubygems.org/api/v1/search.json --data-urlencode "query=$cur"; then
+    local names
+    names=$(jq -r 'if type == "array" then .[].name else empty end' <<<"$REPLY" 2>/dev/null)
+    _ruby_completion_lines "$names"
+  fi
+}
+
+_ruby_completion_bundle() {
+  local executable=$1 index=1 subcommand='' arg
+  while ((index < cword)); do
+    arg=${words[index]}
+    case $arg in
+      --gemfile)
+        local -x BUNDLE_GEMFILE=${words[index + 1]}
+        ((index += 2))
+        ;;
+      --gemfile=*)
+        local -x BUNDLE_GEMFILE=${arg#*=}
+        ((index += 1))
+        ;;
+      --retry | -r) ((index += 2)) ;;
+      -*) ((index += 1)) ;;
+      *)
+        subcommand=$arg
+        break
+        ;;
+    esac
+  done
+
+  if [[ -z $subcommand ]]; then
+    if [[ $cur == -* ]]; then
+      _ruby_completion_flags "$executable"
+    else
+      _ruby_completion_metadata bundle-commands
+    fi
+    return
+  fi
+
+  case $subcommand in
+    exec | e | ex)
+      local offset=$((index + 1))
+      while ((offset < cword)); do
+        case ${words[offset]} in
+          --gemfile)
+            local -x BUNDLE_GEMFILE=${words[offset + 1]}
+            ((offset += 2))
+            ;;
+          --gemfile=*)
+            local -x BUNDLE_GEMFILE=${words[offset]#*=}
+            ((offset += 1))
+            ;;
+          --keep-file-descriptors) ((offset += 1)) ;;
+          --)
+            ((offset += 1))
+            break
+            ;;
+          *) break ;;
+        esac
+      done
+      if ((cword == offset)); then
+        if [[ $cur == -* ]]; then
+          _ruby_completion_flags "$executable" exec
+        else
+          local -a commands=()
+          mapfile -t commands < <(compgen -c -- "$cur" | sort -u)
+          _ruby_completion_offer "${commands[@]}"
+          _filedir
+        fi
+      else
+        local -a _ruby_completion_prefix=("${_ruby_completion_prefix[@]}" "$executable" "${words[@]:1:offset-1}")
+        _ruby_completion_delegate "$offset"
+      fi
+      ;;
+    config | doctor | plugin)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable" "${words[@]:index:cword-index}"
+      elif ((cword == index + 1)); then
+        _ruby_completion_metadata bundle-commands "$subcommand"
+      elif [[ $subcommand == config && ${words[index + 1]} == @(get|set|unset) ]] && ((cword == index + 2)); then
+        _ruby_completion_metadata bundle-settings
+      elif [[ $subcommand == config && ${words[index + 1]} == set ]] && ((cword == index + 3)); then
+        _ruby_completion_offer true false
+        _filedir
+      else
+        _filedir
+      fi
+      ;;
+    help)
+      _ruby_completion_metadata bundle-commands
+      ;;
+    *)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable" "$subcommand"
+      else
+        case $subcommand in
+          update | show | info | open | outdated | remove | pristine | binstubs)
+            _ruby_completion_metadata bundle-gems
+            ;;
+          add | inject)
+            _ruby_completion_remote_gems
+            ;;
+          *) _filedir ;;
+        esac
+      fi
+      ;;
+  esac
+}
+
+_ruby_completion_gem() {
+  local executable=$1 subcommand=${words[1]-}
+  if ((cword == 1)) || [[ $subcommand == help ]]; then
+    if [[ $cur == -* ]]; then
+      _ruby_completion_flags "$executable"
+    else
+      _ruby_completion_metadata gem-commands
+    fi
+  elif [[ $cur == -* ]]; then
+    _ruby_completion_flags "$executable" "$subcommand"
+  else
+    case $subcommand in
+      build) _filedir gemspec ;;
+      push) _filedir gem ;;
+      environment)
+        _ruby_completion_offer gemdir gempath version home path user_gemhome user_gempath
+        ;;
+      which) _ruby_completion_metadata requires "$cur" ;;
+      install | i | fetch)
+        _ruby_completion_remote_gems
+        _filedir gem
+        ;;
+      contents | cleanup | dependency | info | open | outdated | pristine | rdoc | specification | uninstall | unpack | update)
+        _ruby_completion_metadata gem-names
+        ;;
+      *) _filedir ;;
+    esac
+  fi
+}
+
+_ruby_complete() {
+  local cur prev words cword split
+  _init_completion -s -n : || return
+  local executable=$1 name=${1##*/}
+  [[ $name == riv ]] && executable=ri
+  cur=${cur#\'}
+  cur=${cur#\"}
+
+  case $name in
+    gems)
+      case $prev in
+        -p | --page | -h | --help) return 0 ;;
+      esac
+      [[ $cur == -* ]] && _ruby_completion_offer -h --help -p --page --
+      return 0
+      ;;
+  esac
+
+  case $name:$cur in
+    ruby:-I?* | ruby:-C?* | irb:-I?* | ruby:-r?* | irb:-r?*)
+      local prefix=${cur:0:2}
+      cur=${cur:2}
+      if [[ $prefix == -r ]]; then
+        _ruby_completion_metadata requires "$cur"
+      else
+        _filedir -d
+      fi
+      COMPREPLY=("${COMPREPLY[@]/#/$prefix}")
+      return 0
+      ;;
+  esac
+
+  case $prev in
+    --gemfile | --lockfile | --config | --options | --init-script | --out | --output | --rakefile | --target-rbconfig)
+      _filedir
+      return 0
+      ;;
+    --doc-dir | --install-dir | --bindir | --build-root | --path | --directory | --libdir)
+      _filedir -d
+      return 0
+      ;;
+    --port | --port-range | --jobs | --retry | --width | --seed | --example | --example-matches | --name | --version)
+      return 0
+      ;;
+  esac
+
+  case $name:$prev in
+    ri:--format | ri:-f | riv:--format | riv:-f)
+      _ruby_completion_metadata ri-formats
+      return 0
+      ;;
+    ri:-d | riv:-d | ruby:-I | ruby:-C | irb:-I | rake:-I)
+      _filedir -d
+      return 0
+      ;;
+    ruby:-r | ruby:--require | irb:-r | irb:--require | rspec:-r | rspec:--require)
+      _ruby_completion_metadata requires "$cur"
+      return 0
+      ;;
+    ruby:--encoding | ruby:--external-encoding | ruby:--internal-encoding | ruby:-E)
+      _ruby_completion_metadata encodings
+      return 0
+      ;;
+    ruby:-e | irb:-e | rdbg:-e | rspec:-e | rspec:-t | rspec:--tag)
+      return 0
+      ;;
+    rspec:--format | rspec:-f)
+      _ruby_completion_offer progress documentation html json failures
+      return 0
+      ;;
+    rubocop:--format | rubocop:-f | standardrb:--format | standardrb:-f)
+      _ruby_completion_offer progress simple documentation json html emacs clang files offenses junit tap github fuubar
+      return 0
+      ;;
+    rubocop:--fail-level | standardrb:--fail-level)
+      _ruby_completion_offer autocorrect info refactor convention warning error fatal
+      return 0
+      ;;
+    rubocop:--only | rubocop:--except | standardrb:--only | standardrb:--except)
+      local prefix='' candidate
+      [[ $cur == *,* ]] && prefix=${cur%,*},
+      _ruby_completion_query "$executable" --show-cops || return 0
+      while IFS= read -r candidate; do
+        [[ $candidate =~ ^([A-Z][A-Za-z0-9]+/[A-Za-z0-9]+):$ ]] || continue
+        _ruby_completion_offer "$prefix${BASH_REMATCH[1]}"
+      done <<<"$REPLY"
+      return 0
+      ;;
+    rdbg:--open)
+      _ruby_completion_offer rdbg vscode chrome
+      return 0
+      ;;
+    rubocop:-c | standardrb:-c | rspec:-O | rake:-f | rdbg:-x)
+      _filedir
+      return 0
+      ;;
+  esac
+
+  $split && return 0
+
+  if [[ $name == rdbg || $name == ruby ]]; then
+    local index
+    for ((index = 1; index < cword; index++)); do
+      case $name:${words[index]} in
+        rdbg:-c | rdbg:--command | ruby:-S)
+          local offset=$((index + 1))
+          [[ ${words[offset]} == -- ]] && ((offset += 1))
+          _ruby_completion_delegate "$offset"
+          return 0
+          ;;
+      esac
+    done
+  fi
+
+  case $name in
+    bundle | bundler) _ruby_completion_bundle "$executable" ;;
+    gem) _ruby_completion_gem "$executable" ;;
+    ri | riv)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable"
+      else
+        _ruby_completion_metadata ri "${words[@]:1:cword-1}" "$cur"
+        __ltrim_colon_completions "$cur"
+      fi
+      ;;
+    rake)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable"
+      elif [[ $cur != *=* && $cur != *\[* ]]; then
+        local index
+        local -a args=()
+        for ((index = 1; index < cword; index++)); do
+          case ${words[index]} in
+            -f | --rakefile | -C | --directory)
+              args+=("${words[index]}" "${words[index + 1]}")
+              ((index += 1))
+              ;;
+            --rakefile=* | --directory=* | *=*) args+=("${words[index]}") ;;
+          esac
+        done
+        if _ruby_completion_query "$executable" "${args[@]}" --tasks --all; then
+          local task marker rest
+          while read -r marker task rest; do
+            [[ $marker == rake ]] && _ruby_completion_offer "${task%%\[*}"
+          done <<<"$REPLY"
+          __ltrim_colon_completions "$cur"
+        fi
+      fi
+      ;;
+    try)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable"
+      elif ((cword == 1)); then
+        _ruby_completion_offer init clone worktree exec
+      else
+        _filedir -d
+      fi
+      ;;
+    *)
+      if [[ $cur == -* ]]; then
+        _ruby_completion_flags "$executable"
+      else
+        _filedir
+      fi
+      ;;
+  esac
+  return 0
+}
+
+complete -F _ruby_complete ruby gem bundle bundler rake rspec rubocop standardrb rdbg irb ri riv gems rdoc erb ruby-lsp try
+complete -F _ruby_complete bin/bundle bin/rake bin/rspec bin/rubocop bin/standardrb

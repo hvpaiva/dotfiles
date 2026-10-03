@@ -33,12 +33,6 @@ riv() {
     | nvim -R -c 'setlocal filetype=markdown buftype=nofile bufhidden=wipe' -
 }
 
-if [[ -r /usr/share/bash-completion/completions/ri ]]; then
-  shopt -s extglob
-  source /usr/share/bash-completion/completions/ri
-  complete -F _ri ri riv
-fi
-
 gems() (
   set -o pipefail
   local page=1 query
@@ -90,3 +84,5 @@ gems() (
       end
     '
 )
+
+source "${BASH_SOURCE[0]%/*}/ruby-completion"

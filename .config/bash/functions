@@ -33,12 +33,60 @@ riv() {
     | nvim -R -c 'setlocal filetype=markdown buftype=nofile bufhidden=wipe' -
 }
 
-# ri renders Markdown (RI='-f markdown' in bash/envs), but its bash completion parses ri
-# output expecting ansi. This wrapper forces ansi only while the TAB list is generated.
-# (extglob is needed to parse the completion script's !(...) patterns)
 if [[ -r /usr/share/bash-completion/completions/ri ]]; then
   shopt -s extglob
   source /usr/share/bash-completion/completions/ri
-  _ri_md() { local -x RI='-f ansi'; _ri "$@"; }
-  complete -F _ri_md ri riv
+  complete -F _ri ri riv
 fi
+
+gems() (
+  set -o pipefail
+  local page=1 query
+
+  while (( $# )); do
+    case $1 in
+      -h|--help)
+        printf '%s\n' \
+          'Usage: gems [-p PAGE] QUERY...' \
+          'Search RubyGems.org by topic. Returns up to 30 gems per page.' \
+          'Examples: gems html parser; gems -p 2 html parser'
+        return 0
+        ;;
+      -p|--page)
+        if (( $# < 2 )) || [[ ! $2 =~ ^[1-9][0-9]*$ ]]; then
+          printf '%s\n' 'gems: --page requires a positive integer.' >&2
+          return 2
+        fi
+        page=$2
+        shift 2
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        printf 'gems: unknown option: %s\n' "$1" >&2
+        return 2
+        ;;
+      *) break ;;
+    esac
+  done
+
+  query="$*"
+  if [[ -z ${query//[[:space:]]/} ]]; then
+    printf '%s\n' 'Usage: gems [-p PAGE] QUERY...' >&2
+    return 2
+  fi
+
+  curl --fail --silent --show-error --get \
+    --connect-timeout 10 --max-time 30 \
+    'https://rubygems.org/api/v1/search.json' \
+    --data-urlencode "query=$query" \
+    --data-urlencode "page=$page" |
+    jq -r '
+      if type != "array" then error("Unexpected RubyGems response")
+      elif length == 0 then "No gems found."
+      else .[] | "\(.name) (\(.version))\n\(.info // "No description.")\n"
+      end
+    '
+)

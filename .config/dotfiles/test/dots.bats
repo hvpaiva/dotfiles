@@ -3,6 +3,19 @@
 # helpers against throwaway repositories. Nothing here touches the network, the
 # real $HOME or sudo. Run with: bats ~/.config/dotfiles/test
 
+setup_file() {
+  # Tests replace HOME, so mise shims would lose their config/trust state. Keep
+  # the active binaries on PATH and the running Bats installation for nested tests.
+  local dir shims=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims
+  local -a dirs
+  IFS=: read -r -a dirs <<<"$PATH"
+  PATH=$BATS_ROOT/bin
+  for dir in "${dirs[@]}"; do
+    [[ $dir == "$shims" ]] || PATH+=:$dir
+  done
+  export PATH
+}
+
 setup() {
   export HOME=$BATS_TEST_TMPDIR/home
   mkdir -p "$HOME"

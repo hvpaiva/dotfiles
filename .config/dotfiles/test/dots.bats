@@ -17,6 +17,9 @@ setup_file() {
 }
 
 setup() {
+  # Never inherit terminal input: run captures prompts and would hide a waiting read.
+  # Tests that exercise input provide it explicitly (for example, with a here-string).
+  exec </dev/null
   export HOME=$BATS_TEST_TMPDIR/home
   mkdir -p "$HOME"
   export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1

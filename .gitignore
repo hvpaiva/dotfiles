@@ -153,12 +153,13 @@
 # Per-host marker written by dots setup (zeus, athena), used to pick the per-host layers
 /.config/dotfiles/host
 
-# The dots CLI and its completion; nothing else under ~/.local
+# Personal CLIs and their completion; nothing else under ~/.local
 !/.local/
 /.local/*
 !/.local/bin/
 /.local/bin/*
 !/.local/bin/dots
+!/.local/bin/ric
 !/.local/share/
 /.local/share/*
 !/.local/share/bash-completion/

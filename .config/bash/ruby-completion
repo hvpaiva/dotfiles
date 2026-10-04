@@ -225,12 +225,28 @@ _ruby_complete() {
   local cur prev words cword split
   _init_completion -s -n : || return
   local executable=$1 name=${1##*/}
-  [[ $name == riv ]] && executable=ri
+  if [[ $name == riv ]]; then
+    executable=rich-ri
+    command -v "$executable" >/dev/null 2>&1 || executable=ric
+    name=ric
+  fi
+  if [[ $name == ri && ${BASH_ALIASES[ri]-} == ric ]]; then
+    executable=ric
+    name=ric
+  fi
   cur=${cur#\'}
   cur=${cur#\"}
 
   case $name in
     gems)
+      if ! declare -F _gems_explorer >/dev/null; then
+        local completion=${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions/gems
+        [[ -r $completion ]] && source "$completion"
+      fi
+      if declare -F _gems_explorer >/dev/null; then
+        _gems_explorer "$@"
+        return
+      fi
       case $prev in
         -p | --page | -h | --help) return 0 ;;
       esac
@@ -268,11 +284,15 @@ _ruby_complete() {
   esac
 
   case $name:$prev in
-    ri:--format | ri:-f | riv:--format | riv:-f)
+    ric:--color)
+      _ruby_completion_offer auto always never
+      return 0
+      ;;
+    ri:--format | ri:-f | riv:--format | riv:-f | ric:--format | ric:-f)
       _ruby_completion_metadata ri-formats
       return 0
       ;;
-    ri:-d | riv:-d | ruby:-I | ruby:-C | irb:-I | rake:-I)
+    ri:-d | riv:-d | ric:-d | ruby:-I | ruby:-C | irb:-I | rake:-I)
       _filedir -d
       return 0
       ;;
@@ -338,12 +358,15 @@ _ruby_complete() {
   case $name in
     bundle | bundler) _ruby_completion_bundle "$executable" ;;
     gem) _ruby_completion_gem "$executable" ;;
-    ri | riv)
+    ri | riv | ric)
       if [[ $cur == -* ]]; then
         _ruby_completion_flags "$executable"
       else
-        _ruby_completion_metadata ri "${words[@]:1:cword-1}" "$cur"
+        _ruby_completion_metadata "${name/riv/ri}" "${words[@]:1:cword-1}" "$cur"
         __ltrim_colon_completions "$cur"
+        if [[ $name == ric && ${#COMPREPLY[@]} == 1 && ${COMPREPLY[0]} == *[:.#] ]]; then
+          compopt -o nospace 2>/dev/null || :
+        fi
       fi
       ;;
     rake)
@@ -390,5 +413,5 @@ _ruby_complete() {
   return 0
 }
 
-complete -F _ruby_complete ruby gem bundle bundler rake rspec rubocop standardrb rdbg irb ri riv gems rdoc erb ruby-lsp try
+complete -F _ruby_complete ruby gem bundle bundler rake rspec rubocop standardrb rdbg irb ri riv ric gems rdoc erb ruby-lsp try
 complete -F _ruby_complete bin/bundle bin/rake bin/rspec bin/rubocop bin/standardrb

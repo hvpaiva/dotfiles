@@ -27,62 +27,16 @@ img2png() {
     "${1%.*}.png"
 }
 
-# Ruby docs in a throwaway nvim buffer (tree-sitter highlighting only)
+# Rich Ruby docs in a clean Neovim terminal buffer, preserving ANSI colors.
 riv() {
-  command ri -f markdown "$@" 2>/dev/null \
-    | nvim -R -c 'setlocal filetype=markdown buftype=nofile bufhidden=wipe' -
+  local reader=rich-ri
+  command -v "$reader" >/dev/null 2>&1 || reader=ric
+  command "$reader" --no-pager --color=always "$@" \
+    | nvim -u NONE -i NONE - \
+      -c 'lua vim.api.nvim_open_term(0, {})' \
+      -c 'normal! gg'
 }
 
-gems() (
-  set -o pipefail
-  local page=1 query
-
-  while (( $# )); do
-    case $1 in
-      -h|--help)
-        printf '%s\n' \
-          'Usage: gems [-p PAGE] QUERY...' \
-          'Search RubyGems.org by topic. Returns up to 30 gems per page.' \
-          'Examples: gems html parser; gems -p 2 html parser'
-        return 0
-        ;;
-      -p|--page)
-        if (( $# < 2 )) || [[ ! $2 =~ ^[1-9][0-9]*$ ]]; then
-          printf '%s\n' 'gems: --page requires a positive integer.' >&2
-          return 2
-        fi
-        page=$2
-        shift 2
-        ;;
-      --)
-        shift
-        break
-        ;;
-      -*)
-        printf 'gems: unknown option: %s\n' "$1" >&2
-        return 2
-        ;;
-      *) break ;;
-    esac
-  done
-
-  query="$*"
-  if [[ -z ${query//[[:space:]]/} ]]; then
-    printf '%s\n' 'Usage: gems [-p PAGE] QUERY...' >&2
-    return 2
-  fi
-
-  curl --fail --silent --show-error --get \
-    --connect-timeout 10 --max-time 30 \
-    'https://rubygems.org/api/v1/search.json' \
-    --data-urlencode "query=$query" \
-    --data-urlencode "page=$page" |
-    jq -r '
-      if type != "array" then error("Unexpected RubyGems response")
-      elif length == 0 then "No gems found."
-      else .[] | "\(.name) (\(.version))\n\(.info // "No description.")\n"
-      end
-    '
-)
+# gems is now the Ruby executable in ~/.local/bin (gems-explorer).
 
 source "${BASH_SOURCE[0]%/*}/ruby-completion"

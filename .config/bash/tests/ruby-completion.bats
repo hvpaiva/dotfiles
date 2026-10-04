@@ -45,14 +45,62 @@ has_candidate() {
   return 1
 }
 
-@test "ri and riv complete classes and instance methods" {
+@test "ri, riv and ric complete classes and instance methods" {
   probe ri Str
   has_candidate String
   probe ri 'String#sca'
   has_candidate 'String#scan'
   probe riv 'String#sca'
   has_candidate 'String#scan'
+  probe ric 'String#sca'
+  has_candidate 'String#scan'
+  probe ric --no-color 'String#sca'
+  has_candidate 'String#scan'
   probe ri "'String#sca"
+  has_candidate 'String#scan'
+}
+
+@test "ric completes color options and stock formats" {
+  probe ric --color=al
+  has_candidate always
+  probe ric --format=mar
+  has_candidate markdown
+  probe ric --no-c
+  has_candidate --no-color
+}
+
+@test "ric discovers method kinds, Ruby pages and gem pages" {
+  probe ric String
+  has_candidate 'String#'
+  has_candidate 'String.'
+  has_candidate 'String::'
+  probe ric 'String.ne'
+  has_candidate 'String.new'
+  probe ric rub
+  has_candidate 'ruby:'
+  probe ric 'ruby:syntax/pat'
+  has_candidate 'syntax/pattern_matching.rdoc'
+  probe ric --color=always 'rdoc:READ'
+  has_candidate 'README.md'
+}
+
+@test "ric completion loads on demand for an existing shell" {
+  complete -r ric
+  _comp_load ric
+  [[ $(complete -p ric) == *'_ruby_complete ric' ]]
+  probe ric 'Hash#fet'
+  has_candidate 'Hash#fetch'
+}
+
+@test "ri alias keeps ric options and page discovery" {
+  alias ri=ric
+  probe ri --no-c
+  has_candidate --no-color
+  probe ri --color=al
+  has_candidate always
+  probe ri 'ruby:syntax/pat'
+  has_candidate 'syntax/pattern_matching.rdoc'
+  probe ri 'String#sca'
   has_candidate 'String#scan'
 }
 

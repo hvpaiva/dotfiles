@@ -1,12 +1,18 @@
 mode = ARGV.shift
 
 values = case mode
-when "ri"
+when "ri", "ric"
   require "rdoc/ri/driver"
   prefix = ARGV.pop || ""
+  ARGV.reject! { |arg| arg.match?(/\A--(?:no-color|color(?:=.*)?)\z/) } if mode == "ric"
   ENV.delete("RI")
   options = RDoc::RI::Driver.process_args(ARGV)
-  RDoc::RI::Driver.new(options.merge(use_stdout: true, interactive: false)).complete(prefix)
+  driver = RDoc::RI::Driver
+  if mode == "ric"
+    load File.expand_path("../../.local/bin/ric", __dir__)
+    driver = Ric::Driver
+  end
+  driver.new(options.merge(use_stdout: true, interactive: false)).complete(prefix)
 when "ri-formats"
   require "rdoc/ri/driver"
   RDoc::Markup.constants.grep(/^To[A-Z][a-z]+$/).map { |name| name.to_s.delete_prefix("To").downcase } - %w[html label test]

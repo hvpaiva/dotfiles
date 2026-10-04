@@ -715,3 +715,94 @@ last() { printf '%s\n' "$1" | tail -n1; }
   repo_state public; [ "$st_n" -eq 1 ]
   [ "$(repo_git public diff --cached --name-only)" = "" ]
 }
+
+# A small complete tree exercises the real shared checker without recursively
+# running this suite inside every save test.
+make_checkable_public() {
+  make_public
+  mkdir -p "$HOME/.config/dotfiles/test" "$HOME/.config/bash/tests" "$HOME/.local/bin"
+  cp "$BATS_TEST_DIRNAME/check.sh" "$HOME/.config/dotfiles/test/check.sh"
+  printf '# bash\n' >"$HOME/.bashrc"
+  printf '# bash\n' >"$HOME/.bash_profile"
+  printf '# sh\n' >"$HOME/.profile"
+  printf '#!/usr/bin/env bash\n:\n' >"$HOME/bootstrap.sh"
+  cp "$HOME/bootstrap.sh" "$HOME/.local/bin/dots"
+  chmod +x "$HOME/bootstrap.sh" "$HOME/.local/bin/dots"
+  printf '@test "fixture passes" { true; }\n' >"$HOME/.config/dotfiles/test/smoke.bats"
+  repo_git public add -A && repo_git public commit -q -m checker
+}
+
+@test "save rejects unstaged Bash errors before committing or pushing any repo, preserving the index" {
+  make_checkable_public; make_nvim
+  commit "$PRIVATE_DIR" settings initial
+  printf 'private change\n' >>"$PRIVATE_DIR/settings"
+  printf 'nvim change\n' >>"$NVIM_DIR/init.lua"
+  local public_head private_head nvim_head staged origin_head
+  public_head=$(repo_git public rev-parse HEAD)
+  private_head=$(repo_git private rev-parse HEAD)
+  nvim_head=$(repo_git nvim rev-parse HEAD)
+  origin_head=$(git --git-dir="$BATS_TEST_TMPDIR/origin.git" rev-parse HEAD)
+  printf '# staged\n' >>"$HOME/.bashrc"
+  repo_git public add .bashrc
+  staged=$(repo_git public write-tree)
+  printf 'if then\n' >>"$HOME/.bashrc"
+  run cmd_save -m invalid
+  [ "$status" -ne 0 ]
+  [[ $output == *"validation failed; no commits or pushes made"* ]]
+  [ "$(repo_git public rev-parse HEAD)" = "$public_head" ]
+  [ "$(repo_git private rev-parse HEAD)" = "$private_head" ]
+  [ "$(repo_git nvim rev-parse HEAD)" = "$nvim_head" ]
+  [ "$(git --git-dir="$BATS_TEST_TMPDIR/origin.git" rev-parse HEAD)" = "$origin_head" ]
+  [ "$(repo_git public write-tree)" = "$staged" ]
+  [[ $(cat "$HOME/.bashrc") == *'if then'* ]]
+}
+
+@test "check reads hidden sparse files and leaves them hidden" {
+  make_checkable_public
+  printf 'if then\n' >>"$HOME/bootstrap.sh"
+  repo_git public add bootstrap.sh && repo_git public commit -q -m broken
+  repo_git public sparse-checkout set --no-cone "${ROOT_PATTERNS[@]}"
+  [ ! -e "$HOME/bootstrap.sh" ]
+  local staged; staged=$(repo_git public write-tree)
+  run cmd_check
+  [ "$status" -ne 0 ]
+  [[ $output == *bootstrap.sh* ]]
+  [ ! -e "$HOME/bootstrap.sh" ]
+  [ "$(repo_git public write-tree)" = "$staged" ]
+}
+
+@test "save validates new Ruby files separately from Bash and accepts a tests directory" {
+  make_checkable_public
+  printf 'puts ["ruby"].map { |value| value.upcase }\n' >"$HOME/.config/bash/helper.rb"
+  printf '@test "example" { true; }\n' >"$HOME/.config/bash/tests/example.bats"
+  run cmd_save --no-push -m valid
+  [ "$status" -eq 0 ]
+  [ "$(repo_git public log -1 --format=%s)" = valid ]
+  [ -z "$(repo_git public status --porcelain)" ]
+  [ "$(git --git-dir="$BATS_TEST_TMPDIR/origin.git" log -1 --format=%s)" = initial ]
+}
+
+@test "save with no-push still rejects invalid Ruby and failing unit tests" {
+  make_checkable_public
+  local head; head=$(repo_git public rev-parse HEAD)
+  printf 'def broken(\n' >"$HOME/.config/bash/helper.rb"
+  run cmd_save --no-push -m invalid
+  [ "$status" -ne 0 ]
+  [[ $output == *helper.rb* ]]
+  [ "$(repo_git public rev-parse HEAD)" = "$head" ]
+  rm "$HOME/.config/bash/helper.rb"
+  printf '@test "fixture fails" { false; }\n' >"$HOME/.config/dotfiles/test/smoke.bats"
+  run cmd_save --no-push -m invalid
+  [ "$status" -ne 0 ]
+  [[ $output == *"not ok 1 fixture fails"* ]]
+  [ "$(repo_git public rev-parse HEAD)" = "$head" ]
+}
+
+@test "the shared checker fails with an actionable message when shellcheck is missing" {
+  local bin=$BATS_TEST_TMPDIR/minimal-bin
+  mkdir "$bin"
+  ln -s "$(command -v dirname)" "$bin/dirname"
+  run env PATH="$bin" "$(command -v bash)" "$BATS_TEST_DIRNAME/check.sh" lint
+  [ "$status" -ne 0 ]
+  [[ $output == *"validation requires shellcheck; install it and retry dots check"* ]]
+}

@@ -74,6 +74,13 @@ does not fetch.
 The changes themselves, every repo: git diff for tracked files, then the new
 files inside the boundary.
 .TP
+.B check
+Run CI's ShellCheck, shell/Ruby syntax, executable-bit checks and dotfiles unit
+tests against a temporary copy of what save would commit, including new files
+and sparse root entries. Requires shellcheck, ruby and bats. Leaves the real
+index and work tree unchanged. Covers public dotfiles; private and nvim retain
+their own repository hooks. Container tests remain in CI.
+.TP
 .BR save " [" \-m " \fIMESSAGE\fR] [" \-n "|" \-\-no\-push ]
 Commit and push every change, in every repo, in this order: nvim, private,
 dotfiles. The live nvim commit is recorded in dotfiles first when it moved
@@ -83,6 +90,9 @@ on a terminal, with one proposed from the changed files;
 uses the same message everywhere;
 .B \-n
 commits without pushing.
+After adopting per-host files, runs check before any commit or push. Failed
+checks or missing tools stop the save with a nonzero status, even with
+.BR \-n .
 .TP
 .BR update " [" \-\-quick ]
 Bring the machine up to date: fast-forward every repo to origin (local edits

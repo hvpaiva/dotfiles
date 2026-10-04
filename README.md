@@ -96,6 +96,7 @@ think about which one a change belongs to:
 
 ```
 dots            what changed here, what is waiting on origin, what the machine lacks
+dots check      validate dotfiles with the same lint and unit tests as CI
 dots save       commit and push every change, every repo
 dots update     bring the machine up to date: repos, per-host links, tools
 dots doctor     check the machine against the intended state, installs included
@@ -271,6 +272,18 @@ file that moved or went away is removed by the next `dots update`.
   live file wins if a program breaks the link.
 
 ## Testing and CI
+
+`dots check` runs ShellCheck, shell/Ruby syntax checks, executable-bit checks and
+the dotfiles unit tests against a temporary copy of everything `dots save` would
+commit, including new files and the root entries hidden by sparse checkout. The real
+index and work tree stay unchanged. It requires `shellcheck`, `ruby` and `bats` on PATH.
+`dots save` runs this check after adopting per-host files and before committing or
+pushing any repository, even with `--no-push`. Failed checks or missing tools stop it
+with a nonzero exit status. The checks cover the public dotfiles; nvim and private
+retain their own repository hooks.
+
+CI and local validation share `.config/dotfiles/test/check.sh` (`lint`, `unit`, or both
+by default). Container/bootstrap tests remain in CI; they are not run on every save.
 
 `bats .config/dotfiles/test` runs the unit tests for `dots` (bats comes from mise): the
 pure helpers, and the git-backed ones against throwaway repositories, with no network and

@@ -19,13 +19,13 @@ src=${DOTFILES_SRC:-$HOME/.dotfiles}
 case $distro in
   arch)
     image=archlinux:latest
-    setup='pacman -Sy --noconfirm --needed git curl sudo zoxide starship >/dev/null'
+    setup='pacman -Sy --noconfirm --needed git curl sudo zoxide starship shellcheck ruby bats >/dev/null'
     left='pacman -Qq zoxide starship 2>/dev/null | wc -l'
     # shellcheck disable=SC2016
     pacman_check='check "pacman install hook installed" "$(test -r /etc/pacman.d/hooks/pkg-snapshot-append.hook && echo yes)" yes' ;;
   ubuntu)
     image=ubuntu:24.04
-    setup='apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl sudo ca-certificates zoxide >/dev/null'
+    setup='apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl sudo ca-certificates zoxide shellcheck ruby bats >/dev/null'
     # shellcheck disable=SC2016
     left='dpkg-query -W -f="\${db:Status-Status}\n" zoxide 2>/dev/null | grep -cx installed'
     pacman_check='' ;;

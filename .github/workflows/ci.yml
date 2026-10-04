@@ -20,24 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: shellcheck
-        # SC1090/SC1091 only say a sourced file was not followed
-        run: |
-          shellcheck -S warning -e SC1090,SC1091 bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*
-          shellcheck -S warning -e SC1090,SC1091 -s bash .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots
-          shellcheck -S warning -e SC1090,SC1091 -s sh .profile
-      - name: syntax
-        run: |
-          for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/* .bashrc .bash_profile .config/bash/* .config/blesh/*.sh .local/share/bash-completion/completions/dots; do
-            bash -n "$f" || exit 1
-          done
-          sh -n .profile
-      - name: executable bits
-        run: |
-          for f in bootstrap.sh .local/bin/dots .config/dotfiles/test/container.sh .config/git/hooks/* .config/scripts/*; do
-            case $f in *.sh) [ "$f" = bootstrap.sh ] || continue ;; esac
-            [ -x "$f" ] || { echo "not executable: $f"; exit 1; }
-          done
+      - name: lint and syntax
+        run: bash .config/dotfiles/test/check.sh lint
 
   unit:
     runs-on: ubuntu-latest
@@ -46,7 +30,7 @@ jobs:
       - name: bats
         run: sudo apt-get install -y -qq bats >/dev/null
       - name: unit tests
-        run: bats .config/dotfiles/test
+        run: bash .config/dotfiles/test/check.sh unit
 
   container:
     needs: [lint, unit]

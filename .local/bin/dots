@@ -74,6 +74,7 @@ Usage:
 Commands:
   status    Changes, origin state and machine checks (default)
   diff      The changes, every repo
+  check     Validate dotfiles before saving
   save      Commit and push every change, every repo
   update    Update repos, per-host links and tools
   push      Push what is not on origin yet
@@ -125,6 +126,16 @@ Examples:
   dots diff --stat
 H
     ;;
+    check) cat <<'H'
+Run the same ShellCheck, shell/Ruby syntax, executable-bit checks and dotfiles
+unit tests as CI, against a temporary copy of what dots save would commit.
+Includes new files and the root entries hidden by sparse checkout. Requires
+shellcheck, ruby and bats. Leaves the real index and work tree unchanged.
+
+Usage:
+  dots check
+H
+    ;;
     save) cat <<'H'
 Commit and push every change, in every repo, in this order: nvim, private,
 dotfiles. The live nvim commit is recorded in dotfiles first when it moved
@@ -132,6 +143,9 @@ forward. Per-host files that a program replaced with a plain file are adopted:
 copied back into their tree, re-linked and committed with the rest. A message is
 asked per repo, with one proposed from the changed files; -m uses the same
 message everywhere.
+
+After adopting per-host files, run dots check before any commit or push. A failed
+check or a missing validation tool stops the save, including with --no-push.
 
 Usage:
   dots save [-m MESSAGE] [-n|--no-push]
@@ -1047,6 +1061,34 @@ cmd_diff() {
 }
 
 # ── save: commit and push everything ─────────────────────────────────────────
+validate_public() (
+  # A separate index includes unstaged/new files without touching the user's staging.
+  # checkout-index includes sparse entries too, and preserves executable bits.
+  local tmp index
+  tmp=$(mktemp -d) || return 1
+  trap 'rm -rf -- "$tmp"' EXIT
+  index=$(repo_git public rev-parse --path-format=absolute --git-path index) || return 1
+  cp -- "$index" "$tmp/index" || return 1
+  export GIT_INDEX_FILE=$tmp/index
+  repo_git public add -A || return 1
+  mkdir "$tmp/tree" || return 1
+  repo_git public checkout-index --all --ignore-skip-worktree-bits --prefix="$tmp/tree/" || return 1
+  unset GIT_INDEX_FILE
+  if [[ ! -f $tmp/tree/.config/dotfiles/test/check.sh ]]; then
+    warn check "missing .config/dotfiles/test/check.sh"
+    return 1
+  fi
+  line check "running lint and unit tests"
+  bash "$tmp/tree/.config/dotfiles/test/check.sh" || return 1
+  line check passed
+)
+cmd_check() {
+  [[ ${1:-} == -h || ${1:-} == --help ]] && { help_for check; return 0; }
+  (($# == 0)) || die "check: unknown argument $1"
+  need_public
+  validate_public
+}
+
 default_message() { # PORCELAIN — "chore: update a, b, c"
   local l path names='' n=0
   while IFS= read -r l; do
@@ -1079,6 +1121,7 @@ cmd_save() {
   done
   need_public; host_name
   link_all 1
+  validate_public || { warn save "validation failed; no commits or pushes made"; return 1; }
   for r in nvim private public; do
     repo_present "$r" || continue
     label=$(repo_label "$r")
@@ -1677,6 +1720,7 @@ main() {
   case $sub in
     status)  cmd_status "$@" ;;
     diff)    cmd_diff "$@" ;;
+    check)   cmd_check "$@" ;;
     save)    cmd_save "$@" ;;
     update)  cmd_update "$@" ;;
     push)    cmd_push "$@" ;;

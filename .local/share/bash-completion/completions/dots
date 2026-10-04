@@ -3,7 +3,7 @@
 # bash-completion loads this file the first time <Tab> is pressed after `dots`.
 _dots() {
   local cur=${COMP_WORDS[COMP_CWORD]} sub=${COMP_WORDS[1]:-}
-  local own="status diff save update push doctor setup root clean private nvim git help"
+  local own="status diff check save update push doctor setup root clean private nvim git help"
   if ! declare -F __git_main >/dev/null 2>&1; then
     if declare -F _comp_load >/dev/null 2>&1; then _comp_load git
     elif declare -F _completion_loader >/dev/null 2>&1; then _completion_loader git
@@ -21,7 +21,7 @@ _dots() {
     setup)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--host --reset --skip-omarchy --skip-private --skip-mise --skip-rust --skip-secrets" -- "$cur"); return 0 ;;
     root)   mapfile -t COMPREPLY < <(compgen -S ' ' -W "show hide" -- "$cur"); return 0 ;;
     clean)  mapfile -t COMPREPLY < <(compgen -S ' ' -W "--all -y --yes" -- "$cur"); return 0 ;;
-    push | doctor | help) return 0 ;;
+    check | push | doctor | help) return 0 ;;
     private | nvim | git)
       # drop the sub-command so git's completion sees `dots <git args>`
       COMP_WORDS=("${COMP_WORDS[0]}" "${COMP_WORDS[@]:2}")

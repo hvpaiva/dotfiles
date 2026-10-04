@@ -70,6 +70,7 @@ echo "tpm=$([ -d "$HOME/.local/share/tmux/plugins/tpm" ] && echo yes || echo no)
 tmux_out=$(tmux -L probe -f "$HOME/.config/tmux/tmux.conf" new-session -d -s p 2>&1); tmux -L probe kill-server 2>/dev/null
 echo "tmux_errors=$(grep -ci error <<<"$tmux_out")"
 echo "deps=$(for c in git make gawk tmux cc; do command -v "$c" >/dev/null && printf '%s ' "$c"; done)"
+echo "ssh_tools=$(for c in ssh ssh-keygen; do command -v "$c" >/dev/null && printf '%s ' "$c"; done)"
 echo "root_in_home=$({ [ -e "$HOME/README.md" ] && echo 1; [ -e "$HOME/bootstrap.sh" ] && echo 1; [ -e "$HOME/.github" ] && echo 1; } | wc -l)"
 echo "root_checked_out=$(d ls-files -t README.md bootstrap.sh .github | grep -vc '^S ')"
 echo "cargo=$([ -x "$HOME/.cargo/bin/cargo" ] && echo yes || echo no)"
@@ -107,6 +108,7 @@ check "git identity warning shown"       "\$(grep -cE '^git +warn +no identity' 
 $pacman_check
 check "distro copies removed"            "\$($left)" 0
 check "build deps installed"             "\$(get deps)" "git make gawk tmux cc "
+check "SSH client and keygen installed"  "\$(get ssh_tools)" "ssh ssh-keygen "
 check "bashrc tracked"                   "\$(get tracked_bashrc)" .bashrc
 check "login shell: PAGER=less"          "\$(get pager)" less
 check "login shell: dots on PATH"        "\$(get dots_path)" /home/tester/.local/bin/dots

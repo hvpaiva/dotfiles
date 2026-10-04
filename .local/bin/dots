@@ -44,14 +44,14 @@ FETCH_TTL=600
 ROOT_ENTRIES=(README.md bootstrap.sh .github)
 ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # System packages the layer needs and mise cannot provide: compilers and headers for the
-# tools that build here (augur, ble.sh, node native modules), fontconfig, what the
+# tools that build here (augur, ble.sh, node native modules), SSH for git and signing, fontconfig, what the
 # tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
 # the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
-ARCH_DEPS=(base-devel git curl tmux python libsecret fontconfig bash-completion ghostty figlet tailscale neovim)
+ARCH_DEPS=(base-devel git openssh curl tmux python libsecret fontconfig bash-completion ghostty figlet tailscale neovim)
 # Wanted when the repository offers it (the omarchy repo carries the 1Password CLI; a plain
 # Arch does not), skipped with a note otherwise
 ARCH_OPT_DEPS=(1password-cli)
-UBUNTU_DEPS=(git curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
+UBUNTU_DEPS=(git openssh-client curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier

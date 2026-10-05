@@ -159,7 +159,6 @@
 !/.local/bin/
 /.local/bin/*
 !/.local/bin/dots
-!/.local/bin/ric
 !/.local/share/
 /.local/share/*
 !/.local/share/bash-completion/

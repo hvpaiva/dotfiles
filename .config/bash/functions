@@ -29,9 +29,7 @@ img2png() {
 
 # Rich Ruby docs in a clean Neovim terminal buffer, preserving ANSI colors.
 riv() {
-  local reader=rich-ri
-  command -v "$reader" >/dev/null 2>&1 || reader=ric
-  command "$reader" --no-pager --color=always "$@" \
+  command rich-ri --no-pager --color=always "$@" \
     | nvim -u NONE -i NONE - \
       -c 'lua vim.api.nvim_open_term(0, {})' \
       -c 'normal! gg'

@@ -1,0 +1,2 @@
+# Load the completion shipped by the active mise installation on the first Tab.
+eval -- "$(command rich-ri --completion=bash 2>/dev/null)"

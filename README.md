@@ -149,8 +149,8 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
 - **bash** — Omarchy's `default/bash/rc` sourced whole, then only what diverges:
   `~/.config/bash/{envs,aliases,functions,prompt,mise-intercept}`. One pager everywhere
   (`less`, `LESS=-FRi`), man pages coloured through `LESS_TERMCAP` in the eight ANSI
-  colours so they follow the theme. `ri` renders Markdown through glow; `riv` opens Ruby
-  docs in a scratch nvim buffer. No starship.
+  colours so they follow the theme. `ri` uses rich-ri, installed through mise; `riv`
+  opens the same coloured documentation in a clean Neovim terminal buffer. No starship.
 - **bash completions** — `~/.local/share/bash-completion/completions/` is tracked. Each
   file is a lazy loader that runs the tool's own generator on the first Tab
   (`eval -- "$("$1" completion bash 2>/dev/null)"`), so it never goes stale and costs

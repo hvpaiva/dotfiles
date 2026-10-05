@@ -21,8 +21,8 @@ if command -v irb &> /dev/null; then
   alias irb='irb --simple-prompt'
 fi
 
-if command -v ric &> /dev/null; then
-  alias ri='ric'
+if command -v rich-ri &> /dev/null; then
+  alias ri='rich-ri'
 fi
 
 if command -v ghcitty &> /dev/null; then

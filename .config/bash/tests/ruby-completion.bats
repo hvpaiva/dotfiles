@@ -45,55 +45,56 @@ has_candidate() {
   return 1
 }
 
-@test "ri, riv and ric complete classes and instance methods" {
+@test "ri, riv and rich-ri complete classes and instance methods" {
   probe ri Str
   has_candidate String
   probe ri 'String#sca'
   has_candidate 'String#scan'
   probe riv 'String#sca'
   has_candidate 'String#scan'
-  probe ric 'String#sca'
+  probe rich-ri 'String#sca'
   has_candidate 'String#scan'
-  probe ric --no-color 'String#sca'
+  probe rich-ri --no-color 'String#sca'
   has_candidate 'String#scan'
   probe ri "'String#sca"
   has_candidate 'String#scan'
 }
 
-@test "ric completes color options and stock formats" {
-  probe ric --color=al
+@test "rich-ri completes color options and stock formats" {
+  probe rich-ri --color=al
   has_candidate always
-  probe ric --format=mar
+  probe rich-ri --format=mar
   has_candidate markdown
-  probe ric --no-c
+  probe rich-ri --no-c
   has_candidate --no-color
 }
 
-@test "ric discovers method kinds, Ruby pages and gem pages" {
-  probe ric String
+@test "rich-ri discovers method kinds, Ruby pages and gem pages" {
+  probe rich-ri String
   has_candidate 'String#'
   has_candidate 'String.'
   has_candidate 'String::'
-  probe ric 'String.ne'
+  probe rich-ri 'String.ne'
   has_candidate 'String.new'
-  probe ric rub
+  probe rich-ri rub
   has_candidate 'ruby:'
-  probe ric 'ruby:syntax/pat'
+  probe rich-ri 'ruby:syntax/pat'
   has_candidate 'syntax/pattern_matching.rdoc'
-  probe ric --color=always 'rdoc:READ'
+  probe rich-ri --color=always 'rdoc:READ'
   has_candidate 'README.md'
 }
 
-@test "ric completion loads on demand for an existing shell" {
-  complete -r ric
-  _comp_load ric
-  [[ $(complete -p ric) == *'_ruby_complete ric' ]]
-  probe ric 'Hash#fet'
+@test "rich-ri completion loads the packaged handler on demand" {
+  complete -r rich-ri 2>/dev/null || :
+  unset -f _rich_ri
+  _comp_load rich-ri
+  [[ $(complete -p rich-ri) == *'-o filenames -F _rich_ri rich-ri' ]]
+  probe rich-ri 'Hash#fet'
   has_candidate 'Hash#fetch'
 }
 
-@test "ri alias keeps ric options and page discovery" {
-  alias ri=ric
+@test "ri alias keeps rich-ri options and page discovery" {
+  alias ri=rich-ri
   probe ri --no-c
   has_candidate --no-color
   probe ri --color=al
@@ -101,6 +102,38 @@ has_candidate() {
   probe ri 'ruby:syntax/pat'
   has_candidate 'syntax/pattern_matching.rdoc'
   probe ri 'String#sca'
+  has_candidate 'String#scan'
+}
+
+@test "ri and riv lazily discover rich-ri themes and style roles" {
+  alias ri=rich-ri
+  unset -f _rich_ri
+  probe ri --theme=da
+  has_candidate dark
+  declare -F _rich_ri >/dev/null
+  probe ri --style=met
+  has_candidate 'method='
+  probe riv --theme li
+  has_candidate light
+  probe riv --style comm
+  has_candidate 'comment='
+}
+
+@test "rich-ri and its aliases preserve quoted paths and the completion context" {
+  local settings="$BATS_TEST_TMPDIR/settings spaced.yml"
+  local docs="$BATS_TEST_TMPDIR/docs spaced"
+  printf '%s\n' 'theme: terminal' >"$settings"
+  mkdir -p "$docs"
+  alias ri=rich-ri
+
+  probe rich-ri --config "'$BATS_TEST_TMPDIR/settings s"
+  has_candidate "$settings"
+  probe ri --doc-dir "'$BATS_TEST_TMPDIR/docs s"
+  has_candidate "$docs/"
+  [ "${COMP_WORDS[0]}" = ri ]
+  [ "$COMP_CWORD" -eq 2 ]
+  [ "$COMP_LINE" = "ri --doc-dir '$BATS_TEST_TMPDIR/docs s" ]
+  probe riv "'String#sca"
   has_candidate 'String#scan'
 }
 

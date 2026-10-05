@@ -1,2 +1,0 @@
-# Load on the first Tab, including in shells opened before ric was installed.
-source "$HOME/.config/bash/ruby-completion"

@@ -110,6 +110,7 @@ hlint = "latest"
 "github:microsoft/vscode-js-debug" = { version = "latest", asset_pattern = "js-debug-dap-*.tar.gz" }
 "github:vadimcn/codelldb" = { version = "latest", asset_pattern = "codelldb-{{ os() }}-{{ arch() }}.vsix", bin_path = "extension/adapter" }
 "gem:rich-ri" = "0.1.1"
+shellcheck = "latest"
 
 [plugins]
 "vfox-backend:mise-ghcup" = "https://github.com/wasp-lang/mise-ghcup.git"

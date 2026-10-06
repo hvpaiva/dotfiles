@@ -214,7 +214,7 @@ README.md  bootstrap.sh  .github/    the repo root; kept out of $HOME by a spars
   bash/ blesh/ tmux/ herdr/ git/ mise/ alacritty/ ghostty/ kitty/ foot/
   omarchy/{defaults,hooks/post-update.d/setup-agent.hook,themes.txt,shell.toml}
   hypr/bindings.lua  uwsm/default  autostart/com.onepassword.OnePassword.desktop
-  sesh/ tensaku/  packages/ scripts/
+  sesh/ tensaku/  packages/ scripts/  shellcheckrc
   nvim/                               submodule → hvpaiva/nvim
   dotfiles/
     hosts/<host>/                     per-host, non-sensitive files (symlinked into $HOME)
@@ -279,6 +279,8 @@ file that moved or went away is removed by the next `dots update`.
 the dotfiles unit tests against a temporary copy of everything `dots save` would
 commit, including new files and the root entries hidden by sparse checkout. The real
 index and work tree stay unchanged. It requires `shellcheck`, `ruby` and `bats` on PATH.
+Locally ShellCheck also reads `~/.config/shellcheckrc` (optional checks, shared with the
+editor); CI runs with ShellCheck's defaults.
 `dots save` runs this check after adopting per-host files and before committing or
 pushing any repository, even with `--no-push`. Failed checks or missing tools stop it
 with a nonzero exit status. The checks cover the public dotfiles; nvim and private

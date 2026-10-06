@@ -129,6 +129,7 @@
 /.config/packages/universal/chromium-extensions.local.txt
 /.config/packages/sets
 !/.config/scripts/
+!/.config/shellcheckrc
 !/.config/fontconfig/
 /.config/fontconfig/*
 !/.config/fontconfig/fonts.conf

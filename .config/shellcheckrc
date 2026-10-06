@@ -1,0 +1,22 @@
+# ShellCheck defaults for every script on this machine: the CLI, the editor
+# (bash-language-server) and dots check read this file. A project's own
+# .shellcheckrc replaces this file (they are not merged). `shellcheck
+# --list-optional` explains each check.
+
+# Follow `source` to files outside the ones given on the command line.
+external-sources=true
+
+# `case` without a `*)` branch.
+enable=add-default-case
+# `[ "$var" ]` instead of `[ -n "$var" ]`.
+enable=avoid-nullary-conditions
+# Exit codes lost inside `$(...)`, pipelines and process substitution.
+enable=check-extra-masked-returns
+# `set -e` silently disabled by `if`, `&&`, `||` or `!` around a function.
+enable=check-set-e-suppressed
+# Uppercase variables read but never assigned (env vars excepted).
+enable=check-unassigned-uppercase
+# `which` instead of `command -v`.
+enable=deprecate-which
+# `[ ]` instead of `[[ ]]` in Bash (POSIX sh scripts are not affected).
+enable=require-double-brackets

@@ -1,4 +1,3 @@
-shellcheck pacman
 qemu-full pacman
 bolt pacman
 hyprland-preview-share-picker pacman

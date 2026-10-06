@@ -1,7 +1,5 @@
 # Work-specific packages (purpose=work|both)
 # Format: PACKAGE ORIGIN
 
-terraform pacman
-tflint pacman
 helm pacman
 cursor-bin pacman

@@ -58,7 +58,7 @@ UBUNTU_DEPS=(git openssh-client curl ca-certificates build-essential autoconf au
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier
 # life of the machine.
-ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli mise-bin cliamp tobi-try starship glow rust-src rust rust-analyzer)
+ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli mise-bin cliamp tobi-try starship glow rust-src rust rust-analyzer terraform tflint shellcheck)
 UBUNTU_DROP=(mise zoxide zsh fish starship)
 STALE_NAMES=(herdr sesh zoxide starship cliamp tree-sitter mise try glow)
 

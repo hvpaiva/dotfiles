@@ -27,3 +27,5 @@ export LESS_TERMCAP_ue=$'\e[0m'
 export LESS_TERMCAP_se=$'\e[0m'
 
 unset RI RI_PAGER
+
+export COLORTERM=truecolor

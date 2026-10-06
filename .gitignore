@@ -124,6 +124,7 @@
 !/.config/mise/
 /.config/mise/*
 !/.config/mise/config.toml
+!/.config/mise/default-gems
 !/.config/packages/
 /.config/packages/universal/chromium-extensions.local.txt
 /.config/packages/sets

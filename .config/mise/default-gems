@@ -1,0 +1,2 @@
+# One gem per line, installed into every Ruby mise installs (settings.ruby.default_packages_file).
+ruby-lsp

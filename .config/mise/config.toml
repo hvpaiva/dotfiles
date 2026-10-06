@@ -24,7 +24,6 @@ delta = "0.20.1"
 difftastic = "0.71.0"
 direnv = "2.37.1"
 "gem:rubocop" = "latest"
-"gem:ruby-lsp" = "latest"
 "gem:standard" = "latest"
 "gem:try-cli" = "latest"
 glow = "latest"
@@ -122,6 +121,10 @@ idiomatic_version_file_enable_tools = ["ruby"]
 
 [settings.ruby]
 compile = false
+# Gems every Ruby mise installs gets right away. ruby-lsp is one: its C
+# extensions are built for one Ruby ABI, so it lives inside each Ruby instead
+# of being a mise tool (the editor runs the project's Ruby's own).
+default_packages_file = "~/.config/mise/default-gems"
 
 [settings.upgrade]
 auto_prune = false

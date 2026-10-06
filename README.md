@@ -190,6 +190,8 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
 - **mise** — the official build in `~/.local/bin`, one `config.toml` with every tool wanted
   on every machine, mise first over distro packages (herdr, zoxide, sesh, cliamp, try,
   tree-sitter, glow…). Per-host pins live in `conf.d/local.toml`. Rust comes from rustup.
+  Gems whose C extensions follow the Ruby ABI (ruby-lsp) cannot be one shared mise tool:
+  `mise/default-gems` lists them and mise installs them into every Ruby it installs.
 - **neovim** — [hvpaiva/nvim](https://github.com/hvpaiva/nvim), its own repo, declared here
   as a submodule so a clone cannot forget it; `dots update` keeps it on `main` and
   `dots save` records the commit in use.

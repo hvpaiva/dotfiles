@@ -29,6 +29,16 @@
         ]
       },
       {
+        "matcher": "Bash|Write|Edit|MultiEdit|mcp__.*([Ss]lack|[Aa]tlassian|[Gg]mail|Claude_Docs|Google_Drive|[Nn]otion|[Gg]it[Hh]ub).*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/hvpaiva/.claude/hooks/prose-send-gate.py",
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -83,15 +93,6 @@
           {
             "type": "command",
             "command": "node \"/home/hvpaiva/.save-buddy/hooks/buddy-stop.js\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/hvpaiva/.local/bin/agent-hook-prose-gate-claude",
-            "timeout": 20
           }
         ]
       }

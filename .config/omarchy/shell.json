@@ -10,10 +10,10 @@
           "id": "omarchy.keyboard-layout"
         },
         {
+          "id": "omarchy.clock",
           "birthYear": 1994,
           "format": "dddd HH:mm",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "id": "omarchy.clock",
           "lifeExpectancy": 90,
           "verticalFormat": "HH\n—\nmm"
         },

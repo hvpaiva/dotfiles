@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# usage: prose-lint [file.md]   (stdin when no file); prints line:col:rule:message, exit 1 on violations
+set -uo pipefail
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
+cfg="$HOME/.config/vale/.vale.ini"
+tmp=$(mktemp --suffix=.md)
+trap 'rm -f "$tmp"' EXIT
+
+if [ $# -gt 0 ]; then
+  cat -- "$1" >"$tmp"
+else
+  cat >"$tmp"
+fi
+
+command -v vale >/dev/null 2>&1 || { echo "prose-lint: vale not installed" >&2; exit 0; }
+
+out=$(vale --config "$cfg" --output=line "$tmp" 2>/dev/null)
+rc=$?
+[ -n "$out" ] && printf '%s\n' "$out" | sed "s|^$tmp:||"
+exit "$rc"

@@ -1,0 +1,9 @@
+extends: existence
+message: "Travessao nao e permitido. Use virgula, ponto ou parenteses."
+level: error
+nonword: true
+scope: text
+tokens:
+  - '—'
+  - '–'
+  - '\s--\s'

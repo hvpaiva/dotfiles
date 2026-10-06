@@ -1,0 +1,9 @@
+extends: existence
+message: "Rotulo seguido de dois pontos no inicio da frase ('%s'). Escreva em prosa corrida."
+level: error
+nonword: true
+scope:
+  - paragraph
+  - list
+raw:
+  - '(?m)(?:^|[.!?]\s+)(?:\*\*)?[A-ZÀ-Ý][\wÀ-ÿ-]*(?:\s+[\wÀ-ÿ-]+){0,2}(?:\*\*)?:\s+\S'

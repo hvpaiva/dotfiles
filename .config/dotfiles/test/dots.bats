@@ -1,4 +1,6 @@
 #!/usr/bin/env bats
+# Bats' `[ ]` assertions are its idiom; ~/.config/shellcheckrc asks for `[[ ]]` in Bash.
+# shellcheck disable=SC2292
 # Unit tests for the logic in ~/.local/bin/dots: pure helpers, and the git-backed
 # helpers against throwaway repositories. Nothing here touches the network, the
 # real $HOME or sudo. Run with: bats ~/.config/dotfiles/test

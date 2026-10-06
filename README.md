@@ -45,8 +45,9 @@ goes:
    athena: dev, apps, work, fonts, fun). A set is a wish list: what the distro cannot provide
    right now (a repository not added, an AUR package without yay) is reported, never fatal.
    What the configs themselves need is not in a set but in setup's own dependencies;
-8. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, tmux plugins, the official
-   mise build in `~/.local/bin` and every tool in `mise/config.toml`;
+8. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, bashdb (built for the
+   running Bash), tmux plugins, the official mise build in `~/.local/bin` and every tool in
+   `mise/config.toml`;
 9. the terminal font and the extra Omarchy themes;
 10. `dots doctor`, then a summary of anything that did not go as planned. The full output is
    kept in `~/.local/state/dotfiles/setup.log`.
@@ -137,7 +138,7 @@ Edit a file where the program reads it, `dots save` on this machine, `dots updat
 other. New files inside the tracked boundary show up as `untracked` instead of silently
 staying behind. The `CHECKS` column is the difference between "the files match" and "the
 machine is what the files say": `dots doctor` spells out every check (mise tools, rustup,
-augur, ble.sh, tmux version and plugins, per-host links, distro packages that came back, processes
+augur, ble.sh, bashdb, tmux version and plugins, per-host links, distro packages that came back, processes
 still on a replaced binary, font, themes, a real login shell, GitHub over SSH).
 
 If a program replaces one of the per-host links with a plain file (the monitor panel
@@ -194,7 +195,9 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
   `mise/default-gems` lists them and mise installs them into every Ruby it installs.
 - **neovim** — [hvpaiva/nvim](https://github.com/hvpaiva/nvim), its own repo, declared here
   as a submodule so a clone cannot forget it; `dots update` keeps it on `main` and
-  `dots save` records the commit in use.
+  `dots save` records the commit in use. Its Bash debugger drives bashdb, whose upstream
+  keeps one branch per Bash release: setup builds it for the running Bash into `~/.local`,
+  update rebuilds it when Bash moves to a new release.
 - **Omarchy personal bits** — hypr bindings, default agent, the list of extra themes
   (`omarchy/themes.txt`), `shell.toml`.
 - **package lists** — `packages/arch`, kept current by a pacman hook that `dots setup`

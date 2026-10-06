@@ -98,8 +98,8 @@ checks or missing tools stop the save with a nonzero status, even with
 Bring the machine up to date: fast-forward every repo to origin (local edits
 are stashed around the merge and restored), re-link the per-host files, install
 the mise tools the configuration lists but the machine lacks, then upgrade the
-mise tools, rebuild augur when its repository moved and update the tmux
-plugins.
+mise tools, rebuild augur when its repository moved, rebuild bashdb when bash
+moved to a new release and update the tmux plugins.
 .B \-\-quick
 stops after the missing tools.
 .TP
@@ -112,7 +112,7 @@ Check the machine against the intended state and print one row per check:
 each repo (changes, origin, nvim record), host marker, per-host links, root
 entries, git identity and hooks, Omarchy (and on Arch the pacman hook that
 records installs), build dependencies, mise (the official build in ~/.local/bin,
-every tool installed), rust, augur, ble.sh, tmux version and plugins, distro copies of tools
+every tool installed), rust, augur, ble.sh, bashdb, tmux version and plugins, distro copies of tools
 the layer replaces, processes still running a removed binary, font, themes,
 kubectl completion, a real login shell (starts clean, PAGER=less, dots on PATH)
 and GitHub over SSH. Exit status is 1 when any check warns.
@@ -125,8 +125,8 @@ order: build dependencies (sudo); Omarchy, which on Ubuntu means the
 omarchy-ubuntu bootstrap; the dotfiles repo (remotes, sparse checkout,
 fast-forward); host marker; private layer (needs GitHub over SSH, skipped with
 a warning otherwise); per-host links; neovim config; distro packages the layer
-replaces (sudo); the pacman hook (Arch, sudo); rustup; augur; ble.sh; tmux
-plugins; mise and every tool in mise/config.toml; terminal font; themes;
+replaces (sudo); the pacman hook (Arch, sudo); rustup; augur; ble.sh; bashdb;
+tmux plugins; mise and every tool in mise/config.toml; terminal font; themes;
 kubectl completion. Then
 .B doctor
 and a summary. Everything printed is also appended to

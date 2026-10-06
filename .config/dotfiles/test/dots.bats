@@ -349,6 +349,39 @@ PM
   [ "$(cat "$HOME/.newfile")" = $'new\n# port block' ]
 }
 
+fake_bashdb() { # RELEASE — a bashdb in ~/.local/bin that reports RELEASE, on stderr like the real one
+  mkdir -p "$HOME/.local/bin"
+  printf '#!/bin/sh\necho "bashdb, release %s" >&2\n' "$1" >"$BASHDB_BIN"
+  chmod +x "$BASHDB_BIN"
+}
+
+@test "bashdb_state compares the installed release with the running bash" {
+  bash_release() { printf 5.3; }
+  bashdb_state
+  [ "$bd_state" = missing ]
+  fake_bashdb 5.3-1.2.0
+  bashdb_state
+  [ "$bd_state" = ok ] && [ "$bd_release" = 5.3-1.2.0 ]
+  bash_release() { printf 5.4; }
+  bashdb_state
+  [ "$bd_state" = stale ] && [ "$bd_bash" = 5.4 ]
+}
+
+@test "step_bashdb keeps a build for this bash and fetches the branch of a new one" {
+  have() { return 0; }
+  git() { printf '%s\n' "$*" >>"$BATS_TEST_TMPDIR/git"; return 1; }
+  STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
+  fake_bashdb 5.3-1.2.0
+  bash_release() { printf 5.3; }
+  run step_bashdb
+  [[ $output == *5.3-1.2.0* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/git" ]
+  bash_release() { printf 5.4; }
+  run step_bashdb
+  [[ $output == *"no upstream branch for bash 5.4 yet"* ]]
+  [[ $(cat "$BATS_TEST_TMPDIR/git") == *"-b bash-5.4 $BASHDB_REPO"* ]]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

@@ -111,6 +111,7 @@ hlint = "latest"
 "github:vadimcn/codelldb" = { version = "latest", asset_pattern = "codelldb-{{ os() }}-{{ arch() }}.vsix", bin_path = "extension/adapter" }
 "gem:rich-ri" = "0.1.1"
 shellcheck = "latest"
+"github:rogalmic/vscode-bash-debug" = { version = "untagged-438733f35feb8659d939", asset_pattern = "bash-debug-*.vsix" }
 
 [plugins]
 "vfox-backend:mise-ghcup" = "https://github.com/wasp-lang/mise-ghcup.git"

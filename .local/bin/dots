@@ -22,6 +22,8 @@ AUGUR_DIR=$HOME/dev/personal/augur
 AUGUR_REPO=https://github.com/hvpaiva/augur.git
 AUGUR_PUSH_URL=git@github.com:hvpaiva/augur.git
 PORT_DIR=$HOME/.local/share/omarchy-ubuntu
+BASHDB_REPO=https://github.com/Trepan-Debuggers/bashdb.git
+BASHDB_BIN=$HOME/.local/bin/bashdb
 PORT_REPO=https://github.com/hvpaiva/omarchy-ubuntu.git
 BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh
 FONT="MesloLGLDZ Nerd Font Mono"
@@ -44,14 +46,14 @@ FETCH_TTL=600
 ROOT_ENTRIES=(README.md bootstrap.sh .github)
 ROOT_PATTERNS=('/*' '!/README.md' '!/bootstrap.sh' '!/.github/')
 # System packages the layer needs and mise cannot provide: compilers and headers for the
-# tools that build here (augur, ble.sh, node native modules), SSH for git and signing, fontconfig, what the
+# tools that build here (augur, ble.sh, bashdb, node native modules), SSH for git and signing, fontconfig, what the
 # tracked configs call (ghostty, figlet for sesh, imv, tailscale for the bar) and on Arch
 # the 1Password CLI from the omarchy repo (the Ubuntu port installs app, CLI and tailscale)
 ARCH_DEPS=(base-devel git openssh curl tmux python libsecret fontconfig bash-completion ghostty figlet tailscale neovim)
 # Wanted when the repository offers it (the omarchy repo carries the 1Password CLI; a plain
 # Arch does not), skipped with a note otherwise
 ARCH_OPT_DEPS=(1password-cli)
-UBUNTU_DEPS=(git openssh-client curl ca-certificates build-essential gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
+UBUNTU_DEPS=(git openssh-client curl ca-certificates build-essential autoconf automake texinfo gawk pkg-config libsecret-1-dev python3 tmux fontconfig bash-completion figlet imv)
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier
@@ -163,7 +165,8 @@ H
 Bring the machine up to date: fast-forward every repo to origin (local edits are
 stashed around the merge), re-link the per-host files, install the mise tools
 the config lists but the machine lacks, then upgrade the mise tools, rebuild
-augur when its repo moved and update the tmux plugins.
+augur when its repo moved, rebuild bashdb when bash moved to a new release and
+update the tmux plugins.
 
 Usage:
   dots update [--quick]
@@ -188,7 +191,7 @@ H
 Check the machine against the intended state, one row per check: the three
 repos (changes, origin, nvim record), host marker, per-host links, root entries,
 git identity and hooks, Omarchy, build dependencies, mise and its tools, rust,
-augur, ble.sh, tmux version and plugins, the Chromium extension policy, distro copies of
+augur, ble.sh, bashdb, tmux version and plugins, the Chromium extension policy, distro copies of
 replaced tools, processes still running a removed binary, font, themes, kubectl
 completion, a real login shell, GitHub over SSH, and the logins only a person can
 do (1Password CLI, gh with its scopes, Tailscale, the git signing key, the
@@ -214,7 +217,7 @@ distro packages the layer replaces (sudo); the pacman hook that records installs
 (Arch, sudo); the host's package sets (hosts/<host>/.config/packages/sets names
 them, packages/<distro>/<set>.txt lists them; a set is a wish list, what the
 distro cannot provide is reported); the pacman hook that records installs
-(Arch, sudo); rustup; augur; ble.sh; tmux plugins; mise and every tool in
+(Arch, sudo); rustup; augur; ble.sh; bashdb; tmux plugins; mise and every tool in
 mise/config.toml; terminal font; themes; kubectl completion; the Chromium
 extension policy (sudo). Then dots doctor and a summary. The output is also
 written to ~/.local/state/dotfiles/setup.log. This is what bootstrap.sh runs
@@ -874,6 +877,12 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   if [[ -x $HOME/.cargo/bin/cargo ]]; then chk rust ok "$("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else chk rust warn "rustup not installed"; fi
   if have augur; then chk augur ok "$(augur --version 2>/dev/null)"; else chk augur warn "not installed"; fi
   if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then chk ble.sh ok present; else chk ble.sh warn "not installed"; fi
+  bashdb_state
+  case $bd_state in
+    ok) chk bashdb ok "$bd_release" ;;
+    stale) chk bashdb warn "$bd_release does not run on bash $bd_bash (dots update)" ;;
+    *) chk bashdb warn "not installed (dots update)" ;;
+  esac
   checks_tmux
   mapfile -t dup < <(installed_pkgs "${DROP[@]}")
   if ((${#dup[@]})); then chk packages warn "distro copies: ${dup[*]}"; else chk packages ok "no distro copies"; fi
@@ -1186,6 +1195,7 @@ cmd_update() {
   if (( ! quick )); then
     skip_rust=0; [[ -x $HOME/.cargo/bin/cargo ]] || skip_rust=1
     step_augur
+    step_bashdb
     if [[ -x $TPM_DIR/tpm/bin/update_plugins ]]; then
       if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/update_plugins" all >/dev/null 2>&1; then line tmux "plugins updated"; else warn tmux "plugin update failed"; fi
     fi
@@ -1528,6 +1538,41 @@ step_blesh() {
     rm -rf "$tmp"
   fi
 }
+# bashdb, the debugger nvim's Bash adapter drives. Upstream keeps a branch per Bash release
+# and each refuses any other Bash, so it is built for the bash on PATH (the one the adapter
+# runs) into ~/.local, and rebuilt once that bash moves to a new release. It prints its
+# version on stderr.
+bash_release() { command bash -c 'printf "%s.%s" "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}"'; }
+bashdb_release() { "$BASHDB_BIN" --version 2>&1 | sed -n 's/.*release \([0-9][0-9.]*-[0-9][0-9.]*\).*/\1/p' | head -1; }
+bashdb_state() { # sets bd_state ok|stale|missing, bd_release, bd_bash
+  bd_bash=$(bash_release) bd_release=''
+  [[ -x $BASHDB_BIN ]] && bd_release=$(bashdb_release)
+  if [[ -z $bd_release ]]; then
+    bd_state=missing
+  elif [[ ${bd_release%%-*} == "$bd_bash" ]]; then
+    bd_state=ok
+  else
+    bd_state=stale
+  fi
+}
+step_bashdb() {
+  local tmp
+  bashdb_state
+  if [[ $bd_state == ok ]]; then line bashdb "$bd_release"; return 0; fi
+  if ! have make || ! have autoreconf || ! have automake || ! have makeinfo; then
+    warn bashdb "needs make, autoconf, automake and texinfo, skipped"
+    return 0
+  fi
+  tmp=$(mktemp -d)
+  if ! git clone -q --depth 1 -b "bash-$bd_bash" "$BASHDB_REPO" "$tmp/bashdb" 2>/dev/null; then
+    warn bashdb "no upstream branch for bash $bd_bash yet"
+  elif (cd "$tmp/bashdb" && sh ./autogen.sh --prefix="$HOME/.local" && make && make install) >"$STATE_DIR/bashdb-build.log" 2>&1; then
+    line bashdb "installed $(bashdb_release) for bash $bd_bash"
+  else
+    warn bashdb "build failed, log $STATE_DIR/bashdb-build.log"
+  fi
+  rm -rf "$tmp"
+}
 step_tpm() {
   [[ -d $TPM_DIR/tpm ]] || git clone -q https://github.com/tmux-plugins/tpm "$TPM_DIR/tpm"
   if have tmux; then
@@ -1610,6 +1655,7 @@ setup_steps() {
   step_rust
   step_augur
   step_blesh
+  step_bashdb
   step_tpm
   step_mise
   step_font

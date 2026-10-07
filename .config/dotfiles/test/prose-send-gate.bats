@@ -3,6 +3,20 @@
 # deny or silence out. HOME is a throwaway directory wired to the repo's prose-lint and
 # Vale config, so the real $HOME is never read. Run with: bats ~/.config/dotfiles/test
 
+setup_file() {
+  # Tests replace HOME, so mise shims (which dots puts first on PATH) would lose
+  # their config/trust state and every vale call would fail. Keep the active
+  # binaries instead, as dots.bats does.
+  local dir shims=${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims
+  local -a dirs
+  IFS=: read -r -a dirs <<<"$PATH"
+  PATH=$BATS_ROOT/bin
+  for dir in "${dirs[@]}"; do
+    [[ $dir == "$shims" ]] || PATH+=:$dir
+  done
+  export PATH
+}
+
 setup() {
   exec </dev/null
   command -v vale >/dev/null || skip "vale not installed"

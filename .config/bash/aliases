@@ -17,6 +17,11 @@ if command -v kubecolor &> /dev/null; then
   alias k=kubectl
 fi
 
+# Omarchy maps r to rails; here r is plain ruby
+if command -v ruby &> /dev/null; then
+  alias r='ruby'
+fi
+
 if command -v irb &> /dev/null; then
   alias irb='irb --simple-prompt'
 fi

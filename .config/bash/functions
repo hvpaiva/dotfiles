@@ -35,6 +35,11 @@ riv() {
       -c 'normal! gg'
 }
 
+# Print the value of a Ruby expression, irb-style: rbp Dir.pwd
+rbp() {
+  ruby -e "p($*)"
+}
+
 # gems is now the Ruby executable in ~/.local/bin (gems-explorer).
 
 source "${BASH_SOURCE[0]%/*}/ruby-completion"

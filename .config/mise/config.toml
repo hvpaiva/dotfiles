@@ -128,6 +128,10 @@ golangci-lint = "latest"
 experimental = true
 idiomatic_version_file_enable_tools = ["ruby"]
 
+[settings.github]
+# gh keeps its token in the keyring, which gh_cli_tokens (it reads hosts.yml) cannot see.
+credential_command = "gh auth token"
+
 [settings.ruby]
 compile = false
 # Gems every Ruby mise installs gets right away. ruby-lsp is one: its C

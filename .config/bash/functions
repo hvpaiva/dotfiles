@@ -36,8 +36,16 @@ riv() {
 }
 
 # Print the value of a Ruby expression, irb-style: rbp Dir.pwd
+# Without arguments, run the program on stdin and print its last value: rbp < file.rb
 rbp() {
-  ruby -e "p($*)"
+  if (($#)); then
+    ruby -e "p($*)"
+  elif [[ -t 0 ]]; then
+    echo 'usage: rbp EXPR, or Ruby code on stdin (pipe, < file.rb, heredoc)' >&2
+    return 2
+  else
+    ruby -e 'p eval($stdin.read, TOPLEVEL_BINDING, "-", 1)'
+  fi
 }
 
 # gems is now the Ruby executable in ~/.local/bin (gems-explorer).

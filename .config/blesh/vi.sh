@@ -1,5 +1,9 @@
 set -o vi
 
+# ble.sh binds "\e<key>" in readline, so a lone Esc waits for keyseq-timeout (default
+# 500 ms) before switching to normal mode. A key's escape sequence arrives in one read.
+bind 'set keyseq-timeout 10'
+
 function blerc/vim-mode-hook {
   ble-import vim-surround
   # Redraw the prompt on every vi mode change. The option only exists once the vi

@@ -19,7 +19,11 @@ src=${DOTFILES_SRC:-$HOME/.dotfiles}
 case $distro in
   arch)
     image=archlinux:latest
-    setup='pacman -Sy --noconfirm --needed git curl sudo zoxide starship shellcheck ruby bats >/dev/null'
+    # On Arch, shellcheck is a mise tool: setup removes pacman's copy, and the quick run installs no
+    # mise tools, so the release binary dots save validates with lives outside pacman.
+    setup='pacman -Sy --noconfirm --needed git curl sudo zoxide starship ruby bats >/dev/null &&
+      curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.gz |
+      tar -xz -C /tmp && install -m 755 /tmp/shellcheck-v0.11.0/shellcheck /usr/local/bin/shellcheck'
     left='pacman -Qq zoxide starship 2>/dev/null | wc -l'
     # shellcheck disable=SC2016
     pacman_check='check "pacman install hook installed" "$(test -r /etc/pacman.d/hooks/pkg-snapshot-append.hook && echo yes)" yes' ;;

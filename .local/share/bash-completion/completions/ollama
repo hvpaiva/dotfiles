@@ -1,17 +1,27 @@
 # bash completion for ollama(1)
 #
 # Upstream disables cobra's "completion" command, so this is hand-written.
-# Model arguments are completed from the locally installed models.
+# Model arguments are completed from the locally installed models. Written against
+# the API that bash-completion 2.11 (Ubuntu 24.04) has and 2.12+ keeps as compat
+# functions.
+
+# _comp_cmd_ollama__add WORDS: append to COMPREPLY the words in WORDS that start with $cur
+_comp_cmd_ollama__add()
+{
+    local -a matches
+    mapfile -t matches < <(compgen -W "$1" -- "$cur")
+    COMPREPLY+=("${matches[@]}")
+}
 
 _comp_cmd_ollama__models()
 {
-    _comp_compgen_split -- "$(ollama list 2>/dev/null | awk 'NR > 1 { print $1 }')"
+    _comp_cmd_ollama__add "$(ollama list 2>/dev/null | awk 'NR > 1 { print $1 }')"
 }
 
 _comp_cmd_ollama()
 {
-    local cur prev words cword comp_args
-    _comp_initialize -- "$@" || return
+    local cur prev words cword
+    _init_completion || return
 
     local subcommands='serve create show run stop pull push signin signout
         list ps cp rm launch help'
@@ -26,28 +36,28 @@ _comp_cmd_ollama()
 
     if [[ ! $subcommand ]]; then
         if [[ $cur == -* ]]; then
-            _comp_compgen -- -W '--help --version'
+            _comp_cmd_ollama__add '--help --version'
         else
-            _comp_compgen -- -W "$subcommands"
+            _comp_cmd_ollama__add "$subcommands"
         fi
         return
     fi
 
     case $prev in
         -f | --file)
-            _comp_compgen_filedir
+            _filedir
             return
             ;;
     esac
 
     if [[ $cur == -* ]]; then
         case $subcommand in
-            run) _comp_compgen -- -W '--format --hidethinking --keepalive --nowordwrap --think --verbose' ;;
-            serve) _comp_compgen -- -W '--help' ;;
-            show) _comp_compgen -- -W '--license --modelfile --parameters --system --template --verbose' ;;
-            create) _comp_compgen -- -W '--file --quantize' ;;
-            list | ps) _comp_compgen -- -W '--help' ;;
-            *) _comp_compgen -- -W '--help' ;;
+            run) _comp_cmd_ollama__add '--format --hidethinking --keepalive --nowordwrap --think --verbose' ;;
+            serve) _comp_cmd_ollama__add '--help' ;;
+            show) _comp_cmd_ollama__add '--license --modelfile --parameters --system --template --verbose' ;;
+            create) _comp_cmd_ollama__add '--file --quantize' ;;
+            list | ps) _comp_cmd_ollama__add '--help' ;;
+            *) _comp_cmd_ollama__add '--help' ;;
         esac
         return
     fi
@@ -60,7 +70,7 @@ _comp_cmd_ollama()
             # first arg is the new model name, nothing to complete
             ;;
         help)
-            _comp_compgen -- -W "$subcommands"
+            _comp_cmd_ollama__add "$subcommands"
             ;;
     esac
 }

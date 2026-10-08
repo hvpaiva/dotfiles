@@ -2,11 +2,20 @@
 #
 # The go command has no completion generator of its own, so the command and
 # subcommand lists are parsed from "go help" and friends, which keeps this from
-# going stale when the toolchain is upgraded.
+# going stale when the toolchain is upgraded. Written against the API that
+# bash-completion 2.11 (Ubuntu 24.04) has and 2.12+ keeps as compat functions.
+
+# _comp_cmd_go__add WORDS: append to COMPREPLY the words in WORDS that start with $cur
+_comp_cmd_go__add()
+{
+    local -a matches
+    mapfile -t matches < <(compgen -W "$1" -- "$cur")
+    COMPREPLY+=("${matches[@]}")
+}
 
 _comp_cmd_go__commands()
 {
-    _comp_compgen_split -- "$(
+    _comp_cmd_go__add "$(
         go help 2>/dev/null |
             awk '/^The commands are:/ { c = 1; next }
                  /^Additional help topics:/ { c = 0 }
@@ -17,7 +26,7 @@ _comp_cmd_go__commands()
 _comp_cmd_go__subcommands()
 {
     # "go help mod" etc. list their own subcommands the same way.
-    _comp_compgen_split -- "$(
+    _comp_cmd_go__add "$(
         go help "$1" 2>/dev/null |
             awk '/^The commands are:/ { c = 1; next }
                  /^Use "go help/ { c = 0 }
@@ -28,14 +37,14 @@ _comp_cmd_go__subcommands()
 _comp_cmd_go__packages()
 {
     # Local packages (directories holding .go files) plus the recursive pattern.
-    _comp_compgen -a -- -W './...'
-    _comp_compgen -a -d -- "$cur"
+    _comp_cmd_go__add './...'
+    _filedir -d
 }
 
 _comp_cmd_go()
 {
-    local cur prev words cword comp_args
-    _comp_initialize -- "$@" || return
+    local cur prev words cword
+    _init_completion || return
 
     local i command=""
     for ((i = 1; i < cword; i++)); do
@@ -52,11 +61,11 @@ _comp_cmd_go()
 
     case $prev in
         -o)
-            _comp_compgen_filedir
+            _filedir
             return
             ;;
         -C)
-            _comp_compgen_filedir -d
+            _filedir -d
             return
             ;;
         -tags | -ldflags | -gcflags | -covermode | -run | -bench | -timeout)
@@ -66,15 +75,15 @@ _comp_cmd_go()
 
     if [[ $cur == -* ]]; then
         case $command in
-            build) _comp_compgen -- -W '-o -C -a -n -p -race -msan -asan -cover -covermode -v -work -x -asmflags -buildmode -buildvcs -compiler -gcflags -installsuffix -ldflags -linkshared -mod -modcacherw -modfile -overlay -pgo -pkgdir -tags -trimpath -toolexec' ;;
-            test) _comp_compgen -- -W '-args -bench -benchmem -benchtime -count -cover -covermode -coverpkg -coverprofile -cpu -cpuprofile -exec -failfast -fullpath -fuzz -fuzztime -json -list -memprofile -mutexprofile -outputdir -parallel -race -run -short -shuffle -timeout -trace -v -vet -c -o -x' ;;
-            run) _comp_compgen -- -W '-exec -race -msan -asan -cover -tags -mod -gcflags -ldflags -v -x' ;;
-            get) _comp_compgen -- -W '-d -t -u -v -x -tool' ;;
-            list) _comp_compgen -- -W '-e -f -json -m -u -versions -deps -test -export -compiled -find -retracted -mod -tags' ;;
-            vet) _comp_compgen -- -W '-n -x -vettool -tags -json -c' ;;
-            mod) _comp_compgen -- -W '-x' ;;
-            install) _comp_compgen -- -W '-i -n -race -tags -v -x -mod -pgo -trimpath' ;;
-            *) _comp_compgen -- -W '-h' ;;
+            build) _comp_cmd_go__add '-o -C -a -n -p -race -msan -asan -cover -covermode -v -work -x -asmflags -buildmode -buildvcs -compiler -gcflags -installsuffix -ldflags -linkshared -mod -modcacherw -modfile -overlay -pgo -pkgdir -tags -trimpath -toolexec' ;;
+            test) _comp_cmd_go__add '-args -bench -benchmem -benchtime -count -cover -covermode -coverpkg -coverprofile -cpu -cpuprofile -exec -failfast -fullpath -fuzz -fuzztime -json -list -memprofile -mutexprofile -outputdir -parallel -race -run -short -shuffle -timeout -trace -v -vet -c -o -x' ;;
+            run) _comp_cmd_go__add '-exec -race -msan -asan -cover -tags -mod -gcflags -ldflags -v -x' ;;
+            get) _comp_cmd_go__add '-d -t -u -v -x -tool' ;;
+            list) _comp_cmd_go__add '-e -f -json -m -u -versions -deps -test -export -compiled -find -retracted -mod -tags' ;;
+            vet) _comp_cmd_go__add '-n -x -vettool -tags -json -c' ;;
+            mod) _comp_cmd_go__add '-x' ;;
+            install) _comp_cmd_go__add '-i -n -race -tags -v -x -mod -pgo -trimpath' ;;
+            *) _comp_cmd_go__add '-h' ;;
         esac
         return
     fi
@@ -83,9 +92,9 @@ _comp_cmd_go()
         tool)
             if ((i == cword - 1)); then
                 # "go tool" with no arguments lists the installed tools.
-                _comp_compgen_split -- "$(go tool 2>/dev/null)"
+                _comp_cmd_go__add "$(go tool 2>/dev/null)"
             else
-                _comp_compgen_filedir
+                _filedir
             fi
             ;;
         mod | work | telemetry)
@@ -93,15 +102,16 @@ _comp_cmd_go()
             if [[ ${words[i + 1]-} == "$cur" || $i -eq $((cword - 1)) ]]; then
                 _comp_cmd_go__subcommands "$command"
             else
-                _comp_compgen_filedir
+                _filedir
             fi
             ;;
         help)
             _comp_cmd_go__commands
             ;;
         run)
-            _comp_compgen -a -- -G '*.go'
-            _comp_cmd_go__packages
+            # .go files and the directories holding packages
+            _comp_cmd_go__add './...'
+            _filedir go
             ;;
         build | test | vet | fmt | list | install | generate | fix | clean | doc)
             _comp_cmd_go__packages
@@ -110,7 +120,7 @@ _comp_cmd_go()
             # module paths: nothing local to complete
             ;;
         env)
-            _comp_compgen_split -- "$(go env 2>/dev/null | sed -n 's/^\([A-Z0-9_]*\)=.*/\1/p')"
+            _comp_cmd_go__add "$(go env 2>/dev/null | sed -n 's/^\([A-Z0-9_]*\)=.*/\1/p')"
             ;;
     esac
 }

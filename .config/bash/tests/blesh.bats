@@ -54,11 +54,17 @@ current_line() { screen | grep -v '^$' | tail -1; }
 prompt_line() { screen | grep $'^\e\\[9[1-5]m\\$ ' | tail -1; }
 caret() { current_line | grep -q $'^\e\\[9[1-5]m\\$ '; }
 normal_mode() { prompt_line | grep -q $'^\e\\[95m\\$ '; }
+insert_mode() { prompt_line | grep -q $'^\e\\[92m\\$ '; }
 shows() { t capture-pane -p -t "$session" | grep -q -- "$1"; }
+# TEXT drawn with syntax highlighting: a color right before its first word
+highlighted() { screen | grep -q $'\e\\[[0-9;]*m'"${1%% *}"$'\e'; }
+# The last command ran and the next prompt waits with nothing typed
+idle_prompt() { [[ $(t capture-pane -p -t "$session" | grep -v '^$' | tail -1) == '$' ]]; }
+ms_since() { echo $(((${EPOCHREALTIME/[.,]/} - ${1/[.,]/}) / 1000)); }
 
 wait_for() {
   local i
-  for ((i = 0; i < 100; i++)); do
+  for ((i = 0; i < 400; i++)); do
     "$@" && return 0
     sleep 0.05
   done
@@ -99,7 +105,8 @@ type_multiline() {
   printf '%s\n' 'echo from-history' >"$state/history"
   start_shell
   press Up
-  wait_for shows from-history
+  # Highlighted: ble.sh has set up its faces, which a SIGWINCH must not interrupt
+  wait_for highlighted 'echo from-history'
   t resize-window -t "$session" -x 90 -y 25
   sleep 0.5
   wait_for caret
@@ -108,11 +115,23 @@ type_multiline() {
 @test "Esc reaches normal mode without waiting for readline's key timeout" {
   start_shell
   type_text 'echo x'
-  local start=$EPOCHREALTIME
-  press Escape
-  wait_for normal_mode
-  local elapsed=$(( (${EPOCHREALTIME/[.,]/} - ${start/[.,]/}) / 1000 ))
-  ((elapsed < 400)) || { echo "Esc took ${elapsed} ms" >&2; return 1; }
+  wait_for shows '^\$ echo x$'
+  # Against a key that waits for nothing, best of three: load slows both, the
+  # timeout adds its 500 ms to every Esc
+  local i start took text=x key=99999 esc=99999
+  for i in 1 2 3; do
+    start=$EPOCHREALTIME
+    type_text "$i"; text+="$i"
+    wait_for shows "^\\\$ echo $text\$"
+    took=$(ms_since "$start"); ((took < key)) && key=$took
+    start=$EPOCHREALTIME
+    press Escape
+    wait_for normal_mode
+    took=$(ms_since "$start"); ((took < esc)) && esc=$took
+    press A
+    wait_for insert_mode
+  done
+  ((esc < key + 300)) || { echo "Esc took ${esc} ms, a key ${key} ms" >&2; return 1; }
 }
 
 @test "the terminal keeps its own cursor in every vi mode" {
@@ -135,7 +154,8 @@ type_multiline() {
 @test "C-z at the prompt leaves the editor in vi mode" {
   start_shell
   press C-z
-  sleep 0.5
+  wait_for shows 'fg: current: no such job'
+  wait_for idle_prompt
   type_text 'echo after'
   press Enter
   wait_for shows '^after'
@@ -206,8 +226,9 @@ type_multiline() {
 @test "an alias completes as the command it expands to" {
   start_shell
   type_text "complete -W 'checkout commit' fakecmd; alias fk=fakecmd"
+  wait_for shows 'alias fk=fakecmd$'
   press Enter
-  sleep 0.3
+  wait_for idle_prompt
   type_text 'fk chec'
   press Tab
   wait_for shows 'fk checkout'

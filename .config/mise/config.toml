@@ -35,6 +35,7 @@ git-filter-repo = "latest"
 go = "latest"
 "go:github.com/joshmedeski/sesh/v2" = "latest"
 "go:golang.org/x/tools/gopls" = "latest"
+helix = "latest"
 helm-ls = "latest"
 herdr = "latest"
 "http:muse" = { version = "latest", url = "https://api.meta.ai/muse-launcher.sh", bin = "muse", version_list_url = "https://api.meta.ai/muse-code/channels/muse-stable", version_json_path = ".version" }

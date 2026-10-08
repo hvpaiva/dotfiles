@@ -9,7 +9,8 @@ function blerc/vim-mode-hook {
 }
 blehook/eval-after-load keymap_vi blerc/vim-mode-hook
 
-# Vi mode in a simple way. Just the colors change. get-vi-keymap finds the vi keymap
+# Vi mode in a simple way. Just the colors change: green to insert, pink in normal mode
+# and its command line, blue in visual, red in select. get-vi-keymap finds the vi keymap
 # under auto_complete, menu_complete, nsearch and the like, and makes the prompt depend
 # on the keymap stack, so the caret follows the mode and is drawn in every keymap. The
 # first prompt can come before the vi keymap module loads, in insert mode.
@@ -18,8 +19,8 @@ function ble/prompt/backslash:my/vim-mode {
   local keymap=$_ble_decode_keymap
   ble/is-function ble/keymap:vi/script/get-vi-keymap && ble/keymap:vi/script/get-vi-keymap
   case $keymap in
-  (vi_[onc]map) ble/prompt/process-prompt-string '\e[94m\$ ' ;;
-  (vi_xmap) ble/prompt/process-prompt-string '\e[95m\$ ' ;;
+  (vi_[onc]map) ble/prompt/process-prompt-string '\e[95m\$ ' ;;
+  (vi_xmap) ble/prompt/process-prompt-string '\e[94m\$ ' ;;
   (vi_smap) ble/prompt/process-prompt-string '\e[91m\$ ' ;;
   (*) ble/prompt/process-prompt-string '\e[92m\$ ' ;;
   esac

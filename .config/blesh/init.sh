@@ -31,7 +31,7 @@ source ~/.config/blesh/theme.sh
 
 if command -v fzf &>/dev/null; then
   ble-import -d integration/fzf-completion
-  ble-import -d integration/fzf-key-bindings
+  ble-import -d -C blerc/vi-keybindings integration/fzf-key-bindings
 fi
 
 # Context-aware inline suggestions (~/dev/personal/augur), after everything that sets up completion.

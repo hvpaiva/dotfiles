@@ -55,3 +55,16 @@ function blerc/history-keybindings {
   done
 }
 blehook/eval-after-load keymap_vi blerc/history-keybindings
+
+# Ubuntu's fzf 0.44 key bindings, imported from readline, map C-z to emacs-editing-mode,
+# C-r in normal mode to fzf and M-c to a C-z macro. In vi mode C-z resumes the last
+# suspended job (ble.sh's default), C-r redoes, and M-c (fzf cd) is unbound: Esc followed
+# quickly by c arrives as M-c. Runs again after fzf's integration, which rebinds C-r and M-c.
+function blerc/vi-keybindings {
+  ble-bind -m vi_imap -c C-z fg
+  ble-bind -m vi_nmap -c C-z fg
+  ble-bind -m vi_nmap -f C-r vi_nmap/redo
+  ble-bind -m vi_imap -f M-c -
+  ble-bind -m vi_nmap -f M-c -
+}
+blehook/eval-after-load keymap_vi blerc/vi-keybindings

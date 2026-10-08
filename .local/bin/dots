@@ -24,6 +24,7 @@ AUGUR_PUSH_URL=git@github.com:hvpaiva/augur.git
 PORT_DIR=$HOME/.local/share/omarchy-ubuntu
 BASHDB_REPO=https://github.com/Trepan-Debuggers/bashdb.git
 BASHDB_BIN=$HOME/.local/bin/bashdb
+BLESH=$HOME/.local/share/blesh/ble.sh
 PORT_REPO=https://github.com/hvpaiva/omarchy-ubuntu.git
 BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh
 FONT="MesloLGLDZ Nerd Font Mono"
@@ -165,8 +166,8 @@ H
 Bring the machine up to date: fast-forward every repo to origin (local edits are
 stashed around the merge), re-link the per-host files, install the mise tools
 the config lists but the machine lacks, then upgrade the mise tools, rebuild
-augur when its repo moved, rebuild bashdb when bash moved to a new release and
-update the tmux plugins.
+augur when its repo moved, rebuild bashdb when bash moved to a new release,
+update ble.sh and update the tmux plugins.
 
 Usage:
   dots update [--quick]
@@ -876,7 +877,7 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
   if [[ -x $HOME/.cargo/bin/cargo ]]; then chk rust ok "$("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else chk rust warn "rustup not installed"; fi
   if have augur; then chk augur ok "$(augur --version 2>/dev/null)"; else chk augur warn "not installed"; fi
-  if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then chk ble.sh ok present; else chk ble.sh warn "not installed"; fi
+  if [[ -f $BLESH ]]; then chk ble.sh ok present; else chk ble.sh warn "not installed"; fi
   bashdb_state
   case $bd_state in
     ok) chk bashdb ok "$bd_release" ;;
@@ -1196,6 +1197,7 @@ cmd_update() {
     skip_rust=0; [[ -x $HOME/.cargo/bin/cargo ]] || skip_rust=1
     step_augur
     step_bashdb
+    step_blesh_update
     if [[ -x $TPM_DIR/tpm/bin/update_plugins ]]; then
       if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/update_plugins" all >/dev/null 2>&1; then line tmux "plugins updated"; else warn tmux "plugin update failed"; fi
     fi
@@ -1527,7 +1529,7 @@ step_augur() {
 }
 step_blesh() {
   local tmp
-  if [[ -f $HOME/.local/share/blesh/ble.sh ]]; then
+  if [[ -f $BLESH ]]; then
     line ble.sh present
   elif ! have make || ! have gawk; then
     warn ble.sh "needs make and gawk, skipped"
@@ -1536,6 +1538,28 @@ step_blesh() {
     if git clone -q --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git "$tmp/ble.sh" \
       && make -s -C "$tmp/ble.sh" install PREFIX="$HOME/.local" >/dev/null; then line ble.sh installed; else warn ble.sh "install failed"; fi
     rm -rf "$tmp"
+  fi
+}
+# ble.sh updates itself: `ble.sh --update` pulls the clone it keeps under its install
+# directory (cloning it there the first time) and installs the build. Open shells keep
+# the version they loaded until ble-reload.
+blesh_version() { bash "$BLESH" --version 2>/dev/null | sed -n 's/.*version //p'; }
+step_blesh_update() {
+  local before after
+  [[ -f $BLESH ]] || { step_blesh; return 0; }
+  if ! have make || ! have gawk; then warn ble.sh "needs make and gawk, update skipped"; return 0; fi
+  before=$(blesh_version)
+  if ! bash "$BLESH" --update >"$STATE_DIR/blesh-update.log" 2>&1; then
+    warn ble.sh "update failed, log $STATE_DIR/blesh-update.log"
+    return 0
+  fi
+  after=$(blesh_version)
+  if [[ -z $after ]]; then
+    warn ble.sh "no version after the update, log $STATE_DIR/blesh-update.log"
+  elif [[ $after == "$before" ]]; then
+    line ble.sh "$after"
+  else
+    line ble.sh "updated $before -> $after (ble-reload in open shells)"
   fi
 }
 # bashdb, the debugger nvim's Bash adapter drives. Upstream keeps a branch per Bash release

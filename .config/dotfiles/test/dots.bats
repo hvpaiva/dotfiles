@@ -384,6 +384,32 @@ fake_bashdb() { # RELEASE — a bashdb in ~/.local/bin that reports RELEASE, on 
   [[ $(cat "$BATS_TEST_TMPDIR/git") == *"-b bash-5.4 $BASHDB_REPO"* ]]
 }
 
+fake_blesh() { # VERSION [NEW] — a ble.sh that reports VERSION, and NEW once --update ran
+  mkdir -p "${BLESH%/*}"
+  printf '%s\n' "$1" >"${BLESH%/*}/version"
+  cat >"$BLESH" <<EOF
+case \$1 in
+  --version) echo "ble.sh (Bash Line Editor), version \$(<"${BLESH%/*}/version")" ;;
+  --update) echo updating${2:+; echo $2 >"${BLESH%/*}/version"} ;;
+esac
+EOF
+}
+
+@test "step_blesh_update reports the version, an update and a failure" {
+  have() { return 0; }
+  STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
+  fake_blesh 0.4.0-a
+  run step_blesh_update
+  [[ $output == *"ble.sh     0.4.0-a"* ]] && [[ $output != *updated* ]]
+  fake_blesh 0.4.0-a 0.4.0-b
+  run step_blesh_update
+  [[ $output == *"updated 0.4.0-a -> 0.4.0-b"* ]]
+  [ "$(cat "$STATE_DIR/blesh-update.log")" = updating ]
+  printf 'exit 1\n' >"$BLESH"
+  run step_blesh_update
+  [[ $output == *"update failed, log $STATE_DIR/blesh-update.log"* ]]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

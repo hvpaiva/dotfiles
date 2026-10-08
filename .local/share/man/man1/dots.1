@@ -99,7 +99,10 @@ Bring the machine up to date: fast-forward every repo to origin (local edits
 are stashed around the merge and restored), re-link the per-host files, install
 the mise tools the configuration lists but the machine lacks, then upgrade the
 mise tools, rebuild augur when its repository moved, rebuild bashdb when bash
-moved to a new release and update the tmux plugins.
+moved to a new release, update ble.sh (shells already open keep the version
+they loaded until
+.BR ble\-reload )
+and update the tmux plugins.
 .B \-\-quick
 stops after the missing tools.
 .TP
@@ -237,7 +240,8 @@ Public per-host files, symlinked into $HOME.
 Private per-host and shared files, symlinked into $HOME.
 .TP
 .I ~/.local/state/dotfiles/
-Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log) and what
+Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log,
+blesh-update.log) and what
 was moved aside instead of deleted (pre-checkout-*, nvim-*), listed by
 .BR clean .
 .SH ENVIRONMENT

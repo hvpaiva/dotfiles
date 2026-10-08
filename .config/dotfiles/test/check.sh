@@ -49,4 +49,9 @@ fi
 if [[ $mode != lint ]]; then
   need bats
   bats "$root/.config/dotfiles/test"
+  # The shell's own tests skip what needs a tool this machine lacks (tmux, ble.sh, rich-ri...)
+  shell_tests=("$root"/.config/bash/tests/*.bats)
+  if ((${#shell_tests[@]})); then
+    bats "${shell_tests[@]}"
+  fi
 fi

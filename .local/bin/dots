@@ -130,10 +130,11 @@ Examples:
 H
     ;;
     check) cat <<'H'
-Run the same ShellCheck, shell/Ruby syntax, executable-bit checks and dotfiles
-unit tests as CI, against a temporary copy of what dots save would commit.
-Includes new files and the root entries hidden by sparse checkout. Requires
-shellcheck, ruby and bats. Leaves the real index and work tree unchanged.
+Run the same ShellCheck, shell/Ruby syntax, executable-bit checks, dotfiles
+unit tests and shell tests (.config/bash/tests) as CI, against a temporary copy
+of what dots save would commit. Includes new files and the root entries hidden
+by sparse checkout. Requires shellcheck, ruby and bats; a shell test skips what
+needs a tool the machine lacks. Leaves the real index and work tree unchanged.
 
 Usage:
   dots check

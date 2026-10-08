@@ -1,3 +1,7 @@
+# An alias without a completion of its own completes as the command it expands to
+# (g as git, d as docker)
+shopt -s progcomp_alias
+
 # Ubuntu names its packages batcat and fdfind; give them the upstream names
 if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
   alias bat='batcat'

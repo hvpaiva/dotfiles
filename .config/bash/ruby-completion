@@ -81,6 +81,8 @@ _ruby_completion_remote_gems() {
   _ruby_completion_metadata gem-names
   ((${#cur} >= 2)) || return 0
   [[ $cur == *[/[:space:]]* ]] && return 0
+  # ble.sh's auto-complete (augur asks on every pause) stays off the network
+  [[ :${comp_type-}: == *:auto:* ]] && return 0
   local -a _ruby_completion_prefix=()
   if _ruby_completion_query curl --fail --silent --get --connect-timeout 1 --max-time 2 \
     https://rubygems.org/api/v1/search.json --data-urlencode "query=$cur"; then

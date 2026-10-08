@@ -30,6 +30,11 @@ source ~/.config/blesh/bind.sh
 source ~/.config/blesh/theme.sh
 
 if command -v fzf &>/dev/null; then
+  # Ubuntu ships fzf's completion.bash as bash-completion's loader for the fzf command
+  # alone, so the ** trigger is not set up until something completes `fzf`
+  if ! declare -F _fzf_complete >/dev/null && [[ -r /usr/share/bash-completion/completions/fzf ]]; then
+    source /usr/share/bash-completion/completions/fzf
+  fi
   ble-import -d integration/fzf-completion
   ble-import -d -C blerc/vi-keybindings integration/fzf-key-bindings
 fi

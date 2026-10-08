@@ -76,7 +76,8 @@ press() { t send-keys -t "$session" "$@"; }
 
 cursor_row() { t display -p -t "$session" '#{cursor_y}'; }
 on_row() { (($(cursor_row) == $1)); }
-cursor_is() { [[ $(t display -p -t "$session" '#{cursor_shape}') == "$1" ]]; }
+# DECSCUSR (CSI Ps SP q), which sets the cursor shape, in what the shell wrote
+cursor_shapes_set() { grep -ac $'\e\\[[0-9]* q' "$work/output"; }
 
 type_multiline() {
   type_text 'for i in 1 2; do'
@@ -116,15 +117,19 @@ type_multiline() {
 
 @test "the terminal keeps its own cursor in every vi mode" {
   start_shell
+  t pipe-pane -o -t "$session" "cat >>'$work/output'"
   type_text 'echo x'
   sleep 0.3
-  cursor_is default
   press Escape
   wait_for normal_mode
-  cursor_is default
   press v
   sleep 0.3
-  cursor_is default
+  press Escape
+  sleep 0.3
+  t pipe-pane -t "$session"
+  [ -s "$work/output" ]
+  run cursor_shapes_set
+  [ "$output" = 0 ]
 }
 
 @test "C-z at the prompt leaves the editor in vi mode" {
@@ -199,12 +204,11 @@ type_multiline() {
 }
 
 @test "an alias completes as the command it expands to" {
-  command -v git >/dev/null || skip "git not installed"
   start_shell
-  type_text 'alias gx=git'
+  type_text "complete -W 'checkout commit' fakecmd; alias fk=fakecmd"
   press Enter
   sleep 0.3
-  type_text 'gx chec'
+  type_text 'fk chec'
   press Tab
-  wait_for shows 'gx checkout'
+  wait_for shows 'fk checkout'
 }

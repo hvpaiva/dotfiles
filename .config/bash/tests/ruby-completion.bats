@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
 setup_file() {
+  [[ -r /usr/share/bash-completion/bash_completion ]] || skip "bash-completion not installed"
+  command -v ruby >/dev/null && command -v bundle >/dev/null || skip "ruby or bundler not installed"
   export RUBY_COMPLETION_PROJECT_A="$BATS_FILE_TMPDIR/project one"
   export RUBY_COMPLETION_PROJECT_B="$BATS_FILE_TMPDIR/project two"
   mkdir -p "$RUBY_COMPLETION_PROJECT_A/spec" "$RUBY_COMPLETION_PROJECT_B"
@@ -45,7 +47,21 @@ has_candidate() {
   return 1
 }
 
+requires() {
+  local tool
+  for tool; do
+    command -v "$tool" >/dev/null || skip "$tool not installed"
+  done
+}
+
+requires_ri_data() { # [GEM]: the ri pages of Ruby's core classes, or of GEM
+  local check='exit File.directory?(RDoc::RI::Paths.system_dir)'
+  [[ ${1-} ]] && check="exit File.directory?(Gem::Specification.find_by_name('$1').doc_dir('ri'))"
+  ruby -rrdoc -e "$check" 2>/dev/null || skip "no ri data for ${1:-the core classes}"
+}
+
 @test "ri, riv and rich-ri complete classes and instance methods" {
+  requires rich-ri
   probe ri Str
   has_candidate String
   probe ri 'String#sca'
@@ -61,6 +77,7 @@ has_candidate() {
 }
 
 @test "rich-ri completes color options and stock formats" {
+  requires rich-ri
   probe rich-ri --color=al
   has_candidate always
   probe rich-ri --format=mar
@@ -69,7 +86,8 @@ has_candidate() {
   has_candidate --no-color
 }
 
-@test "rich-ri discovers method kinds, Ruby pages and gem pages" {
+@test "rich-ri discovers method kinds and Ruby pages" {
+  requires rich-ri
   probe rich-ri String
   has_candidate 'String#'
   has_candidate 'String.'
@@ -80,20 +98,31 @@ has_candidate() {
   has_candidate 'ruby:'
   probe rich-ri 'ruby:syntax/pat'
   has_candidate 'syntax/pattern_matching.rdoc'
+}
+
+@test "rich-ri discovers gem pages" {
+  requires rich-ri
+  requires_ri_data rdoc
   probe rich-ri --color=always 'rdoc:READ'
   has_candidate 'README.md'
 }
 
 @test "rich-ri completion loads the packaged handler on demand" {
+  requires rich-ri
   complete -r rich-ri 2>/dev/null || :
   unset -f _rich_ri
-  _comp_load rich-ri
+  if declare -F _comp_load >/dev/null; then
+    _comp_load rich-ri
+  else
+    __load_completion rich-ri
+  fi
   [[ $(complete -p rich-ri) == *'-o filenames -F _rich_ri rich-ri' ]]
   probe rich-ri 'Hash#fet'
   has_candidate 'Hash#fetch'
 }
 
 @test "ri alias keeps rich-ri options and page discovery" {
+  requires rich-ri
   alias ri=rich-ri
   probe ri --no-c
   has_candidate --no-color
@@ -106,6 +135,7 @@ has_candidate() {
 }
 
 @test "ri and riv lazily discover rich-ri themes and style roles" {
+  requires rich-ri
   alias ri=rich-ri
   unset -f _rich_ri
   probe ri --theme=da
@@ -120,6 +150,7 @@ has_candidate() {
 }
 
 @test "rich-ri and its aliases preserve quoted paths and the completion context" {
+  requires rich-ri
   local settings="$BATS_TEST_TMPDIR/settings spaced.yml"
   local docs="$BATS_TEST_TMPDIR/docs spaced"
   printf '%s\n' 'theme: terminal' >"$settings"
@@ -138,6 +169,7 @@ has_candidate() {
 }
 
 @test "ri completes namespaced constants and current RDoc formats" {
+  requires_ri_data
   probe ri 'Process::Sta'
   has_candidate Status
   probe ri --format=mar
@@ -225,6 +257,7 @@ has_candidate() {
 }
 
 @test "RuboCop and Standard complete flags and formatter values" {
+  requires rubocop standardrb
   probe rubocop --autocorrect
   has_candidate --autocorrect
   probe standardrb --fi
@@ -234,6 +267,7 @@ has_candidate() {
 }
 
 @test "rdbg completes flags and commands in command mode" {
+  requires rdbg
   probe rdbg --non
   has_candidate --nonstop
   probe rdbg -c -- ruby --vers
@@ -260,6 +294,7 @@ has_candidate() {
 }
 
 @test "IRB, RDoc, ERB, Ruby LSP and try have completions" {
+  requires irb rdoc erb ruby-lsp
   probe irb --noauto
   has_candidate --noautocomplete
   probe rdoc --mar

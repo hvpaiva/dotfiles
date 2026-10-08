@@ -5,7 +5,9 @@ bind 'set menu-complete-display-prefix off'
 # The _ble_* variables are provided by the running ble.sh editor.
 # shellcheck disable=SC2154
 function ble/widget/blerc/line-or-history {
-  local direction=$1 can_move=
+  local direction=$1 can_move='' index count
+  ble/history/get-index -v index
+  ble/history/get-count -v count
 
   # Keep other search bindings unchanged, and let pending searches finish.
   if [[ $_ble_decode_keymap == nsearch ]] &&
@@ -41,6 +43,14 @@ function ble/widget/blerc/line-or-history {
     fi
   elif [[ $_ble_decode_keymap == nsearch ]]; then
     ble/widget/nsearch/"$direction"
+  elif ((index < count)) || [[ $_ble_edit_str == *$'\n'* ]]; then
+    # Only the line being typed searches for the text before the cursor: a recalled
+    # entry or a multi-line command steps to the neighbouring entry.
+    if [[ $_ble_decode_keymap == vi_nmap ]]; then
+      ble/widget/vi-command/"$direction"-line
+    else
+      ble/widget/"$direction"-line history
+    fi
   else
     ble/widget/history-search-"$direction" \
       hide-status:immediate-accept:point=end:blerc-line-history

@@ -1091,7 +1091,9 @@ validate_public() (
   tmp=$(mktemp -d) || return 1
   trap 'rm -rf -- "$tmp"' EXIT
   index=$(repo_git public rev-parse --path-format=absolute --git-path index) || return 1
-  cp -- "$index" "$tmp/index" || return 1
+  # The index's own mtime tells git which entries are racily clean; a copy dated now
+  # would pass a same-size edit made in the second of the last write for unchanged.
+  cp -p -- "$index" "$tmp/index" || return 1
   export GIT_INDEX_FILE=$tmp/index
   repo_git public add -A || return 1
   mkdir "$tmp/tree" || return 1

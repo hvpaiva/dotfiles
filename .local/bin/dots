@@ -25,6 +25,8 @@ PORT_DIR=$HOME/.local/share/omarchy-ubuntu
 BASHDB_REPO=https://github.com/Trepan-Debuggers/bashdb.git
 BASHDB_BIN=$HOME/.local/bin/bashdb
 BLESH=$HOME/.local/share/blesh/ble.sh
+OLLAMA_RELEASES=https://api.github.com/repos/ollama/ollama/releases/latest
+OLLAMA_INSTALLER=https://ollama.com/install.sh
 PORT_REPO=https://github.com/hvpaiva/omarchy-ubuntu.git
 BOOTSTRAP_URL=https://raw.githubusercontent.com/hvpaiva/dotfiles/main/bootstrap.sh
 FONT="MesloLGLDZ Nerd Font Mono"
@@ -167,8 +169,9 @@ H
 Bring the machine up to date: fast-forward every repo to origin (local edits are
 stashed around the merge), re-link the per-host files, install the mise tools
 the config lists but the machine lacks, then upgrade the mise tools, rebuild
-augur when its clone moved past the last build, rebuild bashdb when bash moved
-to a new release, update ble.sh and update the tmux plugins.
+augur when its clone moved past the last build, update Ollama (from its own
+installer, on Ubuntu) and pull augur's model, rebuild bashdb when bash moved to
+a new release, update ble.sh and update the tmux plugins.
 
 Usage:
   dots update [--quick]
@@ -356,8 +359,9 @@ table() { # SEP-separated rows on stdin, the first one the header
     printf '\n'
   done
 }
+root_ok() { sudo -n true 2>/dev/null || { : </dev/tty; } 2>/dev/null; } # sudo runs, or can ask for the password
 run_root() { # CMD… — through sudo; records what to run by hand when no password can be asked
-  if sudo -n true 2>/dev/null || { : </dev/tty; } 2>/dev/null; then
+  if root_ok; then
     sudo "$@"
   else
     warn sudo "no terminal for the password; by hand: sudo $*"
@@ -838,7 +842,7 @@ checks_repos() { # needs the network: fetches, then compares with origin
   done
 }
 checks_machine() { # fast, local: what is installed and wired, against what the layer intends
-  local missing held n cur detail st
+  local missing held n cur detail st model
   local -a dup
   detect_os
   if [[ -r $HOST_FILE ]]; then chk host ok "$host"; else chk host warn "no marker, assuming $host"; fi
@@ -878,6 +882,14 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
   if [[ -x $HOME/.cargo/bin/cargo ]]; then chk rust ok "$("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else chk rust warn "rustup not installed"; fi
   if have augur; then chk augur ok "$(augur --version 2>/dev/null)"; else chk augur warn "not installed"; fi
+  if have ollama; then
+    model=$(augur_model)
+    if [[ -z $model ]] || ollama list 2>/dev/null | awk 'NR > 1 { print $1 }' | grep -qxF "$model"; then
+      chk ollama ok "$(ollama_version)${model:+, $model}"
+    else
+      chk ollama warn "$(ollama_version), $model missing or Ollama stopped (dots update)"
+    fi
+  fi
   if [[ -f $BLESH ]]; then chk ble.sh ok present; else chk ble.sh warn "not installed"; fi
   bashdb_state
   case $bd_state in
@@ -1197,6 +1209,7 @@ cmd_update() {
   if (( ! quick )); then
     skip_rust=0; [[ -x $HOME/.cargo/bin/cargo ]] || skip_rust=1
     step_augur
+    step_ollama_update
     step_bashdb
     step_blesh_update
     if [[ -x $TPM_DIR/tpm/bin/update_plugins ]]; then
@@ -1532,6 +1545,45 @@ step_augur() {
     line augur "installed $(augur --version 2>/dev/null) (ble-augur restart in open shells)"
   else
     warn augur "build failed, log $STATE_DIR/augur-build.log"
+  fi
+}
+# Ollama, which serves augur's model. On Ubuntu it comes from Ollama's own installer, which no
+# package manager updates, so a newer release runs the installer again; Arch has it from pacman.
+# Pulling the model augur asks by default downloads only what changed.
+ollama_version() { ollama --version 2>&1 | sed -n 's/.* version is \([0-9][0-9.]*\).*/\1/p' | tail -1; } # the client's
+ollama_latest() { curl -fsSL --max-time 10 "$OLLAMA_RELEASES" 2>/dev/null | sed -n 's/^ *"tag_name": *"v\([0-9][0-9.]*\)".*/\1/p'; }
+augur_model() { augur suggest --help 2>/dev/null | sed -n 's/.*--model <NAME>.*\[default: \([^]]*\)\].*/\1/p'; }
+version_newer() { [[ $1 != "$2" && $(printf '%s\n' "$1" "$2" | sort -V | tail -1) == "$1" ]]; } # A B
+step_ollama_update() {
+  local current latest tmp model
+  have ollama || return 0
+  current=$(ollama_version)
+  if [[ $os != ubuntu ]]; then
+    line ollama "${current:-installed}"
+  elif ! latest=$(ollama_latest) || [[ -z $latest ]]; then
+    warn ollama "${current:-installed}, latest release unknown (offline?)"
+  elif ! version_newer "$latest" "$current"; then
+    line ollama "$current"
+  elif ! root_ok; then
+    warn ollama "$current, $latest is out: run dots update in a terminal to install it"
+  else
+    tmp=$(mktemp -d)
+    if curl -fsSL --max-time 30 -o "$tmp/install.sh" "$OLLAMA_INSTALLER" &&
+      OLLAMA_VERSION=$latest sh "$tmp/install.sh" >"$STATE_DIR/ollama-update.log" 2>&1; then
+      line ollama "updated $current -> $(ollama_version)"
+    else
+      warn ollama "update to $latest failed, log $STATE_DIR/ollama-update.log"
+    fi
+    rm -rf "$tmp"
+  fi
+  model=$(augur_model)
+  [[ -n $model ]] || return 0
+  if ! ollama list >/dev/null 2>&1; then
+    line ollama "not running, $model not checked"
+  elif ollama pull "$model" >"$STATE_DIR/ollama-pull.log" 2>&1; then
+    line ollama "$model up to date"
+  else
+    warn ollama "cannot pull $model, log $STATE_DIR/ollama-pull.log"
   fi
 }
 step_blesh() {

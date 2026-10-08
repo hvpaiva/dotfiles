@@ -453,6 +453,38 @@ fake_augur_clone() { # — a clone of a local origin at $AUGUR_DIR, built by fak
   [[ $output == *"building $(git -C "$AUGUR_DIR" rev-parse --short=7 HEAD)"* ]]
 }
 
+@test "step_ollama_update installs a newer release on Ubuntu and pulls augur's model" {
+  os=ubuntu
+  have() { return 0; }
+  root_ok() { return 0; }
+  STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
+  printf '0.18.2\n' >"$BATS_TEST_TMPDIR/ollama-version"
+  ollama() {
+    case $1 in
+      --version) echo "ollama version is $(<"$BATS_TEST_TMPDIR/ollama-version")" ;;
+      list) echo "NAME  ID  SIZE  MODIFIED" ;;
+      pull) echo "$2" >>"$BATS_TEST_TMPDIR/pulled" ;;
+    esac
+  }
+  augur_model() { echo qwen2.5-coder:1.5b-base; }
+  ollama_latest() { echo 0.40.1; }
+  # the installer it downloads records the version it was asked for
+  curl() { printf 'echo "$OLLAMA_VERSION" >%s/ollama-version\n' "$BATS_TEST_TMPDIR" >"${@: -2:1}"; }
+  run step_ollama_update
+  [[ $output == *"updated 0.18.2 -> 0.40.1"* ]]
+  [[ $output == *"qwen2.5-coder:1.5b-base up to date"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/pulled")" = qwen2.5-coder:1.5b-base ]
+  run step_ollama_update
+  [[ $output == *"ollama     0.40.1"* ]] && [[ $output != *updated* ]]
+  ollama_latest() { echo 0.41.0; }
+  root_ok() { return 1; }
+  run step_ollama_update
+  [[ $output == *"0.40.1, 0.41.0 is out: run dots update in a terminal to install it"* ]]
+  os=arch
+  run step_ollama_update
+  [[ $output == *"ollama     0.40.1"* ]] && [[ $output != *"is out"* ]]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

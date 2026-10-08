@@ -81,3 +81,14 @@ function blerc/vi-keybindings {
   ble-bind -m vi_nmap -f M-c -
 }
 blehook/eval-after-load keymap_vi blerc/vi-keybindings
+
+# gg and G move to the first and last line of the command, as in Vim (ble.sh's default
+# goes to the oldest and newest history entry)
+function blerc/buffer-line-keybindings {
+  local keymap
+  for keymap in vi_nmap vi_xmap vi_omap; do
+    ble-bind -m "$keymap" -f 'g g' vi-command/first-nol
+    ble-bind -m "$keymap" -f G vi-command/last-line
+  done
+}
+blehook/eval-after-load keymap_vi blerc/buffer-line-keybindings

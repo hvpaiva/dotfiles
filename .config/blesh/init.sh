@@ -40,4 +40,8 @@ if command -v fzf &>/dev/null; then
 fi
 
 # Context-aware inline suggestions (~/dev/personal/augur), after everything that sets up completion.
-[[ -f ~/dev/personal/augur/shell/augur.bash ]] && source ~/dev/personal/augur/shell/augur.bash
+if [[ -f ~/dev/personal/augur/shell/augur.bash ]]; then
+  source ~/dev/personal/augur/shell/augur.bash
+  # Up to 800 ms for the language model, where the augur build has the option
+  [[ ${bleopt_augur_model_timeout+set} ]] && bleopt augur_model_timeout=800
+fi

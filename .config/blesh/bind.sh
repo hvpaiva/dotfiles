@@ -52,6 +52,9 @@ function ble/widget/blerc/line-or-history {
       ble/widget/"$direction"-line history
     fi
   else
+    # history_share reads other sessions' commands only after the search has picked its
+    # entry; read them first so it starts from the newest command.
+    [[ $bleopt_history_share ]] && history -n
     ble/widget/history-search-"$direction" \
       hide-status:immediate-accept:point=end:blerc-line-history
   fi

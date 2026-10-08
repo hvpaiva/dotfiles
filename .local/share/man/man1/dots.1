@@ -100,9 +100,11 @@ checks or missing tools stop the save with a nonzero status, even with
 Bring the machine up to date: fast-forward every repo to origin (local edits
 are stashed around the merge and restored), re-link the per-host files, install
 the mise tools the configuration lists but the machine lacks, then upgrade the
-mise tools, rebuild augur when its repository moved, rebuild bashdb when bash
-moved to a new release, update ble.sh (shells already open keep the version
-they loaded until
+mise tools, rebuild augur when its clone moved past the last build (shells
+already open keep the engine they started until
+.BR "ble\-augur restart" ),
+rebuild bashdb when bash moved to a new release, update ble.sh (shells already
+open keep the version they loaded until
 .BR ble\-reload )
 and update the tmux plugins.
 .B \-\-quick
@@ -243,7 +245,7 @@ Private per-host and shared files, symlinked into $HOME.
 .TP
 .I ~/.local/state/dotfiles/
 Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log,
-blesh-update.log) and what
+blesh-update.log), the commit of the last augur build (augur-built) and what
 was moved aside instead of deleted (pre-checkout-*, nvim-*), listed by
 .BR clean .
 .SH ENVIRONMENT

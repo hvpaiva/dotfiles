@@ -410,6 +410,49 @@ EOF
   [[ $output == *"update failed, log $STATE_DIR/blesh-update.log"* ]]
 }
 
+fake_cargo() { # [STATUS] — a cargo that logs each build and exits with STATUS
+  mkdir -p "$HOME/.cargo/bin"
+  printf '#!/bin/sh\necho build >>"%s/builds"\nexit %s\n' "$BATS_TEST_TMPDIR" "${1:-0}" >"$HOME/.cargo/bin/cargo"
+  chmod +x "$HOME/.cargo/bin/cargo"
+}
+fake_augur_clone() { # — a clone of a local origin at $AUGUR_DIR, built by fake_cargo
+  commit "$BATS_TEST_TMPDIR/augur-src" README v1
+  git clone -q "$BATS_TEST_TMPDIR/augur-src" "$AUGUR_DIR"
+  fake_cargo
+}
+
+@test "step_augur builds until a build of the clone's commit succeeds" {
+  skip_rust=0
+  have() { return 0; }
+  augur() { echo "augur 0.1.0"; }
+  STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
+  fake_augur_clone
+  fake_cargo 1
+  run step_augur
+  [[ $output == *"build failed, log $STATE_DIR/augur-build.log"* ]]
+  [ ! -e "$STATE_DIR/augur-built" ]
+  fake_cargo
+  run step_augur
+  [[ $output == *"installed augur 0.1.0 (ble-augur restart in open shells)"* ]]
+  [ "$(cat "$STATE_DIR/augur-built")" = "$(git -C "$AUGUR_DIR" rev-parse HEAD)" ]
+  run step_augur
+  [[ $output == *"augur 0.1.0"* ]] && [[ $output != *building* ]]
+  [ "$(wc -l <"$BATS_TEST_TMPDIR/builds")" -eq 2 ]
+}
+
+@test "step_augur warns when its clone cannot fast-forward" {
+  skip_rust=0
+  have() { return 0; }
+  augur() { echo "augur 0.1.0"; }
+  STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
+  fake_augur_clone
+  commit "$BATS_TEST_TMPDIR/augur-src" README v2
+  commit "$AUGUR_DIR" README local
+  run step_augur
+  [[ $output == *"cannot fast-forward $AUGUR_DIR"* ]]
+  [[ $output == *"building $(git -C "$AUGUR_DIR" rev-parse --short=7 HEAD)"* ]]
+}
+
 @test "mise_missing takes the first column of mise ls --missing" {
   mise() { printf 'node   24.1.0   ~/.config/mise/config.toml  latest\nbun    1.3.13\n'; }
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]

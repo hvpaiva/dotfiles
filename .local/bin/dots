@@ -167,8 +167,8 @@ H
 Bring the machine up to date: fast-forward every repo to origin (local edits are
 stashed around the merge), re-link the per-host files, install the mise tools
 the config lists but the machine lacks, then upgrade the mise tools, rebuild
-augur when its repo moved, rebuild bashdb when bash moved to a new release,
-update ble.sh and update the tmux plugins.
+augur when its clone moved past the last build, rebuild bashdb when bash moved
+to a new release, update ble.sh and update the tmux plugins.
 
 Usage:
   dots update [--quick]
@@ -1508,24 +1508,30 @@ step_rust() {
     if curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y -q --no-modify-path >/dev/null; then line rust "installed $("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else die "rustup install failed"; fi
   fi
 }
+# augur, built from its clone. augur-built holds the commit of the last good build, so a build
+# that failed, or a commit made in the clone, is built on the next run too. Open shells keep the
+# engine and the functions they started with until ble-augur restart.
 step_augur() {
   if (( skip_rust )); then line augur "skipped"; return 0; fi
-  local build=0 before
+  local head built=''
   if [[ ! -d $AUGUR_DIR/.git ]]; then
     git clone -q "$AUGUR_REPO" "$AUGUR_DIR" || die "cannot clone $AUGUR_REPO"
     git -C "$AUGUR_DIR" remote set-url --push origin "$AUGUR_PUSH_URL"
-    build=1
-  else
-    before=$(git -C "$AUGUR_DIR" rev-parse HEAD)
-    git -C "$AUGUR_DIR" pull -q --ff-only 2>/dev/null || true
-    [[ $(git -C "$AUGUR_DIR" rev-parse HEAD) != "$before" ]] && build=1
+  elif ! git -C "$AUGUR_DIR" pull -q --ff-only 2>/dev/null; then
+    warn augur "cannot fast-forward $AUGUR_DIR (offline, diverged, or local changes in the way)"
   fi
-  have augur || build=1
-  if (( build )); then
-    line augur "building $(git -C "$AUGUR_DIR" log -1 --format=%h)"
-    if "$HOME/.cargo/bin/cargo" install -q --path "$AUGUR_DIR" 2>"$STATE_DIR/augur-build.log"; then line augur "installed $(augur --version 2>/dev/null)"; else warn augur "build failed, log $STATE_DIR/augur-build.log"; fi
-  else
+  head=$(git -C "$AUGUR_DIR" rev-parse HEAD)
+  [[ -r $STATE_DIR/augur-built ]] && built=$(<"$STATE_DIR/augur-built")
+  if have augur && [[ $built == "$head" ]]; then
     line augur "$(augur --version 2>/dev/null)"
+    return 0
+  fi
+  line augur "building ${head:0:7}"
+  if "$HOME/.cargo/bin/cargo" install -q --path "$AUGUR_DIR" 2>"$STATE_DIR/augur-build.log"; then
+    printf '%s\n' "$head" >"$STATE_DIR/augur-built"
+    line augur "installed $(augur --version 2>/dev/null) (ble-augur restart in open shells)"
+  else
+    warn augur "build failed, log $STATE_DIR/augur-build.log"
   fi
 }
 step_blesh() {

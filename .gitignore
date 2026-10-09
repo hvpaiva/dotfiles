@@ -183,3 +183,6 @@
 !/.local/state/omarchy/
 /.local/state/omarchy/*
 !/.local/state/omarchy/defaults/
+
+# Python's bytecode cache, written next to any tracked script something imports
+__pycache__/

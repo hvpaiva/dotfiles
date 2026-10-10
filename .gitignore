@@ -148,6 +148,7 @@
 !/.config/Cursor/User/keybindings.json
 !/.config/sesh/
 !/.config/tensaku/
+!/.config/bat/
 
 # This repo's own support files: per-host trees and the container test
 !/.config/dotfiles/

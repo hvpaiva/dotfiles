@@ -85,6 +85,28 @@ assert_allowed() {
   assert_denied
 }
 
+@test "a spaced double hyphen in a gh comment is denied" {
+  decision "$(bash_payload 'gh pr comment 12 --body "Aplicado -- seguimos amanhã."')"
+  assert_denied
+  [[ $output == *Conduta.Travessao* ]]
+}
+
+@test "an Atlantis command in a gh comment is not prose and is allowed" {
+  decision "$(bash_payload 'gh pr comment 12680 --body "atlantis plan -d domains/devexp/rd-devops -- -target=google_storage_bucket.history -target=google_service_account.exporter"')"
+  assert_allowed
+}
+
+@test "an Atlantis command sent through a publishing MCP is allowed" {
+  decision "$(mcp_payload mcp__github__add_issue_comment '{"body": "atlantis plan -d gcp/rd-devops -- -target=module.cache"}')"
+  assert_allowed
+}
+
+@test "prose after an Atlantis command line is still linted" {
+  decision "$(bash_payload 'gh pr comment 12 --body "atlantis apply -d gcp/rd-devops
+Aplicado — tudo certo."')"
+  assert_denied
+}
+
 @test "commands that send nothing are allowed" {
   decision "$(bash_payload 'git commit -m "Status: wip" && ls -la')"
   assert_allowed

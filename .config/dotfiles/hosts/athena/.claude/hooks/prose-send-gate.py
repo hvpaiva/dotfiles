@@ -37,6 +37,7 @@ HEREDOC = re.compile(
     r"<<-?[ \t]*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1[^\n]*\n(.*?)\n[ \t]*\2[ \t]*(?=\n|$)", re.S
 )
 MARKER = re.compile(r"__PROSE_HEREDOC_(\d+)__")
+BOT_COMMANDS = [re.compile(r"atlantis[ \t]+[^\n]+")]
 OPERATORS = {";", "&&", "||", "|", "&", "(", ")", ";;", "|&"}
 GH_TEXT_FLAGS = {"--body": "body", "-b": "body", "--title": "title", "-t": "title"}
 GH_FILE_FLAGS = {"--body-file", "-F"}
@@ -197,9 +198,15 @@ def lint(text):
     return result.stdout.strip() if result.returncode != 0 else ""
 
 
+def is_bot_command(text):
+    return any(command.fullmatch(text.strip()) for command in BOT_COMMANDS)
+
+
 def violations(texts):
     report = []
     for source, text in texts:
+        if is_bot_command(text):
+            continue
         out = lint(text)
         if out:
             report.append(f"[{source}]\n{out}")

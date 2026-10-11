@@ -162,6 +162,23 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   [[ $(links_text) == "1/3, "* ]] && [[ $(links_text) == *"a/replaced replaced"* ]]
 }
 
+@test "link_tree and link_state leave out what the tree's repo ignores" {
+  make_public
+  printf '__pycache__/\n' >>"$HOME/.gitignore"
+  local root=$HOSTS_DIR/testhost
+  mkdir -p "$root/hooks/__pycache__"; printf 1 >"$root/hooks/gate.py"; printf 1 >"$root/hooks/__pycache__/gate.pyc"
+  host_name
+  link_tree "$root" hosts/testhost public
+  [ "$lt_linked" -eq 1 ]
+  [ -L "$HOME/hooks/gate.py" ]
+  [ ! -e "$HOME/hooks/__pycache__" ]
+  # the cache Python writes next to the linked script is its own, not a replaced link
+  mkdir -p "$HOME/hooks/__pycache__"; printf 2 >"$HOME/hooks/__pycache__/gate.pyc"
+  link_state
+  [ "$lk_ok" -eq 1 ]
+  [ "$(links_text)" = 1/1 ]
+}
+
 @test "themes_missing and tmux_plugins_missing read the config files" {
   mkdir -p "$HOME/.config/omarchy/themes/monokai" "$HOME/.config/tmux" "$TPM_DIR/tpm"
   printf '# c\nhttps://github.com/x/omarchy-monokai-theme\nhttps://github.com/x/omarchy-darcula-theme\n' >"$HOME/.config/omarchy/themes.txt"

@@ -567,16 +567,28 @@ record_nvim() { # stage the live nvim commit in dotfiles when it moved forward
 
 # ── per-host layers: files symlinked into $HOME ──────────────────────────────
 host_name() { if [[ -r $HOST_FILE ]]; then host=$(<"$HOST_FILE"); else host=$(hostname); fi; }
-link_trees() { # "root|label" per tree that applies to this host
-  printf '%s|%s\n' "$HOSTS_DIR/$host" "hosts/$host"
+link_trees() { # "root|label|repo" per tree that applies to this host
+  printf '%s|%s|%s\n' "$HOSTS_DIR/$host" "hosts/$host" public
   if [[ -d $PRIVATE_DIR ]]; then
-    printf '%s|%s\n' "$PRIVATE_DIR/hosts/$host" "private/hosts/$host" "$PRIVATE_DIR/common" "private/common"
+    printf '%s|%s|%s\n' "$PRIVATE_DIR/hosts/$host" "private/hosts/$host" private "$PRIVATE_DIR/common" "private/common" private
   fi
+}
+# A file the tree's repo ignores (a cache Python wrote next to a script there) is not
+# part of the layer: it is neither linked nor counted. With no repo to ask, all are.
+tree_files() { # ROOT [REPO] — one path per line
+  local f
+  local -a files
+  local -A ignored=()
+  mapfile -d '' -t files < <(find "$1" -type f -print0 2>/dev/null)
+  if [[ -n ${2:-} ]] && repo_present "$2" && ((${#files[@]})); then
+    while IFS= read -r -d '' f; do ignored[$f]=1; done < <(printf '%s\0' "${files[@]}" | repo_git "$2" check-ignore -z --stdin 2>/dev/null)
+  fi
+  for f in "${files[@]}"; do [[ -n ${ignored[$f]:-} ]] || printf '%s\n' "$f"; done
 }
 # If a program replaced a link with a regular file (the monitor panel rewrites
 # monitors.local.lua), the live file is the truth: it is copied back into
 # its tree and re-linked, and shows up as a change to save.
-link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
+link_tree() { # ROOT LABEL [REPO] — sets lt_linked lt_adopted lt_kept
   local root=$1 label=$2 src rel dst
   lt_linked=0 lt_adopted=0 lt_kept=0
   [[ -d $root ]] || return 0
@@ -592,7 +604,7 @@ link_tree() { # ROOT LABEL — sets lt_linked lt_adopted lt_kept
       rm -f "$dst"
     fi
     mkdir -p "$(dirname "$dst")" && ln -s "$src" "$dst" && lt_linked=$((lt_linked + 1))
-  done < <(find "$root" -type f 2>/dev/null)
+  done < <(tree_files "$root" "${3:-}")
 }
 # A link into one of the trees whose file is gone (moved to the shared layer, or dropped)
 # is stale: it is removed. Dangling links that point anywhere else are not ours to touch.
@@ -606,10 +618,10 @@ stale_links() { # dangling links into a tree, anywhere the trees reach in $HOME
   return 0
 }
 link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned
-  local root label dst
+  local root label repo dst
   la_ok=0 la_linked=0 la_adopted=0 la_pruned=0
-  while IFS='|' read -r root label; do
-    link_tree "$root" "$label"
+  while IFS='|' read -r root label repo; do
+    link_tree "$root" "$label" "$repo"
     la_ok=$((la_ok + lt_kept + lt_linked)); la_linked=$((la_linked + lt_linked)); la_adopted=$((la_adopted + lt_adopted))
   done < <(link_trees)
   while IFS= read -r dst; do
@@ -619,9 +631,9 @@ link_all() { # QUIET — sets la_ok la_linked la_adopted la_pruned
   (( $1 )) || line links "$la_ok/$la_ok, $la_linked linked now, $la_adopted adopted$( (( la_pruned )) && printf ', %d stale removed' "$la_pruned")"
 }
 link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_stale lk_detail
-  local root label src rel dst
+  local root label repo src rel dst
   lk_ok=0 lk_replaced=0 lk_missing=0 lk_other=0 lk_stale=0 lk_detail=''
-  while IFS='|' read -r root label; do
+  while IFS='|' read -r root label repo; do
     [[ -d $root ]] || continue
     while IFS= read -r src; do
       rel=${src#"$root"/}; dst=$HOME/$rel
@@ -632,7 +644,7 @@ link_state() { # sets lk_ok lk_replaced lk_missing lk_other lk_stale lk_detail
       elif [[ -e $dst ]]; then lk_replaced=$((lk_replaced + 1)); lk_detail+="${lk_detail:+, }$rel replaced"
       else lk_missing=$((lk_missing + 1)); lk_detail+="${lk_detail:+, }$rel missing"
       fi
-    done < <(find "$root" -type f 2>/dev/null)
+    done < <(tree_files "$root" "$repo")
   done < <(link_trees)
   while IFS= read -r dst; do [[ -n $dst ]] && { lk_stale=$((lk_stale + 1)); lk_detail+="${lk_detail:+, }${dst#"$HOME"/} stale"; }; done < <(stale_links)
 }

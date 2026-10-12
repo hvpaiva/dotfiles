@@ -106,9 +106,11 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 @test "detect_os reads the family from os-release" {
   export DOTS_OS_RELEASE=$BATS_TEST_TMPDIR/os
   printf 'ID=omarchy\nID_LIKE=arch\n' >"$DOTS_OS_RELEASE"; detect_os
-  [ "$os" = arch ] && [ "${DROP[0]}" = herdr ]
+  [ "$os" = arch ]
+  [ "${DROP[0]}" = herdr ]
   printf 'ID=ubuntu\n' >"$DOTS_OS_RELEASE"; detect_os
-  [ "$os" = ubuntu ] && [ "${DROP[0]}" = mise ]
+  [ "$os" = ubuntu ]
+  [ "${DROP[0]}" = mise ]
   printf 'ID=manjaro\nID_LIKE="arch"\n' >"$DOTS_OS_RELEASE"; detect_os
   [ "$os" = arch ]
   printf 'ID=fedora\n' >"$DOTS_OS_RELEASE"; detect_os
@@ -126,9 +128,11 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   mkdir -p "$root/.config/app"; printf 'repo\n' >"$root/.config/app/conf"
   host_name
   link_tree "$root" hosts/testhost
-  [ "$lt_linked" -eq 1 ] && [ -L "$HOME/.config/app/conf" ]
+  [ "$lt_linked" -eq 1 ]
+  [ -L "$HOME/.config/app/conf" ]
   link_tree "$root" hosts/testhost
-  [ "$lt_kept" -eq 1 ] && [ "$lt_linked" -eq 0 ]
+  [ "$lt_kept" -eq 1 ]
+  [ "$lt_linked" -eq 0 ]
   rm "$HOME/.config/app/conf"; printf 'live\n' >"$HOME/.config/app/conf"
   run link_tree "$root" hosts/testhost
   [[ $output == *"adopted the live .config/app/conf"* ]]
@@ -140,14 +144,19 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   mkdir -p "$root/.config/app" "$HOME/.config/other"; printf 1 >"$root/.config/app/a"; printf 1 >"$root/.config/app/b"
   host_name
   link_all 1
-  [ "$la_ok" -eq 2 ] && [ -L "$HOME/.config/app/b" ]
+  [ "$la_ok" -eq 2 ]
+  [ -L "$HOME/.config/app/b" ]
   ln -s "$HOME/nowhere" "$HOME/.config/other/foreign"   # dangling, not made by dots
   rm "$root/.config/app/b"
   link_state
-  [ "$lk_stale" -eq 1 ] && [[ $(links_text) == "1/1, .config/app/b stale" ]]
+  [ "$lk_stale" -eq 1 ]
+  [[ $(links_text) == "1/1, .config/app/b stale" ]]
   run link_all 0
-  [[ $output == *"removed the stale .config/app/b"* ]] && [[ $output == *"1 stale removed"* ]]
-  [ ! -L "$HOME/.config/app/b" ] && [ -L "$HOME/.config/app/a" ] && [ -L "$HOME/.config/other/foreign" ]
+  [[ $output == *"removed the stale .config/app/b"* ]]
+  [[ $output == *"1 stale removed"* ]]
+  [ ! -L "$HOME/.config/app/b" ]
+  [ -L "$HOME/.config/app/a" ]
+  [ -L "$HOME/.config/other/foreign" ]
   link_state
   [ "$lk_stale" -eq 0 ]
 }
@@ -158,7 +167,9 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   host_name
   ln -s "$root/a/ok" "$HOME/a/ok"; printf 2 >"$HOME/a/replaced"
   link_state
-  [ "$lk_ok" -eq 1 ] && [ "$lk_replaced" -eq 1 ] && [ "$lk_missing" -eq 1 ]
+  [ "$lk_ok" -eq 1 ]
+  [ "$lk_replaced" -eq 1 ]
+  [ "$lk_missing" -eq 1 ]
   [[ $(links_text) == "1/3, "* ]] && [[ $(links_text) == *"a/replaced replaced"* ]]
 }
 
@@ -200,10 +211,13 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
 @test "repo_state and origin_text on a real repo: clean, ahead, behind" {
   make_public
   repo_state public
-  [ "$st_branch" = main ] && [ "$st_n" -eq 0 ] && [ "$(origin_text)" = "in sync" ]
+  [ "$st_branch" = main ]
+  [ "$st_n" -eq 0 ]
+  [ "$(origin_text)" = "in sync" ]
   printf 'x\n' >"$HOME/.bashrc"; printf 'new\n' >"$HOME/.new"
   repo_state public
-  [ "$st_n" -eq 2 ] && [[ $st_changes == *"?? .new"* ]]
+  [ "$st_n" -eq 2 ]
+  [[ $st_changes == *"?? .new"* ]]
   repo_git public add -A && repo_git public commit -q -m "local"
   repo_state public; [ "$(origin_text)" = "1 to push" ]
   commit "$BATS_TEST_TMPDIR/src" other "upstream moved"
@@ -220,7 +234,8 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   repo_git public fetch -q origin
   run repo_update public 0
   [[ $output == *"1 new commit(s)"* ]]
-  [ -f "$HOME/other" ] && [ "$(cat "$HOME/.bashrc")" = edited ]
+  [ -f "$HOME/other" ]
+  [ "$(cat "$HOME/.bashrc")" = edited ]
   repo_git public add -A && repo_git public commit -q -m "local"
   commit "$BATS_TEST_TMPDIR/src" more "upstream moved again"
   git -C "$BATS_TEST_TMPDIR/src" push -q origin main
@@ -287,7 +302,8 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   repo_state public; [[ $st_changes == "A  .config/nvim" ]]
   record_nvim >/dev/null
   repo_state public
-  [ "$st_n" -eq 1 ] && [[ $st_changes == "M  .config/nvim" ]]
+  [ "$st_n" -eq 1 ]
+  [[ $st_changes == "M  .config/nvim" ]]
   repo_git public commit -q -m "record nvim"
   repo_state public; [ "$st_n" -eq 0 ]
 }
@@ -301,7 +317,9 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   ! root_hidden
   root_hide 1
   root_hidden
-  [ ! -e "$HOME/README.md" ] && [ ! -e "$HOME/bootstrap.sh" ] && [ -f "$HOME/.bashrc" ]
+  [ ! -e "$HOME/README.md" ]
+  [ ! -e "$HOME/bootstrap.sh" ]
+  [ -f "$HOME/.bashrc" ]
   [ -z "$(repo_git public status --porcelain)" ]
   cmd_root show >/dev/null
   [ -f "$HOME/README.md" ]
@@ -309,7 +327,8 @@ record() { repo_git public update-index --add --cacheinfo "160000,$(repo_git nvi
   run root_hide 1
   [ "$status" -eq 1 ]
   [[ $output == *"README.md changed: dots save first"* ]]
-  [ -f "$HOME/README.md" ] && [ -f "$HOME/bootstrap.sh" ]
+  [ -f "$HOME/README.md" ]
+  [ -f "$HOME/bootstrap.sh" ]
   [ "$(repo_git public ls-files -t README.md)" = "H README.md" ]
   repo_git public commit -q -am "edit README"
   root_hide 1
@@ -380,7 +399,8 @@ fake_bashdb() { # RELEASE — a bashdb in ~/.local/bin that reports RELEASE, on 
   [ "$bd_state" = missing ]
   fake_bashdb 5.3-1.2.0
   bashdb_state
-  [ "$bd_state" = ok ] && [ "$bd_release" = 5.3-1.2.0 ]
+  [ "$bd_state" = ok ]
+  [ "$bd_release" = 5.3-1.2.0 ]
   bash_release() { printf 5.4; }
   bashdb_state
   [ "$bd_state" = stale ] && [ "$bd_bash" = 5.4 ]
@@ -417,7 +437,8 @@ EOF
   STATE_DIR=$BATS_TEST_TMPDIR/state; mkdir -p "$STATE_DIR"
   fake_blesh 0.4.0-a
   run step_blesh_update
-  [[ $output == *"ble.sh     0.4.0-a"* ]] && [[ $output != *updated* ]]
+  [[ $output == *"ble.sh     0.4.0-a"* ]]
+  [[ $output != *updated* ]]
   fake_blesh 0.4.0-a 0.4.0-b
   run step_blesh_update
   [[ $output == *"updated 0.4.0-a -> 0.4.0-b"* ]]
@@ -453,7 +474,8 @@ fake_augur_clone() { # — a clone of a local origin at $AUGUR_DIR, built by fak
   [[ $output == *"installed augur 0.1.0 (ble-augur restart in open shells)"* ]]
   [ "$(cat "$STATE_DIR/augur-built")" = "$(git -C "$AUGUR_DIR" rev-parse HEAD)" ]
   run step_augur
-  [[ $output == *"augur 0.1.0"* ]] && [[ $output != *building* ]]
+  [[ $output == *"augur 0.1.0"* ]]
+  [[ $output != *building* ]]
   [ "$(wc -l <"$BATS_TEST_TMPDIR/builds")" -eq 2 ]
 }
 
@@ -492,7 +514,8 @@ fake_augur_clone() { # — a clone of a local origin at $AUGUR_DIR, built by fak
   [[ $output == *"qwen2.5-coder:1.5b-base up to date"* ]]
   [ "$(cat "$BATS_TEST_TMPDIR/pulled")" = qwen2.5-coder:1.5b-base ]
   run step_ollama_update
-  [[ $output == *"ollama     0.40.1"* ]] && [[ $output != *updated* ]]
+  [[ $output == *"ollama     0.40.1"* ]]
+  [[ $output != *updated* ]]
   ollama_latest() { echo 0.41.0; }
   root_ok() { return 1; }
   run step_ollama_update
@@ -644,7 +667,8 @@ $HOME/.config/hypr/xdph.conf.bak-omarchy" ]
   run cmd_clean --all -y
   [ "$status" -eq 0 ]
   [ -z "$(backups)" ]
-  [ -f "$STATE_DIR/setup.log" ] && [ -f "$HOME/.config/hypr/xdph.conf" ]
+  [ -f "$STATE_DIR/setup.log" ]
+  [ -f "$HOME/.config/hypr/xdph.conf" ]
   run cmd_clean
   [ "$output" = "$(line backups none)" ]
 }
@@ -708,16 +732,20 @@ GH
 @test "secrets_gh logs gh in with the token from 1Password, once" {
   make_secret_stubs; touch "$BATS_TEST_TMPDIR/op/unlocked"
   run secrets_gh
-  [ "$status" -eq 1 ] && [[ $output == *"github-token not set"* ]]
+  [ "$status" -eq 1 ]
+  [[ $output == *"github-token not set"* ]]
   printf 'ghp_x\n' >"$BATS_TEST_TMPDIR/op/github-token"
   run secrets_gh
-  [ "$status" -eq 0 ] && [[ $output == *"logged in with the token"* ]] && [ "$(cat "$BATS_TEST_TMPDIR/gh/token")" = ghp_x ]
+  [ "$status" -eq 0 ]
+  [[ $output == *"logged in with the token"* ]]
+  [ "$(cat "$BATS_TEST_TMPDIR/gh/token")" = ghp_x ]
   run secrets_gh
   [[ $output == *"gh         logged in"* ]]
   # a token without the key scopes: replaced by the one from 1Password
   printf 'narrow' >"$BATS_TEST_TMPDIR/gh/token"
   run secrets_gh
-  [ "$status" -eq 0 ] && [[ $output == *"logged in again with the token from 1Password"* ]]
+  [ "$status" -eq 0 ]
+  [[ $output == *"logged in again with the token from 1Password"* ]]
   printf 'narrow' >"$BATS_TEST_TMPDIR/gh/token"; rm "$BATS_TEST_TMPDIR/op/github-token"
   run secrets_gh
   [ "$status" -eq 1 ] && [[ $output == *"gh auth refresh -h github.com -s admin:public_key -s admin:ssh_signing_key"* ]]
@@ -735,11 +763,14 @@ GH
   [ "$(ssh_key)" = "$HOME/.ssh/id_ed25519" ]
   run secrets_key
   [ "$status" -eq 0 ]
-  [[ $output == *"generated ~/.ssh/id_ed25519"* ]] && [[ $output == *"key added to GitHub as Testhost (on-disk)"* ]]
+  [[ $output == *"generated ~/.ssh/id_ed25519"* ]]
+  [[ $output == *"key added to GitHub as Testhost (on-disk)"* ]]
   pub=$(cut -d' ' -f1,2 <"$HOME/.ssh/id_ed25519.pub")
-  [ "$(cat "$BATS_TEST_TMPDIR/gh/keys")" = "$pub" ] && [ "$(cat "$BATS_TEST_TMPDIR/gh/signing")" = "$pub" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/gh/keys")" = "$pub" ]
+  [ "$(cat "$BATS_TEST_TMPDIR/gh/signing")" = "$pub" ]
   run secrets_key
-  [[ $output == *"ssh        key on GitHub"* ]] && [[ $output == *"signing    key on GitHub"* ]]
+  [[ $output == *"ssh        key on GitHub"* ]]
+  [[ $output == *"signing    key on GitHub"* ]]
   [ "$(wc -l <"$BATS_TEST_TMPDIR/gh/keys")" -eq 1 ]
   # another key configured for signing: left alone
   export GIT_CONFIG_GLOBAL=$BATS_TEST_TMPDIR/gitconfig; git config --global user.signingkey "$HOME/.ssh/other.pub"
@@ -758,12 +789,14 @@ GH
   export GIT_CONFIG_GLOBAL=$HOME/.config/git/local
   mv "$HOME/.ssh/id_ed25519.pub" "$HOME/.ssh/away.pub"
   run step_identity
-  [ "$status" -eq 0 ] && [ ! -e "$HOME/.config/git/local" ]   # no key to sign with: no identity written
+  [ "$status" -eq 0 ]
+  [ ! -e "$HOME/.config/git/local" ]   # no key to sign with: no identity written
   [[ $output == *"token written"* ]]
   mv "$HOME/.ssh/away.pub" "$HOME/.ssh/id_ed25519.pub"
   run step_identity
   [ "$status" -eq 0 ]
-  [[ $output == *"identity written"* ]] && [[ $output == *"added to allowed_signers"* ]]
+  [[ $output == *"identity written"* ]]
+  [[ $output == *"added to allowed_signers"* ]]
   grep -q "email = contact@hvpaiva.dev" "$HOME/.config/git/local"
   grep -q "signingkey = ~/.ssh/id_ed25519.pub" "$HOME/.config/git/local"
   pub=$(cut -d' ' -f1,2 <"$HOME/.ssh/id_ed25519.pub")
@@ -822,7 +855,8 @@ last() { printf '%s\n' "$1" | tail -n1; }
 @test "mise-intercept offers mise for global installs and runs it on yes" {
   mi_setup; mi_yes
   out=$(cargo install bacon cargo-aoc <<<y)
-  [[ $out == *"mise use -g cargo:bacon cargo:cargo-aoc"* ]] && [ "$(last "$out")" = "mise use -g cargo:bacon cargo:cargo-aoc" ]
+  [[ $out == *"mise use -g cargo:bacon cargo:cargo-aoc"* ]]
+  [ "$(last "$out")" = "mise use -g cargo:bacon cargo:cargo-aoc" ]
   [ "$(last "$(cargo install tardis-cli --version 0.1.0 --locked <<<'')")" = "mise use -g cargo:tardis-cli@0.1.0" ]
   [ "$(last "$(gem install slipway -N <<<y)")" = "mise use -g gem:slipway" ]
   [ "$(last "$(npm i -g @scope/tool@1.2 <<<y)")" = "mise use -g npm:@scope/tool@1.2" ]

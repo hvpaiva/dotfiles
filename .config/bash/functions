@@ -48,6 +48,38 @@ rbp() {
   fi
 }
 
+sat() {
+  local root=$PWD
+  until [[ -z $root || -d $root/.satori ]]; do
+    root=${root%/*}
+  done
+  root=${root:-$PWD/dojo}
+
+  case $1 in
+  init) _sat_init "$root" ;;
+  reset) _sat_reset "$root" ;;
+  restart) _sat_reset "$root" && _sat_init "$root" ;;
+  *)
+    echo 'usage: sat init | reset | restart' >&2
+    return 2
+    ;;
+  esac
+}
+
+_sat_init() {
+  (builtin cd -- "${1%/*}" && satori init "${1##*/}") || return
+  builtin cd -- "$1" || return
+}
+
+_sat_reset() {
+  [[ -e $1 ]] || return 0
+  if [[ ! -d $1/.satori ]]; then
+    echo "sat: $1 is not a satori dojo, leaving it alone" >&2
+    return 1
+  fi
+  builtin cd -- "${1%/*}" && rm -rf -- "$1"
+}
+
 # gems is now the Ruby executable in ~/.local/bin (gems-explorer).
 
 source "${BASH_SOURCE[0]%/*}/ruby-completion"

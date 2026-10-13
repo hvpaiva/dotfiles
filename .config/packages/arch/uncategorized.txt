@@ -55,3 +55,4 @@ lua51 pacman
 ruby pacman
 ttf-jetbrains-mono-nerd-basic pacman
 sunshine pacman
+openrgb pacman

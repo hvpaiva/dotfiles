@@ -27,6 +27,7 @@
 !/.claude/
 /.claude/*
 !/.claude/CLAUDE.md
+!/.claude/.gitattributes
 !/.claude/agents/
 !/.claude/statusline/
 !/.claude/themes/
@@ -155,6 +156,8 @@
 
 # Per-host marker written by dots setup (zeus, athena), used to pick the per-host layers
 /.config/dotfiles/host
+# The backup the ProductFactory ADE leaves next to settings.json before adding its hooks
+/.config/dotfiles/hosts/*/.claude/settings.json.bak
 
 # Personal CLIs and their completion; nothing else under ~/.local
 !/.local/

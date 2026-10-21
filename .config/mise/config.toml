@@ -96,15 +96,6 @@ cocogitto = "latest"
 "github:asciinema/agg" = { version = "latest", bin = "agg" }
 "github:BurntSushi/biff" = "latest" # renamed bttf upstream from 0.1.4: the binary is bttf
 "github:webstonehq/tuxedo" = "latest"
-ghcup = "latest"
-"mise-ghcup:ghc" = "latest"
-"mise-ghcup:hls" = "latest"
-cabal = "latest"
-stack = "latest"
-"cargo:ghcitty" = "latest"
-ormolu = "latest"
-"github:tfausak/cabal-gild" = "latest"
-hlint = "latest"
 "go:github.com/go-delve/delve/cmd/dlv" = "latest"
 "pipx:debugpy" = "latest"
 "github:microsoft/vscode-js-debug" = { version = "latest", asset_pattern = "js-debug-dap-*.tar.gz" }
@@ -120,12 +111,9 @@ terraform-ls = "latest"
 tflint = "latest"
 golangci-lint = "latest"
 "go:golang.org/x/tools/cmd/goimports" = "latest"
-
-[plugins]
-"vfox-backend:mise-ghcup" = "https://github.com/wasp-lang/mise-ghcup.git"
+pi = "latest"
 
 [settings]
-experimental = true
 idiomatic_version_file_enable_tools = ["ruby"]
 
 [settings.github]

@@ -107,6 +107,19 @@ Aplicado — tudo certo."')"
   assert_denied
 }
 
+@test "the PR summary that Typo appends to a body is not linted" {
+  printf 'O exportador grava o registro no bucket.\n\n **PR Summary by Typo**\n------------\n\n- **Testes de Unidade**: Cobertura extensa.\n' >"$BATS_TEST_TMPDIR/body.md"
+  decision "$(bash_payload "gh pr edit 191 --body-file $BATS_TEST_TMPDIR/body.md")"
+  assert_allowed
+}
+
+@test "prose before the Typo summary is still linted" {
+  printf 'Contexto: o exportador grava o registro.\n\n **PR Summary by Typo**\n------------\n\nVisão geral do PR.\n' >"$BATS_TEST_TMPDIR/body.md"
+  decision "$(bash_payload "gh pr edit 191 --body-file $BATS_TEST_TMPDIR/body.md")"
+  assert_denied
+  [[ $output == *Conduta.Rotulo* ]]
+}
+
 @test "commands that send nothing are allowed" {
   decision "$(bash_payload 'git commit -m "Status: wip" && ls -la')"
   assert_allowed

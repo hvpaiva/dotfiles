@@ -171,7 +171,8 @@ stashed around the merge), re-link the per-host files, install the mise tools
 the config lists but the machine lacks, then upgrade the mise tools, rebuild
 augur when its clone moved past the last build, update Ollama (from its own
 installer, on Ubuntu) and pull augur's model, rebuild bashdb when bash moved to
-a new release, update ble.sh and update the tmux plugins.
+a new release, update ble.sh and update the tmux plugins. On a terminal, the
+mise steps show how long they have run and which tools are in flight.
 
 Usage:
   dots update [--quick]
@@ -414,14 +415,22 @@ need_public() {
 }
 # Git filters named in the repo's .gitattributes. Their commands live in the repo
 # config, which a clone does not carry, so every command makes sure they are set.
-# claude-session: the model and effort Claude Code records from a session stay on
-# disk and out of git (hosts/.gitattributes).
-CLAUDE_SESSION_CLEAN="jq --indent 2 'del(.model, .effortLevel, .modelSettings)'"
+# Git runs them from the work tree root, $HOME, so the paths are relative to it.
+# claude-session: what Claude Code and the ProductFactory runner write into
+# settings.json (model, effort, telemetry, agent hooks) stays on disk and out of git
+# (hosts/.gitattributes). productfactory-block: the runner's block in CLAUDE.md
+# (.claude/.gitattributes).
+CLAUDE_SESSION_CLEAN="jq --indent 2 -f .config/dotfiles/filters/claude-settings.jq"
+PRODUCTFACTORY_BLOCK_CLEAN=".config/dotfiles/filters/productfactory-block"
+repo_filter() { # NAME CLEAN
+  [[ $(repo_git public config --get "filter.$1.clean" 2>/dev/null) == "$2" ]] && return 0
+  repo_git public config "filter.$1.clean" "$2"
+  repo_git public config "filter.$1.smudge" cat
+}
 repo_filters() {
   have jq || return 0
-  [[ $(repo_git public config --get filter.claude-session.clean 2>/dev/null) == "$CLAUDE_SESSION_CLEAN" ]] && return 0
-  repo_git public config filter.claude-session.clean "$CLAUDE_SESSION_CLEAN"
-  repo_git public config filter.claude-session.smudge cat
+  repo_filter claude-session "$CLAUDE_SESSION_CLEAN"
+  repo_filter productfactory-block "$PRODUCTFACTORY_BLOCK_CLEAN"
 }
 # Git takes a size change for a content change without running the clean filter,
 # so a model switch ("opus" to "fable") still reads as modified, and a pull that
@@ -433,7 +442,7 @@ repo_refresh_filtered() {
   while IFS= read -r f; do
     [[ -n $f ]] || continue
     repo_git public diff --quiet -- "$f" 2>/dev/null && repo_git public add -- "$f" 2>/dev/null
-  done < <(repo_git public ls-files -m -- '.config/dotfiles/hosts/*/.claude/settings.json' 2>/dev/null)
+  done < <(repo_git public ls-files -m -- '.config/dotfiles/hosts/*/.claude/settings.json' .claude/CLAUDE.md 2>/dev/null)
   return 0
 }
 need_repo() { repo_present "$1" || die "the $(repo_label "$1") repo is not set up here (dots setup)"; }
@@ -680,7 +689,9 @@ mise_missing() { mise ls --missing --no-header 2>/dev/null | awk 'NF { print $1 
 # (cargo --path/--git, like augur) are deliberate and left out, and so are the
 # tools a port step installs for its own builds. Gems are not checked: one
 # installed by hand cannot be told apart from those Ruby bundles.
-OUTSIDE_MISE_OK=(go:wails pipx:aqtinstall) # the Ubuntu port's build tools: Wails for aether, aqt for Qt
+# The Ubuntu port's build tools (Wails for aether, aqt for Qt), and headroom, which the
+# ProductFactory runner installs and updates itself through pipx (`factory tools`).
+OUTSIDE_MISE_OK=(go:wails pipx:aqtinstall pipx:headroom-ai)
 outside_mise() {
   local n
   {
@@ -701,6 +712,67 @@ mise_held() {
   mise ls --missing --no-header 2>&1 >/dev/null |
     sed -nE -e 's/.*Failed to resolve tool version list for ([^ ]+):.*eligible ([0-9-]+ [0-9:]+).*/\1 until \2/p' -e 't' \
       -e 's/.*Failed to resolve tool version list for ([^ ]+):.*/\1 unresolved/p' | sort -u
+}
+# While it works, mise logs a progress block every few seconds: a "mise ███░ N/M · Ts"
+# header, then one indented row per tool in flight ("  NAME STATE Ts", or "  N queued").
+# The newest block as one phrase ("36/39 · gopls@0.24.0 installing, 7 queued"); before
+# the first block, the last thing mise said.
+mise_progress() { # LOG
+  awk '
+    /^mise [█░]+ [0-9]+\/[0-9]+/ { count = $3; tools = ""; block = 1; next }
+    block && /^  [^ ]/ { tools = tools (tools == "" ? "" : ", ") $1 " " $2; next }
+    { block = 0 }
+    NF { last = $0 }
+    END {
+      if (count != "") printf "%s%s", count, (tools == "" ? "" : " · " tools)
+      else { sub(/^mise +/, "", last); gsub(/ {2,}/, " ", last); printf "%s", last }
+    }' "$1" 2>/dev/null
+}
+mise_failed() { awk '/^mise ✗ / { print $3 }' "$1" 2>/dev/null; } # LOG — the tools mise gave up on
+failed_in() { # LOG — " (tool, tool)" for a warning, or nothing
+  local t
+  t=$(words "$(mise_failed "$1")")
+  [[ -z $t ]] || printf ' (%s)' "$t"
+}
+duration() { # SECONDS → 42s, 3m07s, 1h02m
+  if (($1 < 60)); then printf '%ds' "$1"
+  elif (($1 < 3600)); then printf '%dm%02ds' $(($1 / 60)) $(($1 % 60))
+  else printf '%dh%02dm' $(($1 / 3600)) $(($1 % 3600 / 60)); fi
+}
+# Runs CMD with its output in LOG. With a terminal, one line under NAME is redrawn every
+# second with the time so far and where mise is, so a slow download does not look like a
+# hang. CMD gets its own session, so Ctrl+C reaches it only through the trap here, which
+# stops it and says where it was. Sets rl_secs.
+run_logged() { # NAME DOING LOG CMD…
+  local name=$1 doing=$2 log=$3 start=$SECONDS pid status tty cols text _
+  shift 3
+  rl_secs=0
+  if ! have setsid || ! (: <>/dev/tty) 2>/dev/null; then
+    "$@" >"$log" 2>&1
+    status=$?
+    rl_secs=$((SECONDS - start))
+    return "$status"
+  fi
+  exec {tty}<>/dev/tty
+  setsid -w "$@" >"$log" 2>&1 </dev/null &
+  pid=$!
+  trap 'kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+    printf "\r\e[K" >&"$tty"
+    warn "$name" "stopped after $(duration $((SECONDS - start))) at $(mise_progress "$log"), log $log"
+    exit 130' INT TERM
+  while sleep 1; kill -0 "$pid" 2>/dev/null; do
+    read -r _ cols < <(stty size <&"$tty" 2>/dev/null)
+    [[ $cols =~ ^[0-9]+$ ]] && ((cols >= 20)) || cols=80
+    text=$(printf '%-10s %s %s · %s' "$name" "$doing" "$(duration $((SECONDS - start)))" "$(mise_progress "$log")")
+    printf '\r\e[K%s' "${text:0:cols-1}" >&"$tty"
+  done
+  wait "$pid"
+  status=$?
+  trap - INT TERM
+  printf '\r\e[K' >&"$tty"
+  exec {tty}>&-
+  rl_secs=$((SECONDS - start))
+  return "$status"
 }
 installed_pkgs() { # PKG… — those installed here
   local p
@@ -1190,7 +1262,7 @@ cmd_push() {
 
 # ── update: bring the machine up to date ─────────────────────────────────────
 cmd_update() {
-  local quick=0 r missing held l
+  local quick=0 r missing held l log
   while (($#)); do
     case $1 in
       --quick) quick=1 ;;
@@ -1209,14 +1281,18 @@ cmd_update() {
     missing=$(mise_missing)
     if [[ -n $missing ]]; then
       line mise "installing $(words "$missing")"
-      if mise install -y >"$STATE_DIR/mise-install.log" 2>&1; then line mise installed; else warn mise "install failed, log $STATE_DIR/mise-install.log"; fi
+      log=$STATE_DIR/mise-install.log
+      if run_logged mise installing "$log" mise install -y; then line mise "installed in $(duration "$rl_secs")"
+      else warn mise "install failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     else
       line mise "nothing missing"
     fi
     held=$(mise_held)
     [[ -n $held ]] && while IFS= read -r l; do warn mise "not installable yet: $l"; done <<<"$held"
     if (( ! quick )); then
-      if mise upgrade >"$STATE_DIR/mise-upgrade.log" 2>&1; then line mise "upgraded, log $STATE_DIR/mise-upgrade.log"; else warn mise "upgrade failed, log $STATE_DIR/mise-upgrade.log"; fi
+      log=$STATE_DIR/mise-upgrade.log
+      if run_logged mise upgrading "$log" mise upgrade; then line mise "upgraded in $(duration "$rl_secs"), log $log"
+      else warn mise "upgrade failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     fi
     mise reshim >/dev/null 2>&1 || true
   fi
@@ -1685,7 +1761,9 @@ step_mise() {
     if curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh >/dev/null 2>&1; then line mise "installed ~/.local/bin/mise"; else die "mise install failed"; fi
   fi
   line mise "$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }'), installing tools"
-  if mise install -y >"$STATE_DIR/mise-install.log" 2>&1; then line mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed"; else warn mise "some tools failed, log $STATE_DIR/mise-install.log"; fi
+  local log=$STATE_DIR/mise-install.log
+  if run_logged mise installing "$log" mise install -y; then line mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed in $(duration "$rl_secs")"
+  else warn mise "some tools failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
   mise reshim >/dev/null 2>&1 || true
 }
 step_font() {

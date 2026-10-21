@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Clean filter for .claude/CLAUDE.md (filter=productfactory-block): drops the block the
+# ProductFactory runner keeps between its markers, and the blank line it leaves after
+# it. The runner puts the block back on every start, so git is where it is held back.
+exec awk '
+  /^<!-- productfactory:start -->$/ { skip = 1; next }
+  skip && /^<!-- productfactory:end -->$/ { skip = 0; trim = 1; next }
+  skip { next }
+  trim && /^$/ { trim = 0; next }
+  { trim = 0; print }
+'

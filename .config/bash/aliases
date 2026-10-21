@@ -34,10 +34,6 @@ if command -v rich-ri &> /dev/null; then
   alias ri='rich-ri'
 fi
 
-if command -v ghcitty &> /dev/null; then
-  alias ghci='ghcitty'
-fi
-
 # dots (~/.local/bin/dots) fronts the dotfiles, private and nvim repos; dotp is git in the private one
 alias dotp='dots private'
 

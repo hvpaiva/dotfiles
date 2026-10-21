@@ -1,0 +1,3 @@
+# The ProductFactory runner writes its guidance block into CLAUDE.md on every start.
+# The productfactory-block filter (set up by dots) keeps it on disk and out of git.
+CLAUDE.md filter=productfactory-block

@@ -38,6 +38,7 @@ HEREDOC = re.compile(
 )
 MARKER = re.compile(r"__PROSE_HEREDOC_(\d+)__")
 BOT_COMMANDS = [re.compile(r"atlantis[ \t]+[^\n]+")]
+BOT_SECTIONS = [re.compile(r"^[ \t]*\*\*PR Summary by Typo\*\*.*\Z", re.M | re.S)]
 OPERATORS = {";", "&&", "||", "|", "&", "(", ")", ";;", "|&"}
 GH_TEXT_FLAGS = {"--body": "body", "-b": "body", "--title": "title", "-t": "title"}
 GH_FILE_FLAGS = {"--body-file", "-F"}
@@ -202,10 +203,17 @@ def is_bot_command(text):
     return any(command.fullmatch(text.strip()) for command in BOT_COMMANDS)
 
 
+def without_bot_sections(text):
+    for section in BOT_SECTIONS:
+        text = section.sub("", text)
+    return text
+
+
 def violations(texts):
     report = []
     for source, text in texts:
-        if is_bot_command(text):
+        text = without_bot_sections(text)
+        if is_bot_command(text) or not text.strip():
             continue
         out = lint(text)
         if out:

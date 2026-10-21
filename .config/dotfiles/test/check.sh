@@ -13,6 +13,20 @@ need() {
   }
 }
 
+# The ProductFactory runner writes a telemetry bearer token, its agent hooks and a
+# guidance block into files this repo tracks. The clean filters hold them back; this
+# fails the tree if one got through. Skipped when run in place, where root is $HOME.
+if [[ $mode != unit && $root != "$HOME" ]]; then
+  leaks=$(grep -rIlE --exclude-dir=.git \
+    -e 'pft_[A-Za-z0-9_-]{16,}' -e 'ORCA_AGENT_HOOK_TOKEN' -e '^<!-- productfactory:start -->$' \
+    -- "$root" | grep -v "^$root/.config/dotfiles/test/" || true)
+  if [[ -n $leaks ]]; then
+    echo "ProductFactory state in the tree (check the clean filters):" >&2
+    while IFS= read -r f; do printf '  %s\n' "${f#"$root/"}"; done <<<"$leaks" >&2
+    exit 1
+  fi
+fi
+
 if [[ $mode != unit ]]; then
   need shellcheck
   shell_files=("$root/bootstrap.sh" "$root/.local/bin/dots")

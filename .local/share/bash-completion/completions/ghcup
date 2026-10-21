@@ -1,2 +1,0 @@
-command -v ghcup >/dev/null 2>&1 || return 1
-eval -- "$(command ghcup --bash-completion-script ghcup 2>/dev/null)" && complete -p ghcup >/dev/null 2>&1

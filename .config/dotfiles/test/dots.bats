@@ -836,6 +836,58 @@ GH
   [ "${lines[1]}" = "npm:gone unresolved" ]
 }
 
+@test "mise_progress reads the newest progress block of a mise log" {
+  local log=$BATS_TEST_TMPDIR/mise.log
+  printf 'mise by @jdx – resolving 39 tools\nmise ✓ bat                    0ms\n' >"$log"
+  [ "$(mise_progress "$log")" = "✓ bat 0ms" ]
+  cat >>"$log" <<'LOG'
+mise ██████████████░░ 36/39 · 64.3s
+  go:golang.org/x/tools/gopls@0.24.0          installing  24.7s
+  copilot@1.0.100                             downloading  36.3s  126.8/127.4 MB · 6.0 MB/s
+  7 queued
+mise cargo:ghcitty@0.5.0    Compiling clap v4.6.0
+mise ███████████████░ 38/39 · 70.8s
+  mise-ghcup:hls@2.15.0.0                     installing  35.6s
+mise cargo:ghcitty@0.5.0    Compiling reedline v0.47.0
+LOG
+  [ "$(mise_progress "$log")" = "38/39 · mise-ghcup:hls@2.15.0.0 installing" ]
+  sed -i '/38\/39/,$d' "$log"
+  [ "$(mise_progress "$log")" = "36/39 · go:golang.org/x/tools/gopls@0.24.0 installing, copilot@1.0.100 downloading, 7 queued" ]
+  [ -z "$(mise_progress "$BATS_TEST_TMPDIR/none.log")" ]
+}
+
+@test "failed_in names the tools a mise log gave up on" {
+  local log=$BATS_TEST_TMPDIR/mise.log
+  printf 'mise ✓ cargo:ghcitty@0.5.0  27.0s\n' >"$log"
+  [ -z "$(failed_in "$log")" ]
+  printf 'mise ✗ mise-ghcup:hls@2.15.0.0   131.9s · failed: Backend install method failed\nmise ✗ npm:x@1  1s · failed\n' >>"$log"
+  [ "$(failed_in "$log")" = " (mise-ghcup:hls@2.15.0.0 npm:x@1)" ]
+}
+
+@test "duration prints seconds, minutes and hours" {
+  [ "$(duration 7)" = 7s ]
+  [ "$(duration 187)" = 3m07s ]
+  [ "$(duration 3720)" = 1h02m ]
+}
+
+@test "run_logged without a terminal logs the command and keeps its status" {
+  local log=$BATS_TEST_TMPDIR/run.log
+  run setsid -w bash -c 'source "$1"; run_logged mise upgrading "$2" sh -c "echo working; exit 3"; echo "status=$? secs=$rl_secs"' \
+    bash "$BATS_TEST_DIRNAME/../../../.local/bin/dots" "$log"
+  [[ $output =~ ^status=3\ secs=[01]$ ]]
+  [ "$(cat "$log")" = working ]
+}
+
+@test "run_logged on a terminal redraws one progress line and clears it at the end" {
+  command -v script >/dev/null || skip "script (util-linux) not installed"
+  local log=$BATS_TEST_TMPDIR/run.log fake=$BATS_TEST_TMPDIR/fake-mise
+  printf '#!/bin/sh\nprintf "mise ░░░░ 0/1 · 1s\\n  mise-ghcup:hls@2.15.0.0  installing  1s\\n"\nsleep 1.5\n' >"$fake"
+  chmod +x "$fake"
+  run script -qec "bash -c 'source \"\$1\"; run_logged mise upgrading \"\$2\" \"\$3\"; echo status=\$?' bash '$BATS_TEST_DIRNAME/../../../.local/bin/dots' '$log' '$fake'" /dev/null
+  [[ $output == *$'\r\e[Kmise       upgrading '[12]'s · 0/1 · mise-ghcup:hls@2.15.0.0 installing'* ]]
+  [[ $output == *$'\r\e[Kstatus=0'* ]]
+}
+
 # ── mise-intercept (~/.config/bash/mise-intercept) ──────────────────────────
 mi_setup() {
   local bin=$BATS_TEST_TMPDIR/bin t
@@ -893,21 +945,28 @@ last() { printf '%s\n' "$1" | tail -n1; }
   printf '#!/bin/sh\nprintf "/n/lib\\n/n/lib/node_modules/npm\\n/n/lib/node_modules/corepack\\n/n/lib/node_modules/ccusage\\n"\n' >"$bin/npm"
   printf '#!/bin/sh\necho %s\n' "$gp" >"$bin/go"
   printf '#!/bin/sh\nprintf "graphifyy v0.4.23\\n- graphify\\n"\n' >"$bin/uv"
+  printf '#!/bin/sh\nprintf "aqtinstall 3.3.0\\nheadroom-ai 0.41.0\\nhttpie 3.2.4\\n"\n' >"$bin/pipx"
   chmod +x "$bin"/*
   PATH=$bin:/usr/bin:/bin
   run outside_mise
-  [ "$output" = "$(printf 'cargo:bacon\ngo:sesh\nnpm:ccusage\nuv:graphifyy')" ]
+  [ "$output" = "$(printf 'cargo:bacon\ngo:sesh\nnpm:ccusage\npipx:httpie\nuv:graphifyy')" ]
+}
+
+# The filter commands are paths in the work tree, so a test HOME needs its own copy.
+copy_filters() {
+  mkdir -p "$HOME/.config/dotfiles"
+  cp -r "$BATS_TEST_DIRNAME/../filters" "$HOME/.config/dotfiles/"
 }
 
 @test "the claude-session filter keeps model and effort out of git" {
   command -v jq >/dev/null || skip "jq not installed"
-  make_public
+  make_public; copy_filters
   local f=.config/dotfiles/hosts/testhost/.claude/settings.json
   mkdir -p "$HOME/${f%/*}"
   printf '*/.claude/settings.json filter=claude-session\n' >"$HOME/.config/dotfiles/hosts/.gitattributes"
   printf '{\n  "hooks": {},\n  "model": "opus",\n  "effortLevel": "high"\n}\n' >"$HOME/$f"
   repo_filters
-  repo_git public add -f "$f" .config/dotfiles/hosts/.gitattributes && repo_git public commit -q -m settings
+  repo_git public add -f "$f" .config/dotfiles/hosts/.gitattributes .config/dotfiles/filters && repo_git public commit -q -m settings
   [ "$(repo_git public show "HEAD:$f")" = "$(printf '{\n  "hooks": {}\n}')" ]
   grep -q '"model": "opus"' "$HOME/$f"
   printf '{\n  "hooks": {},\n  "model": "fable",\n  "effortLevel": "xhigh"\n}\n' >"$HOME/$f"
@@ -917,6 +976,63 @@ last() { printf '%s\n' "$1" | tail -n1; }
   repo_refresh_filtered
   repo_state public; [ "$st_n" -eq 1 ]
   [ "$(repo_git public diff --cached --name-only)" = "" ]
+}
+
+@test "the claude-session filter holds back ProductFactory telemetry and agent hooks only" {
+  command -v jq >/dev/null || skip "jq not installed"
+  copy_filters
+  local own='{"type": "command", "command": "~/.claude/hooks/own.sh"}'
+  local pf='{"type": "command", "command": "[ -n \"${ORCA_AGENT_HOOK_TOKEN-}\" ] && x"}'
+  cat >"$BATS_TEST_TMPDIR/in.json" <<EOF
+{
+  "env": {
+    "BASH_ENV": "/b",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://productfactory-stg.example/api/telemetry/otlp",
+    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer pft_0123456789abcdefghij",
+    "OTEL_LOG_TOOL_DETAILS": "1",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1"
+  },
+  "hooks": {
+    "Stop": [{"hooks": [$own]}, {"hooks": [$pf]}],
+    "SessionEnd": [{"hooks": [$pf]}]
+  }
+}
+EOF
+  run bash -c "cd '$HOME' && $CLAUDE_SESSION_CLEAN" <"$BATS_TEST_TMPDIR/in.json"
+  [ "$status" -eq 0 ]
+  [ "$(jq -c . <<<"$output")" = '{"env":{"BASH_ENV":"/b"},"hooks":{"Stop":[{"hooks":[{"type":"command","command":"~/.claude/hooks/own.sh"}]}]}}' ]
+  # someone else's OTLP endpoint is configuration, not ProductFactory's
+  run bash -c "cd '$HOME' && $CLAUDE_SESSION_CLEAN" <<<'{"env": {"OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.example", "OTEL_LOGS_EXPORTER": "otlp"}}'
+  [ "$(jq -c . <<<"$output")" = '{"env":{"OTEL_EXPORTER_OTLP_ENDPOINT":"https://otel.example","OTEL_LOGS_EXPORTER":"otlp"}}' ]
+}
+
+@test "the productfactory-block filter keeps the runner's CLAUDE.md block out of git" {
+  command -v jq >/dev/null || skip "jq not installed"
+  make_public; copy_filters
+  mkdir -p "$HOME/.claude"
+  printf 'CLAUDE.md filter=productfactory-block\n' >"$HOME/.claude/.gitattributes"
+  printf '# Mine\n\nrules\n' >"$HOME/.claude/CLAUDE.md"
+  repo_filters
+  repo_git public add -f .claude/CLAUDE.md .claude/.gitattributes .config/dotfiles/filters && repo_git public commit -q -m claude
+  printf '<!-- productfactory:start -->\n# ProductFactory\n\nroute it\n<!-- productfactory:end -->\n\n# Mine\n\nrules\n' >"$HOME/.claude/CLAUDE.md"
+  repo_refresh_filtered
+  repo_state public; [ "$st_n" -eq 0 ]
+  grep -q '^# ProductFactory$' "$HOME/.claude/CLAUDE.md"
+  printf '\nmore rules\n' >>"$HOME/.claude/CLAUDE.md"
+  repo_git public add .claude/CLAUDE.md && repo_git public commit -q -m edit
+  [ "$(repo_git public show HEAD:.claude/CLAUDE.md)" = "$(printf '# Mine\n\nrules\n\nmore rules')" ]
+}
+
+@test "the shared checker rejects a tree that carries ProductFactory state" {
+  make_checkable_public
+  local head; head=$(repo_git public rev-parse HEAD)
+  printf 'Authorization=Bearer pft_0123456789abcdefghij\n' >"$HOME/.bashrc.local"
+  repo_git public add -f .bashrc.local
+  run cmd_save --no-push -m leak
+  [ "$status" -ne 0 ]
+  [[ $output == *"ProductFactory state in the tree"* ]]
+  [[ $output == *".bashrc.local"* ]]
+  [ "$(repo_git public rev-parse HEAD)" = "$head" ]
 }
 
 # A small complete tree exercises the real shared checker without recursively

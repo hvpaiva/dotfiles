@@ -137,6 +137,8 @@ unit tests and shell tests (.config/bash/tests) as CI, against a temporary copy
 of what dots save would commit. Includes new files and the root entries hidden
 by sparse checkout. Requires shellcheck, ruby and bats; a shell test skips what
 needs a tool the machine lacks. Leaves the real index and work tree unchanged.
+The output goes to ~/.local/state/dotfiles/check.log; on a terminal one line
+shows the tests run so far, and a failure prints the failing tests.
 
 Usage:
   dots check
@@ -319,8 +321,10 @@ else
   c_b='' c_r='' c_g='' c_y='' c_c='' c_0=''
 fi
 WARNINGS=()
-line() { printf '%-10s %s%s%s\n' "$1" "${3:-}" "$2" "${3:+$c_0}"; } # NAME DETAIL [COLOUR]
+line() { printf '%s%-10s%s %s%s%s\n' "$c_b" "$1" "$c_0" "${3:-}" "$2" "${3:+$c_0}"; } # NAME DETAIL [COLOUR]
+good() { line "$1" "$2" "$c_g"; }                                   # NAME DETAIL — a step that finished well
 warn() { WARNINGS+=("$1: $2"); line "$1" "$2" "$c_y"; }             # NAME DETAIL
+bad()  { WARNINGS+=("$1: $2"); line "$1" "$2" "$c_r"; }             # NAME DETAIL — a step that failed
 die()  { printf '%serror:%s %s\n' "$c_r" "$c_0" "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 indent() { local l; while IFS= read -r l; do printf '%s%s\n' "$1" "$l"; done; }
@@ -506,14 +510,14 @@ repo_update() { # NAME RESET — fast-forward to the upstream (fetched already),
   up=$(repo_git "$r" rev-parse --abbrev-ref '@{upstream}' 2>/dev/null) || { warn "$label" "no upstream branch"; return 1; }
   before=$(repo_git "$r" rev-parse HEAD)
   if (( reset )); then
-    repo_git "$r" reset -q --hard "$up" || { warn "$label" "reset to $up failed"; return 1; }
+    repo_git "$r" reset -q --hard "$up" || { bad "$label" "reset to $up failed"; return 1; }
   elif ! err=$(repo_git "$r" merge -q --ff-only --autostash "$up" 2>&1); then
     warn "$label" "cannot fast-forward to $up: ${err%%$'\n'*}"
     return 1
   fi
   after=$(repo_git "$r" rev-parse HEAD)
   if [[ $before == "$after" ]]; then
-    line "$label" "up to date $(repo_git "$r" log --format='%h %s' -1)"
+    good "$label" "up to date $(repo_git "$r" log --format='%h %s' -1)"
   else
     n=$(repo_git "$r" rev-list --count "$before..$after")
     line "$label" "$n new commit(s), now at $(repo_git "$r" log --format='%h %s' -1)"
@@ -531,9 +535,9 @@ push_repo() { # NAME — push when there is something to push
     return 1
   fi
   if repo_git "$r" push -q origin HEAD 2>/dev/null; then
-    line "$label" "pushed $st_ahead commit(s)"
+    good "$label" "pushed $st_ahead commit(s)"
   else
-    warn "$label" "push failed"
+    bad "$label" "push failed"
     return 1
   fi
 }
@@ -669,7 +673,7 @@ root_hide() { # QUIET
   local out dirty
   dirty=$(repo_git public status --porcelain --ignore-submodules=all -- "${ROOT_ENTRIES[@]}" 2>/dev/null | awk '{ print $NF }' | paste -sd' ')
   [[ -n $dirty ]] && { warn root "$dirty changed: dots save first"; return 1; }
-  out=$(repo_git public sparse-checkout set --no-cone "${ROOT_PATTERNS[@]}" 2>&1) || { warn root "sparse-checkout failed: $out"; return 1; }
+  out=$(repo_git public sparse-checkout set --no-cone "${ROOT_PATTERNS[@]}" 2>&1) || { bad root "sparse-checkout failed: $out"; return 1; }
   [[ -n $out ]] && warn root "${out//$'\n'/ }"
   (( $1 )) || line root "${ROOT_ENTRIES[*]} out of \$HOME"
 }
@@ -1214,9 +1218,15 @@ validate_public() (
     warn check "missing .config/dotfiles/test/check.sh"
     return 1
   fi
-  line check "running lint and unit tests"
-  bash "$tmp/tree/.config/dotfiles/test/check.sh" || return 1
-  line check passed
+  local log=$STATE_DIR/check.log
+  mkdir -p "$STATE_DIR"
+  if run_logged check running "$log" tap_progress bash "$tmp/tree/.config/dotfiles/test/check.sh"; then
+    good check "passed in $(duration "$rl_secs"), $(tap_summary "$log")"
+  else
+    check_failures "$log" | indent '  '
+    bad check "failed after $(duration "$rl_secs"), log $log"
+    return 1
+  fi
 )
 cmd_check() {
   [[ ${1:-} == -h || ${1:-} == --help ]] && { help_for check; return 0; }
@@ -1257,7 +1267,7 @@ cmd_save() {
   done
   need_public; host_name
   link_all 1
-  validate_public || { warn save "validation failed; no commits or pushes made"; return 1; }
+  validate_public || { bad save "validation failed; no commits or pushes made"; return 1; }
   for r in nvim private public; do
     repo_present "$r" || continue
     label=$(repo_label "$r")
@@ -1269,9 +1279,9 @@ cmd_save() {
       m=$msg
       [[ -n $m ]] || m=$(ask_message "$st_changes") || { warn "$label" "skipped"; continue; }
       if repo_git "$r" add -A && repo_git "$r" commit -q -m "$m"; then
-        line "$label" "committed $(repo_git "$r" log --format='%h %s' -1)"
+        good "$label" "committed $(repo_git "$r" log --format='%h %s' -1)"
       else
-        warn "$label" "commit failed"; continue
+        bad "$label" "commit failed"; continue
       fi
     fi
     (( push )) && push_repo "$r"
@@ -1309,8 +1319,8 @@ cmd_update() {
     if [[ -n $missing ]]; then
       line mise "installing $(words "$missing")"
       log=$STATE_DIR/mise-install.log
-      if run_logged mise installing "$log" mise_progress mise install -y; then line mise "installed in $(duration "$rl_secs")"
-      else warn mise "install failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
+      if run_logged mise installing "$log" mise_progress mise install -y; then good mise "installed in $(duration "$rl_secs")"
+      else bad mise "install failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     else
       line mise "nothing missing"
     fi
@@ -1318,8 +1328,8 @@ cmd_update() {
     [[ -n $held ]] && while IFS= read -r l; do warn mise "not installable yet: $l"; done <<<"$held"
     if (( ! quick )); then
       log=$STATE_DIR/mise-upgrade.log
-      if run_logged mise upgrading "$log" mise_progress mise upgrade; then line mise "upgraded in $(duration "$rl_secs"), log $log"
-      else warn mise "upgrade failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
+      if run_logged mise upgrading "$log" mise_progress mise upgrade; then good mise "upgraded in $(duration "$rl_secs"), log $log"
+      else bad mise "upgrade failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     fi
     mise reshim >/dev/null 2>&1 || true
   fi
@@ -1330,7 +1340,7 @@ cmd_update() {
     step_bashdb
     step_blesh_update
     if [[ -x $TPM_DIR/tpm/bin/update_plugins ]]; then
-      if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/update_plugins" all >/dev/null 2>&1; then line tmux "plugins updated"; else warn tmux "plugin update failed"; fi
+      if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/update_plugins" all >/dev/null 2>&1; then good tmux "plugins updated"; else bad tmux "plugin update failed"; fi
     fi
   fi
 }
@@ -1368,7 +1378,7 @@ step_deps() {
     arch)   run_root pacman -S --needed --noconfirm "${missing[@]}" >/dev/null && ok=1 ;;
     ubuntu) run_root apt-get update -qq >/dev/null 2>&1; run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}" >/dev/null && ok=1 ;;
   esac
-  if (( ok )); then line deps installed; else warn deps "install failed: ${missing[*]}"; fi
+  if (( ok )); then good deps installed; else bad deps "install failed: ${missing[*]}"; fi
   hash -r
 }
 step_omarchy() {
@@ -1452,15 +1462,15 @@ secrets_gh() { # logged in, with the scopes the key step needs
   local t
   have gh || { warn gh "not installed"; return 1; }
   if gh auth status >/dev/null 2>&1; then
-    if gh_scopes_ok; then line gh "logged in"; return 0; fi
+    if gh_scopes_ok; then good gh "logged in"; return 0; fi
     t=$(op_field github-token)
-    if [[ -n $t ]] && gh auth login --with-token <<<"$t" >/dev/null 2>&1 && gh_scopes_ok; then line gh "logged in again with the token from 1Password (the old one lacked ${GH_SCOPES[*]})"; return 0; fi
+    if [[ -n $t ]] && gh auth login --with-token <<<"$t" >/dev/null 2>&1 && gh_scopes_ok; then good gh "logged in again with the token from 1Password (the old one lacked ${GH_SCOPES[*]})"; return 0; fi
     warn gh "token lacks ${GH_SCOPES[*]}: gh auth refresh -h github.com -s ${GH_SCOPES[0]} -s ${GH_SCOPES[1]}, or a token with them in $OP_ITEM/github-token"
     return 1
   fi
   t=$(op_field github-token)
   [[ -n $t ]] || { warn gh "not logged in and $OP_ITEM/github-token not set"; return 1; }
-  if gh auth login --with-token <<<"$t" >/dev/null 2>&1; then line gh "logged in with the token from 1Password"; else warn gh "login with the token from 1Password failed"; return 1; fi
+  if gh auth login --with-token <<<"$t" >/dev/null 2>&1; then good gh "logged in with the token from 1Password"; else bad gh "login with the token from 1Password failed"; return 1; fi
   gh_scopes_ok || { warn gh "the token from 1Password lacks ${GH_SCOPES[*]}"; return 1; }
 }
 secrets_key() { # generated here, on GitHub for authentication and (unless another key signs) signing
@@ -1592,12 +1602,12 @@ step_packages() { # the host's sets
       arch) run_root pacman -S --needed --noconfirm "${avail[@]}" >/dev/null && ok=1 ;;
       ubuntu) run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${avail[@]}" >/dev/null && ok=1 ;;
     esac
-    if (( ok )); then line packages "installed"; else warn packages "install failed: ${avail[*]}"; fi
+    if (( ok )); then good packages "installed"; else bad packages "install failed: ${avail[*]}"; fi
   fi
   if ((${#aur[@]})); then
     if [[ $os == arch ]] && have yay; then
       line packages "AUR, through yay: ${aur[*]}"
-      if yay -S --needed --noconfirm "${aur[@]}" >/dev/null 2>&1; then line packages "AUR installed"; else warn packages "yay failed for: ${aur[*]}"; fi
+      if yay -S --needed --noconfirm "${aur[@]}" >/dev/null 2>&1; then good packages "AUR installed"; else bad packages "yay failed for: ${aur[*]}"; fi
     else
       warn packages "not in the repositories here: ${aur[*]} (add their repository, or drop them from the set)"
     fi
@@ -1635,7 +1645,7 @@ step_rust() {
     line rust "$("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"
   else
     have curl || die "curl is required to install rustup"
-    if curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y -q --no-modify-path >/dev/null; then line rust "installed $("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else die "rustup install failed"; fi
+    if curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y -q --no-modify-path >/dev/null; then good rust "installed $("$HOME/.cargo/bin/rustc" --version 2>/dev/null)"; else die "rustup install failed"; fi
   fi
 }
 # augur, built from its clone. augur-built holds the commit of the last good build, so a build
@@ -1659,9 +1669,9 @@ step_augur() {
   line augur "building ${head:0:7}"
   if "$HOME/.cargo/bin/cargo" install -q --path "$AUGUR_DIR" 2>"$STATE_DIR/augur-build.log"; then
     printf '%s\n' "$head" >"$STATE_DIR/augur-built"
-    line augur "installed $(augur --version 2>/dev/null) (ble-augur restart in open shells)"
+    good augur "installed $(augur --version 2>/dev/null) (ble-augur restart in open shells)"
   else
-    warn augur "build failed, log $STATE_DIR/augur-build.log"
+    bad augur "build failed, log $STATE_DIR/augur-build.log"
   fi
 }
 # Ollama, which serves augur's model. On Ubuntu it comes from Ollama's own installer, which no
@@ -1689,7 +1699,7 @@ step_ollama_update() {
       OLLAMA_VERSION=$latest sh "$tmp/install.sh" >"$STATE_DIR/ollama-update.log" 2>&1; then
       line ollama "updated $current -> $(ollama_version)"
     else
-      warn ollama "update to $latest failed, log $STATE_DIR/ollama-update.log"
+      bad ollama "update to $latest failed, log $STATE_DIR/ollama-update.log"
     fi
     rm -rf "$tmp"
   fi
@@ -1712,7 +1722,7 @@ step_blesh() {
   else
     tmp=$(mktemp -d)
     if git clone -q --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git "$tmp/ble.sh" \
-      && make -s -C "$tmp/ble.sh" install PREFIX="$HOME/.local" >/dev/null; then line ble.sh installed; else warn ble.sh "install failed"; fi
+      && make -s -C "$tmp/ble.sh" install PREFIX="$HOME/.local" >/dev/null; then good ble.sh installed; else bad ble.sh "install failed"; fi
     rm -rf "$tmp"
   fi
 }
@@ -1726,7 +1736,7 @@ step_blesh_update() {
   if ! have make || ! have gawk; then warn ble.sh "needs make and gawk, update skipped"; return 0; fi
   before=$(blesh_version)
   if ! bash "$BLESH" --update >"$STATE_DIR/blesh-update.log" 2>&1; then
-    warn ble.sh "update failed, log $STATE_DIR/blesh-update.log"
+    bad ble.sh "update failed, log $STATE_DIR/blesh-update.log"
     return 0
   fi
   after=$(blesh_version)
@@ -1767,16 +1777,16 @@ step_bashdb() {
   if ! git clone -q --depth 1 -b "bash-$bd_bash" "$BASHDB_REPO" "$tmp/bashdb" 2>/dev/null; then
     warn bashdb "no upstream branch for bash $bd_bash yet"
   elif (cd "$tmp/bashdb" && sh ./autogen.sh --prefix="$HOME/.local" && make && make install) >"$STATE_DIR/bashdb-build.log" 2>&1; then
-    line bashdb "installed $(bashdb_release) for bash $bd_bash"
+    good bashdb "installed $(bashdb_release) for bash $bd_bash"
   else
-    warn bashdb "build failed, log $STATE_DIR/bashdb-build.log"
+    bad bashdb "build failed, log $STATE_DIR/bashdb-build.log"
   fi
   rm -rf "$tmp"
 }
 step_tpm() {
   [[ -d $TPM_DIR/tpm ]] || git clone -q https://github.com/tmux-plugins/tpm "$TPM_DIR/tpm"
   if have tmux; then
-    if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/install_plugins" >/dev/null 2>&1; then line tmux "tpm, $(tmux_plugins | wc -l) plugins"; else warn tmux "plugin install failed"; fi
+    if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/install_plugins" >/dev/null 2>&1; then good tmux "tpm, $(tmux_plugins | wc -l) plugins"; else bad tmux "plugin install failed"; fi
   else
     warn tmux "tmux not installed, plugins pending"
   fi
@@ -1785,12 +1795,12 @@ step_mise() {
   if (( skip_mise )); then line mise "skipped"; return 0; fi
   if ! have mise; then
     have curl || die "curl is required to install mise"
-    if curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh >/dev/null 2>&1; then line mise "installed ~/.local/bin/mise"; else die "mise install failed"; fi
+    if curl -fsSL https://mise.run | MISE_INSTALL_PATH="$HOME/.local/bin/mise" sh >/dev/null 2>&1; then good mise "installed ~/.local/bin/mise"; else die "mise install failed"; fi
   fi
   line mise "$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }'), installing tools"
   local log=$STATE_DIR/mise-install.log
-  if run_logged mise installing "$log" mise_progress mise install -y; then line mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed in $(duration "$rl_secs")"
-  else warn mise "some tools failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
+  if run_logged mise installing "$log" mise_progress mise install -y; then good mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed in $(duration "$rl_secs")"
+  else bad mise "some tools failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
   mise reshim >/dev/null 2>&1 || true
 }
 step_font() {
@@ -1815,7 +1825,7 @@ step_themes() {
   local url n=0
   while read -r url; do
     [[ -n $url ]] || continue
-    if omarchy-theme-install "$url" >/dev/null 2>&1; then n=$((n + 1)); else warn themes "install failed: $url"; fi
+    if omarchy-theme-install "$url" >/dev/null 2>&1; then n=$((n + 1)); else bad themes "install failed: $url"; fi
   done < <(themes_missing)
   line themes "$n installed now, $(find "$HOME/.config/omarchy/themes" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l) present"
 }
@@ -1870,7 +1880,7 @@ setup_steps() {
   if ((${#WARNINGS[@]})); then
     warn setup "${#WARNINGS[@]} warning(s) above, log $STATE_DIR/setup.log"
   else
-    line setup "done, log $STATE_DIR/setup.log"
+    good setup "done, log $STATE_DIR/setup.log"
   fi
   return 0
 }

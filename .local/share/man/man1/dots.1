@@ -83,7 +83,9 @@ would commit, including new files and sparse root entries. Requires shellcheck,
 ruby and bats; a shell test skips what needs a tool the machine lacks (tmux,
 ble.sh, rich-ri...). Leaves the real index and work tree unchanged. Covers
 public dotfiles; private and nvim retain their own repository hooks. Container
-tests remain in CI.
+tests remain in CI. The output goes to check.log; on a terminal one line shows
+the tests run so far, and a failure prints the failing tests with their
+diagnostics (or the lint output, when no test failed).
 .TP
 .BR save " [" \-m " \fIMESSAGE\fR] [" \-n "|" \-\-no\-push ]
 Commit and push every change, in every repo, in this order: nvim, private,
@@ -250,7 +252,7 @@ Public per-host files, symlinked into $HOME.
 Private per-host and shared files, symlinked into $HOME.
 .TP
 .I ~/.local/state/dotfiles/
-Logs (setup.log, mise-install.log, mise-upgrade.log, augur-build.log,
+Logs (setup.log, check.log, mise-install.log, mise-upgrade.log, augur-build.log,
 ollama-update.log, ollama-pull.log, blesh-update.log), the commit of the last
 augur build (augur-built) and what
 was moved aside instead of deleted (pre-checkout-*, nvim-*), listed by

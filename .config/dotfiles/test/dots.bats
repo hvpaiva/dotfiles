@@ -872,7 +872,7 @@ LOG
 
 @test "run_logged without a terminal logs the command and keeps its status" {
   local log=$BATS_TEST_TMPDIR/run.log
-  run setsid -w bash -c 'source "$1"; run_logged mise upgrading "$2" sh -c "echo working; exit 3"; echo "status=$? secs=$rl_secs"' \
+  run setsid -w bash -c 'source "$1"; run_logged mise upgrading "$2" mise_progress sh -c "echo working; exit 3"; echo "status=$? secs=$rl_secs"' \
     bash "$BATS_TEST_DIRNAME/../../../.local/bin/dots" "$log"
   [[ $output =~ ^status=3\ secs=[01]$ ]]
   [ "$(cat "$log")" = working ]
@@ -883,9 +883,31 @@ LOG
   local log=$BATS_TEST_TMPDIR/run.log fake=$BATS_TEST_TMPDIR/fake-mise
   printf '#!/bin/sh\nprintf "mise ░░░░ 0/1 · 1s\\n  mise-ghcup:hls@2.15.0.0  installing  1s\\n"\nsleep 1.5\n' >"$fake"
   chmod +x "$fake"
-  run script -qec "bash -c 'source \"\$1\"; run_logged mise upgrading \"\$2\" \"\$3\"; echo status=\$?' bash '$BATS_TEST_DIRNAME/../../../.local/bin/dots' '$log' '$fake'" /dev/null
-  [[ $output == *$'\r\e[Kmise       upgrading '[12]'s · 0/1 · mise-ghcup:hls@2.15.0.0 installing'* ]]
+  run script -qec "bash -c 'source \"\$1\"; run_logged mise upgrading \"\$2\" mise_progress \"\$3\"; echo status=\$?' bash '$BATS_TEST_DIRNAME/../../../.local/bin/dots' '$log' '$fake'" /dev/null
+  [[ $output == *$'\r\e[K\e[1mmise      \e[0m upgrading '[12]'s · 0/1 · mise-ghcup:hls@2.15.0.0 installing'* ]]
   [[ $output == *$'\r\e[Kstatus=0'* ]]
+}
+
+@test "tap_progress counts the tests of every suite and names the newest" {
+  local log=$BATS_TEST_TMPDIR/check.log
+  printf 'Syntax OK\n' >"$log"
+  [ "$(tap_progress "$log")" = linting ]
+  printf '1..3\nok 1 first\nnot ok 2 second\n# (in test file x.bats, line 4)\nok 3 third # skip no tmux\n1..2\nok 1 shell one\n' >>"$log"
+  [ "$(tap_progress "$log")" = "4/5, 1 failed · shell one" ]
+  [ "$(tap_summary "$log")" = "3 tests, 1 skipped" ]
+}
+
+@test "check_failures shows the failing tests, or the lint output when none failed" {
+  local log=$BATS_TEST_TMPDIR/check.log
+  printf '1..2\nok 1 first\nnot ok 2 second\n# (in test file x.bats, line 4)\n#   `[ 1 = 2 ]'"'"' failed\nok 3 third\n' >"$log"
+  run check_failures "$log"
+  [ "${lines[0]}" = "not ok 2 second" ]
+  [ "${lines[1]}" = "# (in test file x.bats, line 4)" ]
+  [ "${#lines[@]}" -eq 3 ]
+  printf 'In dots line 3:\nfoo=$bar baz\n^-- SC2034 (warning)\n' >"$log"
+  run check_failures "$log"
+  [ "${lines[0]}" = "In dots line 3:" ]
+  [ "${#lines[@]}" -eq 3 ]
 }
 
 # ── mise-intercept (~/.config/bash/mise-intercept) ──────────────────────────

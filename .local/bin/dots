@@ -739,13 +739,40 @@ duration() { # SECONDS → 42s, 3m07s, 1h02m
   elif (($1 < 3600)); then printf '%dm%02ds' $(($1 / 60)) $(($1 % 60))
   else printf '%dh%02dm' $(($1 / 3600)) $(($1 % 3600 / 60)); fi
 }
+# bats prints TAP: a "1..N" plan per suite, then "ok N name" or "not ok N name" per
+# test. The run so far as one phrase ("87/141, 1 failed · the newest test"); before the
+# first plan check.sh is still linting.
+tap_progress() { # LOG
+  awk '
+    /^1\.\.[0-9]+$/ { total += substr($0, 4); next }
+    /^(not )?ok [0-9]+/ { done++; if (/^not /) failed++; name = $0; sub(/^(not )?ok [0-9]+ /, "", name) }
+    END {
+      if (!total) { printf "linting"; exit }
+      printf "%d/%d%s · %s", done, total, (failed ? ", " failed " failed" : ""), name
+    }' "$1" 2>/dev/null
+}
+tap_summary() { # LOG — "141 tests, 1 skipped"
+  awk '
+    /^ok [0-9]+/ { n++; if (/ # skip/) skipped++ }
+    END { printf "%d tests%s", n, (skipped ? ", " skipped " skipped" : "") }' "$1" 2>/dev/null
+}
+# What to show when check.sh fails: each failing test with bats' diagnostics under it,
+# or, when no test failed, everything that is not a passing test (lint output).
+check_failures() { # LOG
+  awk '
+    /^not ok [0-9]+/ { failing = 1; tests = 1; print; next }
+    failing && /^#/ { print; next }
+    { failing = 0 }
+    !/^(ok [0-9]+|1\.\.[0-9]+$)/ { other = other $0 "\n" }
+    END { if (!tests) printf "%s", other }' "$1" 2>/dev/null
+}
 # Runs CMD with its output in LOG. With a terminal, one line under NAME is redrawn every
-# second with the time so far and where mise is, so a slow download does not look like a
-# hang. CMD gets its own session, so Ctrl+C reaches it only through the trap here, which
-# stops it and says where it was. Sets rl_secs.
-run_logged() { # NAME DOING LOG CMD…
-  local name=$1 doing=$2 log=$3 start=$SECONDS pid status tty cols text _
-  shift 3
+# second with the time so far and PROGRESS (a function that reads LOG), so a slow step
+# does not look like a hang. CMD gets its own session, so Ctrl+C reaches it only through
+# the trap here, which stops it and says where it was. Sets rl_secs.
+run_logged() { # NAME DOING LOG PROGRESS CMD…
+  local name=$1 doing=$2 log=$3 progress=$4 start=$SECONDS pid status tty cols text _
+  shift 4
   rl_secs=0
   if ! have setsid || ! (: <>/dev/tty) 2>/dev/null; then
     "$@" >"$log" 2>&1
@@ -758,13 +785,13 @@ run_logged() { # NAME DOING LOG CMD…
   pid=$!
   trap 'kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
     printf "\r\e[K" >&"$tty"
-    warn "$name" "stopped after $(duration $((SECONDS - start))) at $(mise_progress "$log"), log $log"
+    warn "$name" "stopped after $(duration $((SECONDS - start))) at $("$progress" "$log"), log $log"
     exit 130' INT TERM
   while sleep 1; kill -0 "$pid" 2>/dev/null; do
     read -r _ cols < <(stty size <&"$tty" 2>/dev/null)
-    [[ $cols =~ ^[0-9]+$ ]] && ((cols >= 20)) || cols=80
-    text=$(printf '%-10s %s %s · %s' "$name" "$doing" "$(duration $((SECONDS - start)))" "$(mise_progress "$log")")
-    printf '\r\e[K%s' "${text:0:cols-1}" >&"$tty"
+    [[ $cols =~ ^[0-9]+$ ]] && ((cols >= 30)) || cols=80
+    text="$doing $(duration $((SECONDS - start))) · $("$progress" "$log")"
+    printf '\r\e[K%s%-10s%s %s' "$c_b" "$name" "$c_0" "${text:0:cols-12}" >&"$tty"
   done
   wait "$pid"
   status=$?
@@ -1282,7 +1309,7 @@ cmd_update() {
     if [[ -n $missing ]]; then
       line mise "installing $(words "$missing")"
       log=$STATE_DIR/mise-install.log
-      if run_logged mise installing "$log" mise install -y; then line mise "installed in $(duration "$rl_secs")"
+      if run_logged mise installing "$log" mise_progress mise install -y; then line mise "installed in $(duration "$rl_secs")"
       else warn mise "install failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     else
       line mise "nothing missing"
@@ -1291,7 +1318,7 @@ cmd_update() {
     [[ -n $held ]] && while IFS= read -r l; do warn mise "not installable yet: $l"; done <<<"$held"
     if (( ! quick )); then
       log=$STATE_DIR/mise-upgrade.log
-      if run_logged mise upgrading "$log" mise upgrade; then line mise "upgraded in $(duration "$rl_secs"), log $log"
+      if run_logged mise upgrading "$log" mise_progress mise upgrade; then line mise "upgraded in $(duration "$rl_secs"), log $log"
       else warn mise "upgrade failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
     fi
     mise reshim >/dev/null 2>&1 || true
@@ -1762,7 +1789,7 @@ step_mise() {
   fi
   line mise "$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }'), installing tools"
   local log=$STATE_DIR/mise-install.log
-  if run_logged mise installing "$log" mise install -y; then line mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed in $(duration "$rl_secs")"
+  if run_logged mise installing "$log" mise_progress mise install -y; then line mise "$(mise ls --no-header 2>/dev/null | awk 'NF' | wc -l) tools installed in $(duration "$rl_secs")"
   else warn mise "some tools failed after $(duration "$rl_secs")$(failed_in "$log"), log $log"; fi
   mise reshim >/dev/null 2>&1 || true
 }

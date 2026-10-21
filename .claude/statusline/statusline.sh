@@ -2,7 +2,9 @@
 # shellcheck disable=SC2154 # variables come from the jq eval below
 # Claude Code status line (statusLine in ~/.claude/settings.json).
 # Reads the session JSON on stdin and prints one line:
-#   model ·effort │ context bar │ 5h and 7d limits
+#   account │ model ·effort │ context bar │ 5h and 7d limits
+# The account is STATUSLINE_ACCOUNT when the launcher sets it (a gateway alias, say),
+# "gateway" for any other ANTHROPIC_BASE_URL, and "personal" otherwise.
 
 input=$(cat)
 # printf/awk must use a dot as the decimal separator regardless of the system locale.
@@ -47,6 +49,14 @@ human_tokens() {
 }
 
 segments=()
+
+if [[ -n ${STATUSLINE_ACCOUNT-} ]]; then
+  segments+=("${e}[1;38;5;170m${STATUSLINE_ACCOUNT}${reset}")
+elif [[ -n ${ANTHROPIC_BASE_URL-} ]]; then
+  segments+=("${e}[1;38;5;170mgateway${reset}")
+else
+  segments+=("${dim}personal${reset}")
+fi
 
 # Model: "Opus 5 (1M context)" -> "Opus 5 1M", plus effort and fast mode.
 model=$(sed -E 's/ \(([0-9.]+[KM]) context\)/ \1/' <<<"$model")

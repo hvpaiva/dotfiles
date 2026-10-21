@@ -71,6 +71,13 @@ warn. Origin is fetched at most once every ten minutes;
 fetches now,
 .B \-o
 does not fetch.
+.PP
+On a terminal a spinner names the step in flight while a repository is fetched and
+while the machine is checked, and clears itself before each table. The commands that
+reach the network or install things
+.RB ( update ", " doctor ", " save ", " push ", " clean ", " setup )
+do the same for each of their slow steps. Through a pipe, or with no terminal at all,
+there is no spinner and the output is exactly what a script reads.
 .TP
 .BR diff " [" "git diff arguments" ]
 The changes themselves, every repo: git diff for tracked files, then the new

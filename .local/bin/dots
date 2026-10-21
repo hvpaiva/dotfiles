@@ -107,6 +107,12 @@ the number of local checks that warn (dots doctor lists them) and, only while
 some exist, the backups setup left behind (dots clean lists them). Origin is
 fetched at most once every 10 minutes.
 
+On a terminal a spinner names the step in flight while a repo is fetched and the
+machine is checked, then clears itself before the table. The commands that talk to
+the network or install things (update, doctor, save, push, clean, setup) do the same
+for each of their slow steps; through a pipe or with no terminal there is no spinner
+and the output is unchanged.
+
 Usage:
   dots status [-f|--fetch] [-o|--offline]
 
@@ -321,11 +327,41 @@ else
   c_b='' c_r='' c_g='' c_y='' c_c='' c_0=''
 fi
 WARNINGS=()
-line() { printf '%s%-10s%s %s%s%s\n' "$c_b" "$1" "$c_0" "${3:-}" "$2" "${3:+$c_0}"; } # NAME DETAIL [COLOUR]
+# ── spinner: one line redrawn on a terminal while a slow step runs ───────────
+# Modelled on pf-mode's: a background subshell paints a frame every 100 ms and
+# spin_stop clears the line. It draws on the terminal rather than on stdout, so it
+# also shows where stdout is a pipe (dots setup tees to its log) and stays silent
+# where there is no terminal at all (bats, CI, a script redirecting the output).
+SPIN_PID=''
+spin() { # MESSAGE — a turning frame until spin_stop
+  spin_stop
+  (: <>/dev/tty) 2>/dev/null || return 0
+  local msg=$1 frames=⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ i=0
+  # The frame goes to the terminal the subshell opens for itself, so no descriptor is
+  # left in this shell for a child (a long ssh, a package manager) to inherit and hold.
+  (
+    exec {fd}<>/dev/tty || exit 0
+    while :; do
+      printf '\r  %s%s%s %s' "$c_c" "${frames:i++%10:1}" "$c_0" "$msg" >&"$fd"
+      sleep 0.1
+    done
+  ) &
+  SPIN_PID=$!
+  return 0
+}
+spin_stop() {
+  [[ -n $SPIN_PID ]] || return 0
+  kill "$SPIN_PID" 2>/dev/null
+  wait "$SPIN_PID" 2>/dev/null
+  SPIN_PID=''
+  (: <>/dev/tty) 2>/dev/null && { exec {fd}<>/dev/tty; printf '\r\e[K' >&"$fd"; exec {fd}>&-; }
+  return 0
+}
+line() { spin_stop; printf '%s%-10s%s %s%s%s\n' "$c_b" "$1" "$c_0" "${3:-}" "$2" "${3:+$c_0}"; } # NAME DETAIL [COLOUR]
 good() { line "$1" "$2" "$c_g"; }                                   # NAME DETAIL — a step that finished well
 warn() { WARNINGS+=("$1: $2"); line "$1" "$2" "$c_y"; }             # NAME DETAIL
 bad()  { WARNINGS+=("$1: $2"); line "$1" "$2" "$c_r"; }             # NAME DETAIL — a step that failed
-die()  { printf '%serror:%s %s\n' "$c_r" "$c_0" "$*" >&2; exit 1; }
+die()  { spin_stop; printf '%serror:%s %s\n' "$c_r" "$c_0" "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 indent() { local l; while IFS= read -r l; do printf '%s%s\n' "$1" "$l"; done; }
 SEP=$'\x1f'
@@ -947,6 +983,7 @@ checks_repos() { # needs the network: fetches, then compares with origin
   for r in public private nvim; do
     label=$(repo_label "$r")
     repo_present "$r" || { chk "$label" warn "not set up"; continue; }
+    spin "fetching $label"
     repo_fetch "$r" 0 || true
     repo_state "$r"
     st=ok
@@ -1055,6 +1092,7 @@ checks_deep() { # slower: a real login shell, GitHub over SSH, installs outside 
   out=$(bash -lic 'printf "%s|%s" "${PAGER-}" "$(command -v dots)"' 2>/dev/null)
   if [[ $out == "less|$HOME/.local/bin/dots" ]]; then detail+=", PAGER=less, dots on PATH"; else st=warn detail+=", PAGER='${out%%|*}', dots='${out#*|}'"; fi
   chk shell "$st" "$detail"
+  spin 'checking GitHub over ssh'
   out=$(timeout 20 ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1)
   if [[ $out == *"successfully authenticated"* ]]; then chk github ok "ssh access"; else chk github warn "no ssh access: ${out%%$'\n'*}"; fi
   # Logins: what only a person can do. Listed so a fresh machine knows what is left.
@@ -1105,8 +1143,11 @@ cmd_doctor() {
   need_public; host_name
   chk_rows='' chk_warns=0
   checks_repos
+  spin 'checking this machine'
   checks_machine
+  spin 'checking logins'
   checks_deep
+  spin_stop
   { row CHECK STATUS DETAIL; printf '%s' "$chk_rows"; } | table
   (( chk_warns == 0 ))
 }
@@ -1141,8 +1182,9 @@ overview() { # MODE auto|force|off
     if ! repo_present "$r"; then repos+="$(row "$label" '' '' 'not set up')"$'\n'; nx_hand+="${nx_hand:+, }$label not set up"; continue; fi
     origin=''
     case $mode in
-      force) repo_fetch "$r" 1 || origin='offline, ' ;;
-      auto)  repo_fetch "$r" 0 || origin='offline, ' ;;
+      force) spin "fetching $label"; repo_fetch "$r" 1 || origin='offline, ' ;;
+      auto)  spin "fetching $label"; repo_fetch "$r" 0 || origin='offline, ' ;;
+      off)   spin "reading $label" ;;
     esac
     repo_state "$r"
     if [[ $r == nvim ]]; then origin+=$(nvim_origin_text); else origin+=$(origin_text); fi
@@ -1152,15 +1194,19 @@ overview() { # MODE auto|force|off
       changes+="$(row "${l:3}" "$(change_state "${l:0:2}")" "$label")"$'\n'
     done <<<"$st_changes"
   done
+  spin_stop
   { row REPO BRANCH CHANGES ORIGIN; printf '%s' "$repos"; } | table
   if [[ -n $changes ]]; then
     printf '\n'
     { row PATH STATE REPO; printf '%s' "$changes"; } | table
   fi
   chk_rows='' chk_warns=0
+  spin 'checking this machine'
   checks_machine
+  spin_stop
   if (( chk_warns )); then checks="$chk_warns warn"; nx_doctor=1; else checks=ok; fi
   printf '\n'
+  spin_stop
   if backups_text >/dev/null; then
     { row HOST LINKS CHECKS BACKUPS; row "$host" "$(links_text)" "$checks" "$(backups_text)"; } | table
   else
@@ -1190,6 +1236,7 @@ cmd_diff() {
     repo_present "$r" || continue
     repo_state "$r"
     (( st_n )) || continue
+    spin_stop
     printf '%s%s%s\n' "$c_b" "$(repo_label "$r")" "$c_0"
     repo_git "$r" diff --ignore-submodules=all "$@"
     untracked=$(repo_git "$r" ls-files --others --exclude-standard)
@@ -1278,22 +1325,28 @@ cmd_save() {
       while IFS= read -r l; do line "$label" "$(change_state "${l:0:2}") ${l:3}"; done <<<"$st_changes"
       m=$msg
       [[ -n $m ]] || m=$(ask_message "$st_changes") || { warn "$label" "skipped"; continue; }
+      spin "committing $label"
       if repo_git "$r" add -A && repo_git "$r" commit -q -m "$m"; then
         good "$label" "committed $(repo_git "$r" log --format='%h %s' -1)"
       else
         bad "$label" "commit failed"; continue
       fi
     fi
-    (( push )) && push_repo "$r"
+    (( push )) && { spin "pushing $label"; push_repo "$r"; }
   done
   (( any )) || line dots "nothing to commit"
   return 0
 }
 cmd_push() {
-  local r
+  local r label
   [[ ${1:-} == -h || ${1:-} == --help ]] && { help_for push; return 0; }
   need_public
-  for r in nvim private public; do repo_present "$r" && push_repo "$r"; done
+  for r in nvim private public; do
+    repo_present "$r" || continue
+    label=$(repo_label "$r")
+    spin "pushing $label"
+    push_repo "$r"
+  done
   return 0
 }
 
@@ -1311,7 +1364,9 @@ cmd_update() {
   need_public; host_name; detect_os; mkdir -p "$STATE_DIR"
   for r in public private nvim; do
     repo_present "$r" || continue
-    if repo_fetch "$r" 1; then repo_update "$r" 0; else warn "$(repo_label "$r")" "cannot reach origin"; fi
+    label=$(repo_label "$r")
+    spin "updating $label"
+    if repo_fetch "$r" 1; then repo_update "$r" 0; else warn "$label" "cannot reach origin"; fi
   done
   link_all 0
   if have mise; then
@@ -1374,6 +1429,7 @@ step_deps() {
   ((${#missing[@]})) || { line deps "all present"; return 0; }
   line deps "installing ${missing[*]}"
   local ok=0
+  spin 'installing build dependencies'
   case $os in
     arch)   run_root pacman -S --needed --noconfirm "${missing[@]}" >/dev/null && ok=1 ;;
     ubuntu) run_root apt-get update -qq >/dev/null 2>&1; run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}" >/dev/null && ok=1 ;;
@@ -1399,6 +1455,7 @@ step_omarchy() {
       # whatever was clean before the run comes back from the repo afterwards
       local before after f restored=''
       before=$(repo_git public status --porcelain --ignore-submodules=all -- . 2>/dev/null | awk '{ print $2 }')
+      spin 'running the omarchy-ubuntu bootstrap'
       "$PORT_DIR/bootstrap.sh" || die "omarchy-ubuntu bootstrap failed"
       after=$(repo_git public status --porcelain --ignore-submodules=all -- . 2>/dev/null | awk '$1 != "??" { print $2 }')
       for f in $after; do
@@ -1598,6 +1655,7 @@ step_packages() { # the host's sets
   for p in "${missing[@]}"; do if pkg_available "$p"; then avail+=("$p"); else aur+=("$p"); fi; done
   if ((${#avail[@]})); then
     line packages "installing ${#avail[@]}: ${avail[*]}"
+    spin "installing ${#avail[@]} package(s)"
     case $os in
       arch) run_root pacman -S --needed --noconfirm "${avail[@]}" >/dev/null && ok=1 ;;
       ubuntu) run_root env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${avail[@]}" >/dev/null && ok=1 ;;
@@ -1624,6 +1682,7 @@ step_drop_packages() {
   mapfile -t dup < <(installed_pkgs "${DROP[@]}")
   ((${#dup[@]})) || { line packages "no distro copies"; return 0; }
   line packages "removing ${dup[*]}"
+  spin 'removing the distro copies'
   # all at once first, so packages that depend on each other (rust-src, rust-analyzer
   # on rust) go in one transaction; then one by one, so an outside dependency blocks
   # only its own package
@@ -1667,6 +1726,7 @@ step_augur() {
     return 0
   fi
   line augur "building ${head:0:7}"
+  spin "building augur"
   if "$HOME/.cargo/bin/cargo" install -q --path "$AUGUR_DIR" 2>"$STATE_DIR/augur-build.log"; then
     printf '%s\n' "$head" >"$STATE_DIR/augur-built"
     good augur "installed $(augur --version 2>/dev/null) (ble-augur restart in open shells)"
@@ -1735,6 +1795,7 @@ step_blesh_update() {
   [[ -f $BLESH ]] || { step_blesh; return 0; }
   if ! have make || ! have gawk; then warn ble.sh "needs make and gawk, update skipped"; return 0; fi
   before=$(blesh_version)
+  spin 'updating ble.sh'
   if ! bash "$BLESH" --update >"$STATE_DIR/blesh-update.log" 2>&1; then
     bad ble.sh "update failed, log $STATE_DIR/blesh-update.log"
     return 0
@@ -1774,6 +1835,7 @@ step_bashdb() {
     return 0
   fi
   tmp=$(mktemp -d)
+  spin "building bashdb for bash $bd_bash"
   if ! git clone -q --depth 1 -b "bash-$bd_bash" "$BASHDB_REPO" "$tmp/bashdb" 2>/dev/null; then
     warn bashdb "no upstream branch for bash $bd_bash yet"
   elif (cd "$tmp/bashdb" && sh ./autogen.sh --prefix="$HOME/.local" && make && make install) >"$STATE_DIR/bashdb-build.log" 2>&1; then
@@ -1786,6 +1848,7 @@ step_bashdb() {
 step_tpm() {
   [[ -d $TPM_DIR/tpm ]] || git clone -q https://github.com/tmux-plugins/tpm "$TPM_DIR/tpm"
   if have tmux; then
+    spin 'installing the tmux plugins'
     if TMUX_PLUGIN_MANAGER_PATH=$TPM_DIR "$TPM_DIR/tpm/bin/install_plugins" >/dev/null 2>&1; then good tmux "tpm, $(tmux_plugins | wc -l) plugins"; else bad tmux "plugin install failed"; fi
   else
     warn tmux "tmux not installed, plugins pending"
@@ -1811,6 +1874,7 @@ step_font() {
   elif omarchy-font-current 2>/dev/null | grep -qF "$FONT"; then
     line font "$FONT"
   else
+    spin 'setting the terminal font'
     omarchy-font-set "$FONT" >/dev/null 2>&1
     # font-set rewrites the terminal configs (and pins foot to size 9); fontconfig is what
     # we wanted from it, the terminal files come back from the repo
@@ -1825,6 +1889,7 @@ step_themes() {
   local url n=0
   while read -r url; do
     [[ -n $url ]] || continue
+    spin "installing the theme ${url##*/}"
     if omarchy-theme-install "$url" >/dev/null 2>&1; then n=$((n + 1)); else bad themes "install failed: $url"; fi
   done < <(themes_missing)
   line themes "$n installed now, $(find "$HOME/.config/omarchy/themes" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l) present"
@@ -1968,6 +2033,7 @@ cmd_clean() {
     [[ $answer == [yY]* ]] || { line clean "kept"; return 0; }
   fi
   for p in "${paths[@]}"; do
+    spin "removing ${p/#"$HOME"/\~}"
     if rm -rf -- "$p"; then line clean "removed ${p/#"$HOME"/\~}"; else warn clean "could not remove ${p/#"$HOME"/\~}"; fi
   done
 }
@@ -1996,5 +2062,6 @@ main() {
 }
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
   set -u
+  trap spin_stop EXIT
   main "$@"
 fi

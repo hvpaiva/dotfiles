@@ -18,7 +18,6 @@ bluez-utils pacman
 cups-pk-helper pacman
 ddcutil pacman
 dosfstools pacman
-dua-cli pacman
 foot pacman
 moonlight-qt pacman
 mpv-mpris pacman
@@ -30,7 +29,6 @@ qemu-user-static-binfmt pacman
 qrencode pacman
 qt6-imageformats pacman
 socat pacman
-tensaku pacman
 tesseract pacman
 tesseract-data-eng pacman
 ttfx pacman
@@ -56,3 +54,18 @@ ruby pacman
 ttf-jetbrains-mono-nerd-basic pacman
 sunshine pacman
 openrgb pacman
+omasnap pacman
+vi pacman
+owe pacman
+owe-lockfeed pacman
+monologue pacman
+hype pacman
+mise-bin pacman
+disktree-bin pacman
+fcitx5-chewing pacman
+fcitx5-chinese-addons pacman
+fcitx5-hangul pacman
+fcitx5-mozc pacman
+omarchy-hyprland-titlebars pacman
+gliff pacman
+signed pacman

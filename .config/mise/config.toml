@@ -41,7 +41,6 @@ marksman = "latest"
 "npm:typescript-language-server" = "latest"
 "npm:vscode-langservers-extracted" = "latest"
 "npm:yaml-language-server" = "latest"
-"pipx:hermes-agent" = { version = "latest", extras = "all" }
 "pipx:jrnl" = "latest"
 pnpm = "12.9.1"
 prettier = "latest"

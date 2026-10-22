@@ -60,8 +60,9 @@ UBUNTU_DEPS=(git openssh-client curl ca-certificates build-essential autoconf au
 # Distro packages the layer replaces (mise or rustup provide the tool) or does not want at
 # all (starship, zsh). Omarchy ships most of the Arch ones. The Ubuntu port installs mise
 # through mise.run and nothing else from this list, so on Ubuntu they come from an earlier
-# life of the machine.
-ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli mise-bin cliamp tobi-try starship glow rust-src rust rust-analyzer terraform tflint shellcheck)
+# life of the machine. Omarchy's mise-bin stays: its updater runs migrations with a fixed
+# PATH that only reaches /usr/bin/mise.
+ARCH_DROP=(herdr sesh-bin zoxide zsh fish fisher tree-sitter-cli cliamp tobi-try starship glow rust-src rust rust-analyzer terraform tflint shellcheck)
 UBUNTU_DROP=(mise zoxide zsh fish starship)
 STALE_NAMES=(herdr sesh zoxide starship cliamp tree-sitter mise try glow)
 
@@ -1040,7 +1041,12 @@ checks_machine() { # fast, local: what is installed and wired, against what the 
   fi
   if have mise; then
     st=ok detail="$(command -v mise) $(mise --version 2>/dev/null | awk '{ print $1 }')"
-    [[ $(command -v mise) == "$HOME/.local/bin/mise" ]] || { st=warn detail+=" (not the official build)"; }
+    if [[ $os == arch && -r /usr/share/omarchy/version ]]; then
+      # dots puts ~/.local/bin first, so a copy there shows up here as the one that wins
+      [[ $(command -v mise) == /usr/bin/mise ]] || { st=warn detail+=" (Omarchy needs /usr/bin/mise from mise-bin)"; }
+    else
+      [[ $(command -v mise) == "$HOME/.local/bin/mise" ]] || { st=warn detail+=" (not the official build)"; }
+    fi
     missing=$(mise_missing) held=$(mise_held)
     if [[ -z $missing && -z $held ]]; then detail+=", every tool installed"; fi
     [[ -n $missing ]] && { st=warn detail+=", missing $(words "$missing")"; }

@@ -38,16 +38,16 @@ goes:
 4. the per-host layers: public files from `hosts/<host>/`, sensitive ones from the private
    repo (needs the GitHub SSH key from the step above; skipped with a warning until it works);
 5. [hvpaiva/nvim](https://github.com/hvpaiva/nvim) on `main`;
-6. the distro packages this layer replaces with mise's copy (Omarchy ships `mise-bin`,
-   `zoxide`, `herdr`, `cliamp`, `tobi-try`, `tree-sitter-cli`, `starship`; they go);
+6. the distro packages this layer replaces with mise's copy (Omarchy ships `zoxide`,
+   `herdr`, `cliamp`, `tobi-try`, `tree-sitter-cli`, `starship`; they go);
 7. the host's **package sets**: `hosts/<host>/.config/packages/sets` names them,
    `packages/<distro>/<set>.txt` lists them (zeus: core, desktop, dev, apps, gaming, work;
    athena: dev, apps, work, fonts, fun). A set is a wish list: what the distro cannot provide
    right now (a repository not added, an AUR package without yay) is reported, never fatal.
    What the configs themselves need is not in a set but in setup's own dependencies;
 8. rustup and [augur](https://github.com/hvpaiva/augur), ble.sh, bashdb (built for the
-   running Bash), tmux plugins, the official mise build in `~/.local/bin` and every tool in
-   `mise/config.toml`;
+   running Bash), tmux plugins, mise (the official build in `~/.local/bin` when the machine
+   has none; an Arch Omarchy keeps its `mise-bin`) and every tool in `mise/config.toml`;
 9. the terminal font and the extra Omarchy themes;
 10. `dots doctor`, then a summary of anything that did not go as planned. The full output is
    kept in `~/.local/state/dotfiles/setup.log`.
@@ -188,7 +188,9 @@ and `dots update` copy it back into its tree, restore the link and show it as a 
   attribution trailers, run the repository's own hooks (a global `core.hooksPath` would
   otherwise disable them) and a per-host hook if present. Identity comes from the per-host
   layer.
-- **mise** — the official build in `~/.local/bin`, one `config.toml` with every tool wanted
+- **mise** — the official build in `~/.local/bin`, except on an Arch Omarchy, which keeps
+  its `mise-bin` because the updater runs migrations with a `PATH` that only reaches
+  `/usr/bin/mise`. One `config.toml` with every tool wanted
   on every machine, mise first over distro packages (herdr, zoxide, sesh, cliamp, try,
   tree-sitter, glow…). Per-host pins live in `conf.d/local.toml`. Rust comes from rustup.
   Gems whose C extensions follow the Ruby ABI (ruby-lsp) cannot be one shared mise tool:
@@ -272,7 +274,8 @@ file that moved or went away is removed by the next `dots update`.
 - `MesloLGLDZ Nerd Font Mono`, size 11, applied by `omarchy-font-set` (fontconfig) with the
   terminal files restored from the repo afterwards, because font-set also pins foot to size 9.
 - mise first, on both distros, for everything mise can provide; the distro copies are
-  removed so there is one of each tool. mise itself is the official build, not a package.
+  removed so there is one of each tool. mise itself is the official release binary: from
+  mise.run, or Omarchy's `mise-bin` package on Arch.
 - No symlinks for shared files (see above); symlinks only for the per-host trees, where the
   live file wins if a program breaks the link.
 

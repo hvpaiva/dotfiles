@@ -530,6 +530,20 @@ fake_augur_clone() { # — a clone of a local origin at $AUGUR_DIR, built by fak
   [ "$(mise_missing | tr '\n' ' ')" = "node bun " ]
 }
 
+@test "mise_missing leaves out a tool declared lazy in the file mise found it in" {
+  command -v jq >/dev/null && command -v yq >/dev/null || skip "jq or yq not installed"
+  local conf=$BATS_TEST_TMPDIR/tools.toml
+  printf '[tools]\nhunk = { version = "latest", lazy = true }\n"npm:@scope/cli" = { version = "latest", lazy = true }\nnode = "latest"\n' >"$conf"
+  mise() {
+    case "$*" in
+      'ls --missing --json')
+        printf '{"hunk":[{"source":{"path":"%s"}}],"npm:@scope/cli":[{"source":{"path":"%s"}}],"node":[{"source":{"path":"%s"}}]}\n' "$conf" "$conf" "$conf" ;;
+      *) printf 'hunk 0.24.0 (missing)\nnpm:@scope/cli 1.0.0 (missing)\nnode 26.0.0 (missing)\n' ;;
+    esac
+  }
+  [ "$(mise_missing | tr '\n' ' ')" = "node " ]
+}
+
 tmux_fixture() {
   local binary=$HOME/.local/share/mise/installs/tmux/3.7c/tmux
   mkdir -p "${binary%/*}" "$HOME/.local/share/mise/shims" "$TPM_DIR/tpm" "$HOME/.config/tmux"

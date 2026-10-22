@@ -721,7 +721,24 @@ root_hidden() {
 }
 
 # ── tools and packages ───────────────────────────────────────────────────────
-mise_missing() { mise ls --missing --no-header 2>/dev/null | awk 'NF { print $1 }'; }
+mise_missing() {
+  local lazy
+  lazy=$(mise_lazy)
+  mise ls --missing --no-header 2>/dev/null | awk -v lazy="$lazy" '
+    BEGIN { n = split(lazy, names, "\n"); for (i = 1; i <= n; i++) skip[names[i]] }
+    NF && !($1 in skip) { print $1 }'
+}
+mise_lazy() {
+  have jq && have yq || return 0
+  local tool src
+  mise ls --missing --json 2>/dev/null | jq -r 'to_entries[] | [.key, (.value[0].source.path // "")] | @tsv' 2>/dev/null |
+    while IFS=$'\t' read -r tool src; do
+      [[ -r $src ]] || continue
+      if [[ $(TOOL=$tool yq -p toml -o json '.tools[strenv(TOOL)].lazy' "$src" 2>/dev/null) == true ]]; then
+        printf '%s\n' "$tool"
+      fi
+    done
+}
 # Language tools installed straight through their own manager instead of a mise
 # backend: dots cannot carry them, and a gem or npm package inside mise's ruby
 # or node goes with the next version. mise-intercept (bash) offers the mise

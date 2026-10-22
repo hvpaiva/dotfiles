@@ -4,6 +4,7 @@
 hl.config({
   input = {
     repeat_delay = 600,
+    kb_options = "compose:caps,shift:both_capslock_cancel",
   },
 })
 

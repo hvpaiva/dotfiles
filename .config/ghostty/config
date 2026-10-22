@@ -23,6 +23,7 @@ shell-integration-features = no-cursor,ssh-env
 # Keyboard bindings
 # Free ctrl+shift+j (Ghostty default: write_screen_file:paste) so herdr gets it
 keybind = ctrl+shift+j=unbind
+keybind = ctrl+enter=unbind
 keybind = shift+insert=paste_from_clipboard
 keybind = control+insert=copy_to_clipboard
 # Legacy encoding sends Alt+Shift+Enter the same as Alt+Enter; send CSI-u so TUIs can tell them apart.
